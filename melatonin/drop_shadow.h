@@ -1,7 +1,7 @@
 #pragma once
 #include "juce_gui_basics/juce_gui_basics.h"
 #include "melatonin_blur/melatonin/blur.h"
-#include "melatonin_ui/Utilities/stack_blur.h"
+#include "implementations/gin.h"
 
 namespace melatonin
 {
@@ -89,7 +89,8 @@ namespace melatonin
                 // renderedShadows should already be composited as ARGB
                 // This lets us specify `false` for `fillAlphaChannelWithCurrentBrush` here
                 // Which is a 2-3x speedup
-                g.drawImageAt (renderedShadows[i], s.area.getX(), s.area.getY(), true);
+                g.setOpacity(1.0);
+                g.drawImageAt (renderedShadows[i], s.area.getX(), s.area.getY());
             }
         }
 
