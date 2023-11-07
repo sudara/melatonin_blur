@@ -20,6 +20,13 @@ It aims to do everything you need out of the box:
 
 ## Installation 
 
+
+### IPP on Windows
+
+If you aren't already using it, Intel IPP might feel like an annoying dependency. Understandable! I have a blog post describing how to set it up locally and in CI. 
+
+It's not too bad! It's fantastic tool to have for dsp as well (albeit with an annoying API!) and it'll speed up the single channel (shadows, etc) on Windows. But you'll still get Stack Blur performance and shadow caching without it.
+
 ### Via CMake and git submodules
 
 
@@ -76,16 +83,61 @@ Download (via git like above, or via the UI here) and "Add a module from a speci
 
 ### Drop Shadows
 
-Drop shadows work on a `juce::Path`. For caching to work, both the path and the shadow needs to be a member of your `juce::Component`, like so:
+Drop shadows work on a `juce::Path`. For caching to work, `melatonin::DropShadow` needs to be a member of your `juce::Component`. In the `paint` call you will then `shadow.render()`, passing in the graphics context and the path to render. 
 
+```cpp
 
+class MySlider : public juce::Component
+{
+public:
+    
+    void paint (juce::Graphics& g) override
+    {
+        // note that drop shadows get painted *before* the path
+        shadow.render (g, valueTrack);
+        
+        g.setColour (juce::Colours::red);
+        path.fillPath (valueTrack);
+    }
+    
+    void resized()
+    {
+        valueTrack.clear();
+        valueTrack.addRoundedRectangle (10, 10, 100, 20, 2);
+    }
+    
+private:
+    juce::Path valueTrack;
+    melatonin::DropShadow valueTrackShadow = {{ juce::Colours::black, 8, { -2, 0 } }};
+}
+```
 
+The `juce::Path` doesn't *have* to be a member variable to take advantage of the shadow caching. We pass in the path to be on `render` (instead of on shadow construction) precisely to check for equality on the path before re-rendering the shadow. This lets you recalcuate the path in `paint` (for example, when `resized` isn't called), while still retaining the cached shadow (as long as the path data is the same).
 
+```cpp
+class MySlider : public juce::Component
+{
+public:
+    
+    void paint (juce::Graphics& g) override
+    {
+        juce::Path valueTrack;
+        valueTrack.addRoundedRectangle (10, 10, 100, 20, 2);
+        
+        shadow.render (g, valueTrack);
+        
+        g.setColour (juce::Colours::red);
+        path.fillPath (valueTrack);
+    }
+    
+private:
+    melatonin::DropShadow valueTrackShadow = {{ juce::Colours::black, 8, { -2, 0 } }};
+}
 
+```
 
+Note: For paths like slider thumbs that look the same but move around, the underlying path data *will* be different as it moves, invalidating the blur cache. To avoid this, you can use a `juce::AffineTransform` to move the path around, and the cache will be retained. 
 
-
-If you aren't already using it, Intel IPP might feel like an annoying dependency. Understandable! I have a blog post describing how to set it up locally and in CI. It's not too bad! It's fantastic tool to have for dsp as well (albeit with an annoying API!)
 
 ## Motivation
 
