@@ -2,11 +2,9 @@
 
 Melatonin Blur is a batteries-included CPU blur library for the C++ JUCE framework with a focus on performance and ease of use.
 
-On MacOS, it depends on the built-in Accelerate framework.
+On macOS, it depends on the built-in Accelerate framework.
 
-On Windows, it depends on the Intel IPP library.
-
-On Windows without IPP, it will fall back to a slower JUCE FloatVectorOperations Stack Blur implementation which has performance in the same neighborhood as the Gin Stack Blur implementation. Note that while the underlying blur times are comparable, the caching in the helpers will still provide a ~5x speedup due to cache hits on subsequent repaints. 
+On Windows, it optionally depends on the Intel IPP library. If not present will fall back to a JUCE FloatVectorOperations implementation for single channel (shadows, etc) and Gin's Stack Blur for ARGB. 
 
 ## Features
 
@@ -14,12 +12,78 @@ What does *batteries-included* mean?
 
 It aims to do everything you need out of the box:
 
-* Fast and Figma-Accurate Drop shadows.
+* Optimized for speed! (see benchmarks below)
+* Figma/CSS Accurate Drop shadows.
 * Ditto with Inner shadows.
-* Behind the scenes caching of shadows and blurs (so aren't re-calculated unless their underlying data changes).
+* Behind the scenes caching of shadows and blurs (so they won't re-calculated unless their underlying data changes).
 * Debug optimized (Nothing worse than painting sluggishness in Debug!)
 
 ## Installation 
+
+### Via CMake and git submodules
+
+
+Add the submodule:
+
+```git
+git submodule add -b main https://github.com/sudara/melatonin_blur.git modules/melatonin_blur
+
+# To update down the road:
+# git submodule update --remote --merge modules/melatonin_blur
+```
+
+
+or use FetchContent
+
+```cmake
+Include (FetchContent)
+FetchContent_Declare (melatonin_blur
+  GIT_REPOSITORY https://github.com/sudara/melatonin_blur.git
+  GIT_TAG origin/main
+  SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/melatonin_blur)
+FetchContent_MakeAvailable (melatonin_blur)
+```
+
+Then add this *before* your `juce_add_plugin` call:
+
+```cmake
+juce_add_module("modules/melatonin_blur")
+
+```
+
+Make sure to link to your plugin target *after* the `juce_add_plugin` call:
+
+```cmake
+target_link_libraries("YourProject" PRIVATE melatonin_inspector)
+
+```
+
+### Via Projucer
+
+Download (via git like above, or via the UI here) and "Add a module from a specified folder" and you're done!
+
+<p align="center">
+<img src="https://github.com/sudara/melatonin_inspector/assets/472/010d9bf3-f8dc-4fc1-9039-69ba42ff856c" width="500"/>
+</p>
+
+### Don't forget to include the header!
+
+```cpp
+#include <melatonin_blur/melatonin_blur.h>
+```
+
+## Usage
+
+### Drop Shadows
+
+Drop shadows work on a `juce::Path`. For caching to work, both the path and the shadow needs to be a member of your `juce::Component`, like so:
+
+
+
+
+
+
+
 
 If you aren't already using it, Intel IPP might feel like an annoying dependency. Understandable! I have a blog post describing how to set it up locally and in CI. It's not too bad! It's fantastic tool to have for dsp as well (albeit with an annoying API!)
 
