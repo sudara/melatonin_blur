@@ -52,7 +52,7 @@ static std::vector<float> pixelRow (const juce::Image& image, int row, int chann
         }
         else
         {
-            auto pixel = getActualARGBPixel(data.getPixelPointer (x, row));
+            auto pixel = getActualARGBPixel (data.getPixelPointer (x, row));
 
             // assume little endian (aka BGRA)
             if (channel == 0)
@@ -79,7 +79,7 @@ static std::vector<float> pixelCol (const juce::Image& image, int col, int chann
             result.push_back (data.getPixelColour (col, y).getBrightness());
         else
         {
-            auto pixel = getActualARGBPixel(data.getPixelPointer (col, y));
+            auto pixel = getActualARGBPixel (data.getPixelPointer (col, y));
 
             // assume little endian (aka BGRA)
             if (channel == 0)
@@ -92,6 +92,36 @@ static std::vector<float> pixelCol (const juce::Image& image, int col, int chann
                 // wat?
                 jassertfalse;
         }
+    }
+    return result;
+}
+
+static juce::String getPixel (juce::Image& img, int x, int y)
+{
+    return img.getPixelAt (x, y).toDisplayString (true);
+}
+
+// get pixels in a range, *includes* the start/end of range
+static juce::String getPixels (juce::Image& img, int x, juce::Range<int> yRange)
+{
+    juce::String result;
+    for (auto y = yRange.getStart(); y <= yRange.getEnd(); ++y)
+    {
+        result << getPixel (img, x, y);
+        if (y != yRange.getEnd())
+            result << ", ";
+    }
+    return result;
+}
+
+static juce::String getPixels (juce::Image& img, juce::Range<int> xRange, int y)
+{
+    juce::String result;
+    for (auto x = xRange.getStart(); x <= xRange.getEnd(); ++x)
+    {
+        result << getPixel (img, x, y);
+        if (x != xRange.getEnd())
+            result << ", ";
     }
     return result;
 }
@@ -110,7 +140,7 @@ static void print_test_image (juce::Image& image)
             if (image.getFormat() == juce::Image::PixelFormat::SingleChannel)
                 std::cout << color.getBrightness() << ", ";
             else
-                std::cout << color.toDisplayString(true) << ", "; // AARRGGBB
+                std::cout << color.toDisplayString (true) << ", "; // AARRGGBB
         }
         std::cout << std::endl;
     }

@@ -1,4 +1,4 @@
-#include "../melatonin/drop_shadow.h"
+#include "../melatonin/shadows.h"
 #include "helpers/pixel_helpers.h"
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -6,7 +6,7 @@
 
 TEST_CASE ("Melatonin Blur Drop Shadow")
 {
-    // here's what it should look like:
+    // here's what our test image looks like:
     // 0  0  0  0  0  0  0  0  0
     // 0  0  0  0  0  0  0  0  0
     // 0  0  0  0  0  0  0  0  0

@@ -25,8 +25,8 @@ TEST_CASE ("Melatonin Blur Drop Shadow Benchmarks")
                 shadow.render (g, p);
                 BENCHMARK ("Reference (gin)")
                 {
-                    renderDropShadow (g, p, juce::Colours::red, 48, { 2, 2 });
-                    renderDropShadow (g, p, juce::Colours::black, 36, { 0, 8 });
+                    melatonin::stackBlur::renderDropShadow (g, p, juce::Colours::red, 48, { 2, 2 });
+                    melatonin::stackBlur::renderDropShadow (g, p, juce::Colours::black, 36, { 0, 8 });
                     return image.getPixelAt (20, 20);
                 };
 

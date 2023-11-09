@@ -15,4 +15,4 @@ END_JUCE_MODULE_DECLARATION
 */
 
 #include "juce_graphics/juce_graphics.h"
-#include "melatonin/drop_shadow.h"
+#include "melatonin/shadows.h"

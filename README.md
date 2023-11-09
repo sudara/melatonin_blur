@@ -8,13 +8,11 @@ On Windows, it optionally depends on the Intel IPP library. If not present will 
 
 ## Features
 
-What does *batteries-included* mean? 
+*Batteries-included* means it aims to do everything you need out of the box:
 
-It aims to do everything you need out of the box:
-
-* Optimized for speed! (see benchmarks below)
-* Figma/CSS Accurate Drop shadows.
-* Ditto with Inner shadows.
+* Fast! (see benchmarks below)
+* Figma/CSS Accurate Drop and Inner shadows.
+* Trivial to stack / layer shadows
 * Behind the scenes caching of shadows and blurs (so they won't re-calculated unless their underlying data changes).
 * Debug optimized (Nothing worse than painting sluggishness in Debug!)
 
@@ -206,7 +204,9 @@ Optimizing larger image sizes ensures that drop shadows won't be a cause for dro
 
 ### Optimized for Debug Too
 
-Debug is where we spend 95% of our day! Because it directly talks to vendor vector libraries, Melatonin Blur is almost as fast in Debug as it is in release. It performs 5-15x faster than alternatives in Debug. 
+Debug is where we spend 95% of our day! 
+
+Because it directly talks to vendor vector libraries, Melatonin Blur is almost as fast in Debug as it is in release. It performs 5-15x faster in Debug. 
 
 
 
@@ -301,3 +301,9 @@ This might seem like a strange thing to say, or even a no-brainer to a seasoned 
 In reality, I think the truth is more subtle: compilers have a lot of history with C, and are very good at optimizing a linear mess of instructions. There are more considerations when moving to templates and classes (such as memory layout, the resulting impact on cache locality, "seeing through" the indirection created by classes and function calls). The compiler can't always make the same straightforward assumptions, if only because there is more complexity for the compiler itself. My conclusion is that the human has to work *harder* at optimizing modern C++ code than with naive "risky" pointer juggling C-ish implementations. 
 
 In other words, this project humbled me. I love to advocate for clarity, readability and maintainability. I tend to despise spaghetti code and esoteric C++ tricks. In the rare times when the absolute priority is raw speed, I still 100% believe readability and maintainability are possible, but there's definitely a price to be paid for composability and reusability. I paid that price, both in terms of raw hours, as well as an end result I wish I could be prouder of.
+
+
+## Acknowledgements
+
+* Roland Rabian for providing a JUCE Stack Blur via [Gin](https://github.com/figbug/gin).
+* Luke M1 for [figuring out the `drawImageAt` optimization](https://forum.juce.com/t/faster-blur-glassmorphism-ui/43086/76). 

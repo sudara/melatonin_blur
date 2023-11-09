@@ -467,6 +467,7 @@ namespace melatonin::stackBlur
         }
     }
 
+    // these are sudara's old helpers
     static void renderDropShadow (juce::Graphics& g, const juce::Path& path, juce::Colour color, const int radius = 1, const juce::Point<int> offset = { 0, 0 }, int spread = 0)
     {
         if (radius < 1)
@@ -497,5 +498,32 @@ namespace melatonin::stackBlur
 
         g.setColour (color);
         g.drawImageAt (renderedPath, area.getX(), area.getY(), true);
+    }
+
+    // sudara's old inner helper
+    static void renderInnerShadow (juce::Graphics& g, juce::Path target, juce::Colour shadowColor, int radius = 1, juce::Point<int> offset = { 0, 0 }, int spread = 0)
+    {
+        // resets the Clip Region when this scope ends
+        juce::Graphics::ScopedSaveState saveState (g);
+
+        // invert the path's fill shape and enlarge it,
+        // so it casts a shadow
+        juce::Path shadowPath (target);
+        shadowPath.setUsingNonZeroWinding (false);
+
+        if (spread != 0)
+        {
+            // A positive spread radius means a smaller projected image (more inner shadow)
+            auto bounds = shadowPath.getBounds().expanded (-spread);
+            shadowPath.scaleToFit (bounds.getX(), bounds.getY(), bounds.getWidth(), bounds.getHeight(), true);
+        }
+
+        shadowPath.addRectangle (target.getBounds().expanded ((float) (10 + radius + spread)));
+
+        // reduce clip region to avoid the shadow
+        // being drawn outside of the shape to cast the shadow on
+        g.reduceClipRegion (target);
+
+        renderDropShadow (g, shadowPath, shadowColor, radius, offset);
     }
 }
