@@ -1,9 +1,17 @@
 ![Figma - 2023-11-09 42@2x](https://github.com/sudara/melatonin_blur/assets/472/0cb16190-bce7-4d9a-8a7c-d15846946354)
+
 Melatonin Blur is a batteries-included CPU blur library for the C++ JUCE framework with a focus on performance and ease of use.
+
+The primary goal of the project is to get drop shadows and inner shadows fast enough that entire vector interfaces in JUCE can be built without resorting to deprecated solutions with less quality of life (looking at you, OpenGL on macOS!). 
+
+For this use case, Melatonin Blur gives a 10-30x improvement over using just StackBlur.
+
+<img src="https://github.com/sudara/melatonin_blur/assets/472/598115b8-9c9d-42d8-b868-e921978cda17" width="550" />
 
 On macOS, it depends on the built-in Accelerate framework.
 
 On Windows, it optionally depends on the Intel IPP library. If not present will fall back to a JUCE FloatVectorOperations implementation for single channel (shadows, etc) and Gin's Stack Blur for ARGB. 
+
 
 ## Features
 
@@ -163,7 +171,7 @@ So I started to get curious about the Stack Blur algorithm. I kept thinking I co
 
 Well, thanks to being arrogant and setting a somewhat ridiculously high bar, I spent 4-5 weeks and implemented Stack Blur probably 25 times, enough where I can do it in my sleep. There are 15 reference implementations in this repo that pass the tests (most didn't bring the performance improvements I was looking for). I still have a few more implementations that I'd like to try, but I've already invested ridiculous amounts of time into what I've been affectionately calling my C++ performance final exam, and would like to move on with my life!
 
-## Benchmarks
+## More Benchmarks
 
 Benchmarks are REALLY messy things.
 
@@ -184,7 +192,7 @@ My #1 performance goal with this library was for drop-shadows to be screaming fa
 
 Caching does most of the heavy lifting here, giving a 10-30x improvement over using just StackBlur:
 
-<img src="https://github.com/sudara/melatonin_blur/assets/472/27b72ac0-74d6-43e2-85f3-b483160f1f56" width="550" />
+<img src="https://github.com/sudara/melatonin_blur/assets/472/598115b8-9c9d-42d8-b868-e921978cda17" width="550" />
 
 On Windows, with IPP as a dependency:
 
