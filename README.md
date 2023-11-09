@@ -1,30 +1,30 @@
 ![Figma - 2023-11-09 42@2x](https://github.com/sudara/melatonin_blur/assets/472/0cb16190-bce7-4d9a-8a7c-d15846946354)
 
-Melatonin Blur is a batteries-included cross-platform CPU blur library for the C++ JUCE framework with a focus on performance and ease of use.
+Melatonin Blur is a batteries-included, cross-platform CPU blur library for the [JUCE C++ framework](https://juce.com/). 
 
-The primary goal of the project is to get drop shadows and inner shadows fast enough that entire vector interfaces in JUCE can be built without resorting to deprecated solutions with less quality of life (looking at you, OpenGL on macOS!). 
+The primary goal of the project: get drop shadows and inner shadows fast enough that entire vector interfaces in JUCE can be built without resorting to deprecated solutions with less quality of life (looking at you, OpenGL on macOS!). 
 
-For this use case, Melatonin Blur gives a 10-30x improvement over using just StackBlur.
+For drop shadows, Melatonin Blur gives a 10-30x improvement over using just StackBlur.
 
 <img src="https://github.com/sudara/melatonin_blur/assets/472/598115b8-9c9d-42d8-b868-e921978cda17" width="550" />
 
 On macOS, it depends on the built-in Accelerate framework.
 
-On Windows, it optionally depends on the Intel IPP library. If IPP is not present, it will fall back to a JUCE FloatVectorOperations implementation for single channel (shadows, etc) and Gin's Stack Blur for ARGB. 
+On Windows, it optionally depends on the Intel IPP library.
 
+If IPP is not present, it will fall back to a JUCE FloatVectorOperations implementation for single channel (shadows, etc) and Gin's Stack Blur for ARGB. 
 
 ## Features
 
-*Batteries-included* means it aims to do everything you need out of the box:
+*Batteries-included* means it that it aims to do everything you need out of the box:
 
 * Fast! (see benchmarks below)
 * Figma/CSS Accurate Drop and Inner shadows.
 * Trivial to stack / layer shadows
-* Behind the scenes caching of shadows and blurs (so they won't re-calculated unless their underlying data changes).
+* Behind the scenes caching of shadows and blurs (they won't re-calculated unless their underlying data changes).
 * Debug optimized (Nothing worse than painting sluggishness in Debug!)
 
 ## Installation 
-
 
 ### IPP on Windows
 
@@ -148,28 +148,28 @@ Note: For paths like slider thumbs that look the same but move around, the under
 
 Blurs are essential to modern design. Layered drop shadows, frosted glass effects, blurred backgrounds — you won't see a nice looking app in the 2020s without them. 
 
-Designers work in vector based tools such as Figma. Shadows are a big part of their workflow. With proper support for drop shadows, you can take a designer's work in Figma and quickly translate it (no need to export image strips and so on like we're in the 1990s). 
+Designers tend to work in vector based tools such as Figma. Shadows are a big part of their workflow, how they bring depth and life to 2D interfaces. Melatonin Blur is designed to let you can take a designer's work in CSS/Figma and quickly translate it (no need to export image strips and so on like it's still the 90s!). 
 
-For example, I have sliders that look like this:
+For example, I have a slider that look like this:
 
 ![Figma - 2023-11-09 05](https://github.com/sudara/melatonin_blur/assets/472/1b84cad0-6044-444a-a2bd-ac8d33142eb9)
 
-Every single part of this slider is a vector path with shadows. The background track (2 inner), to the level indicator (3 inner, 2 drop) to the knob (3 drop shadow), is a vector path with shadows. They all need to be rendered fast enough that several of them can be happily animated at 60fps without freezing up the UI on older machines.
+Every single part of this slider is a vector path with shadows. The background track (2 inner), to the level indicator (3 inner, 2 drop) to the knob (3 drop shadow). They all need to be rendered fast enough that many of these can be happily animated at 60fps without freezing up the UI on older machines.
 
-Stack Blur from Gin first made this UI technically possible for me. Thanks Roland! 
+Stack Blur [via the Gin implementation](https://github.com/FigBug/Gin) first made this feel technically possible for me. Thanks Roland! 
 
-However, performance issues are death by 1000 cuts. I was still finding myself building little caching helpers. Sometimes these shadows added up, and I didn't feel "safe", in particular on Windows. On larger images (above 500px in a dimension) Stack Blur can takes milliseconds of CPU time (which is unacceptable for responsive UI targeting 60fps). I was also seeing some jank in Debug mode, which is discouraging.
+However, performance is death by 1000 cuts. I was still finding myself building little caching helpers. Sometimes these shadows add up, and I didn't feel "safe", in particular on Windows. On larger images (above 500px in a dimension) Stack Blur can takes milliseconds of CPU time (which is unacceptable for responsive UI targeting 60fps). I was also seeing some slowdows in Debug mode.
 
 So I started to get curious about the Stack Blur algorithm. I kept thinking I could make it:
 
 * **Faster**. I figured a vectorized implementation would be faster than the original. The original stack blur algorithm was made for an environment without access to SIMD or intel/apple vendor libs, in 2004. For larger images, I was seeing images take `ms`. I wanted them to stay in the `µs`. In Debug, the unoptimized algorithm was sluggish and couldn't provide 60fps, even on a fast machine, so as a Bonus, this implementation is also very fast in Debug.
-* **Cleaner**. The implementation in gin comes from a long line of ports starting with [Mario's old js implementation](https://web.archive.org/web/20110707030516/http://www.quasimondo.com/StackBlurForCanvas/StackBlur.js). That means there's no templates, no code reuse, there's multiplication and left shift tables to avoid division, and all kinds of trickery that's no longer needed with C++ and modern compilers. 
-* **Understandable**. The concept of the "stack" in Stack Blur can take a while to "click." I had a hard time finding resources that made it easy to understand. The original notes on the algorithm don't align with how implementations semeed to work in practice. So I was interested in understanding how the algorithm works. 
+* **Cleaner**. The implementation in gin comes from a long line of ports starting with [Mario's old js implementation](https://web.archive.org/web/20110707030516/http://www.quasimondo.com/StackBlurForCanvas/StackBlur.js). That means there's no templates, no code reuse, there's multiplication and left shift tables to avoid division, and all kinds of trickery that's felt no longer needed with C++ and modern compilers. 
+* **Understandable**. The concept of the "stack" in Stack Blur can take a while to click. I had a hard time finding resources that made it easy to understand. The original notes on the algorithm don't align with how implementations semeed to work in practice. So I was interested in understanding how the algorithm works. 
 * **Tested**. This is critical when iteratively re-implementing algorithms, and I felt like it was a must-have.
 * **Benchmarked**. The only way to effectively compare implementations was to test on Windows and MacOS.
 * **Batteries included**. 
 
-Well, thanks to being arrogant and setting a somewhat ridiculously high bar, I spent 4-5 weeks and implemented Stack Blur probably 25 times, enough where I can do it in my sleep. There are 15 reference implementations in this repo that pass the tests (most didn't bring the performance improvements I was looking for). I still have a few more implementations that I'd like to try, but I've already invested ridiculous amounts of time into what I've been affectionately calling my C++ performance final exam, and would like to move on with my life!
+Tthanks to being arrogant and setting a somewhat ridiculously high bar, I implemented Stack Blur probably 25+ times over the course of a few weeks. Enough where I can now do it in my sleep. There are 15 reference implementations in this repo that pass the tests (most didn't bring the performance improvements I was looking for). I still have a few more implementations that I'd like to try, but I've already invested ridiculous amounts of time into what I've been calling my *C++ performance final exam* — and would like to move on with my life!
 
 ## More Benchmarks
 
@@ -180,9 +180,9 @@ Benchmarks are REALLY messy things.
 * Initial "wow!" level improvements tend to degrade as you get closer to real world use cases (due to things like cache locality etc)
 * Even with a high `n`, Benchmarks are noisy and can vary per run (musn't run other CPU intensive things while running them).
 * Using benchmark averages obscure outliers (and outliers matter, especially in dsp, but even in UI).
-* Results differ on different machines. 
+* Results differ on different machines. (I swear a fresh restart of my Apple M1 made vImage run faster!)
 
-So, here are some cherry-picked benchmarks. Here, the Windows machine is an AMD Ryzen 9 and the mac is a M1 MacBook Pro. In all cases, the image dimensions are square (e.g. 50x50px) and the times are `µs` (microseconds, or a millionth of a second) averaged over 100 runs. That means that when you see a number like 1000, it means 1ms. Please open issues if you are seeing discrepancies or want to contribute to the benchmarks. 
+So, here are some cherry-picked benchmarks. The Windows machine is an AMD Ryzen 9 and the mac is a M1 MacBook Pro. In all cases, the image dimensions are square (e.g. 50x50px) and the times are `µs` (microseconds, or a millionth of a second) averaged over 100 runs. That means that when you see a number like 1000, it means 1ms. Please open issues if you are seeing discrepancies or want to contribute to the benchmarks. 
 
 ### Cached Drop Shadows
 
@@ -198,13 +198,13 @@ On Windows, with IPP as a dependency:
 
 <img src="https://github.com/sudara/melatonin_blur/assets/472/d660ef4c-8807-4c4d-b9eb-cfb5a28655bd" width="750" />
 
-Note: I haven't been including JUCE's DropShadow class. That's in part because it's not compatible with design programs like Figma or standards like CSS, but also because it performs 20-30x worse than Stack Blur and up to 500x worse than Melatonin Blur, so the scale in `µs` has to logarithmic: 
+Note: I haven't been including JUCE's DropShadow class. That's in part because it's not compatible with design programs like Figma or standards like CSS. But it also performs 20-30x worse than Stack Blur and up to 500x worse than Melatonin Blur. To show this, the scale in `µs` has to logarithmic: 
 
 <img src="https://github.com/sudara/melatonin_blur/assets/472/aaa3a979-e75d-40a1-8bfa-beefe8a87d53" width="550" />
 
 ### Single Channel Blurs (Uncached Shadows)
 
-My #2 performance goal was for single channel blurs underlying shadows themselves to take `µs`, not `ms`. So you can also think of these as the timings for the *first* time the shadow is built. Optimizing these larger image sizes ensures that drop shadows won't be a cause for dropped frames on their first render, and can even be animated. 
+My #2 performance goal was for single channel blurs underlying shadows themselves to take `µs`, not `ms`. You can also think of these as the timings for the *first* time a shadow is built with a blur. Optimizing these larger image sizes ensures that drop shadows won't be a cause for dropped frames on their first render (and can even be animated). 
 
 Stack Blur (and in particular the Gin implementation) is already *very* optimized, especially for smaller dimensions. It's hard to beat the raw blur performance on smaller images like a 32x32px (although caching the blur is still very much worth it). However, as image dimensions scale, Stack Blur gets into the `ms`, even on single channels. 
 
@@ -212,7 +212,7 @@ Melatonin Blur stays under `1ms` for the initial render of most realistic image 
 
 <img src="https://github.com/sudara/melatonin_blur/assets/472/56b4c60c-835d-412c-bcb9-df0431247b46" width="750" />
 
-On Windows, the IPP implementation has a more consistent performance profile (when the radii changes, the timings remain about the same):
+On Windows, my IPP Stack Blur implementation is the best I've tried so far and has a more consistent performance profile (when the radii changes, the timings remain about the same):
 
 <img src="https://github.com/sudara/melatonin_blur/assets/472/ce0dc3c7-3d30-413e-af3a-77b741c6c1fe" width="750" />
 
@@ -220,18 +220,15 @@ On Windows, the IPP implementation has a more consistent performance profile (wh
 
 Debug is where we spend 95% of our day! Nothing worse than clicking around a janky low FPS UI, uncertain of how it will perform in Release. 
 
-Because it directly talks to vendor vector libraries and the caching is still in play, Melatonin Blur is *almost* as fast in Debug as it is in Release. Individual drop shadows are up to 30x-50x faster and will stay in µs, not ms. The following chart is again on a logarithmic scale:
+Because it directly talks to vendor vector libraries and the caching is still in play, Melatonin Blur is *almost* as fast in Debug as it is in Release. Individual drop shadows are up to 30x-50x faster than a Debug Stack Blur, and timings will stay in µs, not ms. The following chart is again on a logarithmic scale:
 
 <img src="https://github.com/sudara/melatonin_blur/assets/472/9e6e0551-d6ca-4df6-a842-de09a9a6f5f3" width="550" />
 
 ### ARGB
 
-The problem with ARGB blurs is it's often used to blur a whole window or a big part of the screen. The blur itself usually has to be a good 32px or something to get a good result. So the sizes are large, the radii are large, and there are 4 channels. Yikes. Bad for performance.
+ARGB blurs are often used to blur a whole window or a big part of the screen. The blur itself usually has to be a good 32px or 48px something to look nice. So the image dimensions are large. The radii are large. And there are 4 channels. This is rough on performance.
 
-ARGB on Windows just about killed me. I tried many implementations, and [still have a few left to try](https://github.com/sudara/melatonin_blur/issues/2). But almost nothing outperforms Gin, so it's currently being used as the blur implementation backing Windows.
-
-Again, the key to getting usable performance is caching. 
-
+ARGB on Windows just about killed me. I tried many implementations, and [still have a few left to try](https://github.com/sudara/melatonin_blur/issues/2). Nothing consistenly outperforms Gin (vImage can get 2x on larger images but suffers on larger radii), so Gin is being used as the blur implementation backing Windows ARGB.
 
 ## FAQ
 
@@ -247,8 +244,7 @@ Don't ask.
 
 In JUCE, graphics options are limited, as it's a cross-platform C++ framework. Yes, you could spin up an OpenGL context (deprecated and crusty on MacOS), but you lose a lot of conveniences working with the normal JUCE rendering. 
 
-Basically, JUCE got me very close to having what I needed to happily make modern plugin UIs. This library was the last piece of the puzzle.
-
+JUCE + Stack Blur got me very close to having what I needed to happily make modern plugin UIs. This library was the last piece of the puzzle.
 
 ### What's up with the tests?
 
@@ -256,12 +252,11 @@ The tests were necessary to verify implementations were correct and attempt to t
 
 <img src="https://github.com/sudara/sinemachine/assets/472/1e931984-6a55-4f63-8d95-a18c64e6c4f9" width="450"/>
 
-Tests aren't currently run on this repo, there's an issue open for it.
-
+Tests aren't currently run in CI, there's an issue open for it.
 
 ### How can I run the benchmarks on my machine
 
-For this first release, I put 0 effort into this. The benchmarks are there, but you'll have to feed them to an existing/another Catch2 project at the moment. There's an issue open for this.
+The benchmarks are there, but you'll have to feed them to an existing/another Catch2 project at the moment. There's an issue open for this.
 
 It could be fun to codesign and release the benchmark binaries... In general I sort of daydream about JUCE hiring me to release a benchmark plugin utility for JUCE that compares dsp and UI performance across different machines (and reports to the cloud so we can all benefit from results). 
 
