@@ -375,11 +375,11 @@ In JUCE, graphics options are limited, as it's a cross-platform C++ framework. Y
 
 JUCE + Stack Blur got me very close to having what I needed to happily make modern plugin UIs. This library was the last piece of the puzzle.
 
-### What tested?
+### What's tested?
 
 Tests were necessary to verify implementations were correct. Horizontal and vertical blur passes of Stack Blur are tested in isolation. Most of the implementations in this repository pass the tests.
 
-![1e931984-6a55-4f63-8d95-a18c64e6c4f9](https://github.com/sudara/melatonin_blur/assets/472/b1490023-d9c9-440e-a6b0-d814e548b4b8)
+<img src="https://github.com/sudara/melatonin_blur/assets/472/b1490023-d9c9-440e-a6b0-d814e548b4b8" width="300" />
 
 Tests aren't currently run in CI, there's an issue open for it.
 
