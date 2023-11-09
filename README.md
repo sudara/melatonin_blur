@@ -184,15 +184,15 @@ My #1 performance goal with this library was for drop-shadows to be screaming fa
 
 Caching does most of the heavy lifting here, giving a 10-30x improvement over using just StackBlur:
 
-<img src="https://github.com/sudara/melatonin_blur/assets/472/a17ece20-d3e4-4502-bdbc-df36f097c769" width="550" />
+<img src="https://github.com/sudara/melatonin_blur/assets/472/27b72ac0-74d6-43e2-85f3-b483160f1f56" width="550" />
 
 On Windows, with IPP as a dependency:
 
-<img src="https://github.com/sudara/melatonin_blur/assets/472/44ee8df7-2855-4b79-a779-4e4b8b0aeb46" width="750" />
+<img src="github.com/sudara/melatonin_blur/assets/472/77882917-880f-4eb2-9378-8c292ba1b922" width="750" />
 
 Note: I haven't been including JUCE's DropShadow class. That's in part because it's not compatible with design programs like Figma or standards like CSS, but also because it performs 20-30x worse than Stack Blur and up to 500x worse than Melatonin Blur, so the scale in `µs` has to logarithmic: 
 
-<img src="https://github.com/sudara/melatonin_blur/assets/472/46646f22-2353-4f04-a8b5-7d1a9bc46742" width="550" />
+<img src="https://github.com/sudara/melatonin_blur/assets/472/aaa3a979-e75d-40a1-8bfa-beefe8a87d53" width="550" />
 
 ### Single Channel Blurs (Uncached Shadows)
 
@@ -202,11 +202,11 @@ Stack Blur (and in particular the Gin implementation) is already *very* optimize
 
 Melatonin Blur stays under `1ms` for the initial render of most realistic image sizes and radii. 
 
-<img src="https://github.com/sudara/melatonin_blur/assets/472/3a757c0f-d221-43f2-8a9a-ce4ae8ac8246" width="750" />
+<img src="https://github.com/sudara/melatonin_blur/assets/472/56b4c60c-835d-412c-bcb9-df0431247b46" width="750" />
 
 On Windows, the IPP implementation has a more consistent performance profile (when the radii changes, the timings remain about the same):
 
-<img src="https://github.com/sudara/melatonin_blur/assets/472/9d976883-8aa9-4d41-abd1-55550dc59055" width="750" />
+<img src="https://github.com/sudara/melatonin_blur/assets/472/ce0dc3c7-3d30-413e-af3a-77b741c6c1fe" width="750" />
 
 ### Optimized for Debug Too
 
@@ -214,7 +214,7 @@ Debug is where we spend 95% of our day! Nothing worse than clicking around a jan
 
 Because it directly talks to vendor vector libraries and the caching is still in play, Melatonin Blur is *almost* as fast in Debug as it is in Release. Individual drop shadows are up to 30x-50x faster and will stay in µs, not ms. The following chart is again on a logarithmic scale:
 
-<img src="https://github.com/sudara/melatonin_blur/assets/472/b2b50259-2e7a-4d96-b75d-c8d508791117" width="550" />
+<img src="https://github.com/sudara/melatonin_blur/assets/472/9e6e0551-d6ca-4df6-a842-de09a9a6f5f3" width="550" />
 
 ### ARGB
 
