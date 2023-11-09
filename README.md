@@ -286,7 +286,7 @@ So I started to get curious about the Stack Blur algorithm. I kept thinking I co
 * **Benchmarked**. The only way to effectively compare implementations was to test on Windows and MacOS.
 * **Batteries included**. 
 
-Tthanks to being arrogant and setting a somewhat ridiculously high bar, I implemented Stack Blur probably 25+ times over the course of a few weeks. Enough where I can now do it in my sleep. There are 15 reference implementations in this repo that pass the tests (most didn't bring the performance improvements I was looking for). I still have a few more implementations that I'd like to try, but I've already invested ridiculous amounts of time into what I've been calling my *C++ performance final exam* — and would like to move on with my life!
+Thanks to being arrogant and setting a somewhat ridiculously high bar, I implemented Stack Blur probably 25+ times over the course of a few weeks. Enough where I can do it in my sleep. There are 15 reference implementations in this repo that pass the tests, but most didn't bring the performance improvements I was looking for. I still have a few more implementations that I'd like to try, but I've already invested ridiculous amounts of time into what I've been calling my *C++ performance final exam* — in short, I would like to move on with my life!
 
 ## More Benchmarks
 
