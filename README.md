@@ -315,9 +315,10 @@ On Windows, with IPP as a dependency:
 
 <img src="https://github.com/sudara/melatonin_blur/assets/472/d660ef4c-8807-4c4d-b9eb-cfb5a28655bd" width="750" />
 
-Note: I haven't been including JUCE's DropShadow class. That's in part because it's not compatible with design programs like Figma or standards like CSS. But it also performs 20-30x worse than Stack Blur and up to 500x worse than Melatonin Blur. To show this, the scale in `µs` has to logarithmic: 
+Note: I haven't been including JUCE's DropShadow class. That's in part because it's not compatible with design programs like Figma or standards like CSS. But it also performs 20-30x worse than Stack Blur and up to 500x worse than Melatonin Blur. 
 
-<img src="https://github.com/sudara/melatonin_blur/assets/472/aaa3a979-e75d-40a1-8bfa-beefe8a87d53" width="550" />
+To show this clearly, the time axis (in `µs`) has to be logarithmic: 
+<img src="https://github.com/sudara/melatonin_blur/assets/472/74353ab2-9eeb-40c1-a1df-1e0dbc26fdd0" width="550" />
 
 ### Single Channel Blurs (Uncached Shadows)
 
@@ -329,7 +330,7 @@ Melatonin Blur stays under `1ms` for the initial render of most realistic image 
 
 <img src="https://github.com/sudara/melatonin_blur/assets/472/56b4c60c-835d-412c-bcb9-df0431247b46" width="750" />
 
-On Windows, my IPP Stack Blur implementation is the best I've tried so far and has a more consistent performance profile (when the radii changes, the timings remain about the same):
+On Windows (with IPP):
 
 <img src="https://github.com/sudara/melatonin_blur/assets/472/ce0dc3c7-3d30-413e-af3a-77b741c6c1fe" width="750" />
 
