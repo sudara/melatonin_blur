@@ -1,4 +1,4 @@
-![Figma - 2023-11-04 46@2x](https://github.com/sudara/sinemachine/assets/472/505bdb04-9882-477f-8220-aa322c813ca8)
+![Figma - 2023-11-09 42@2x](https://github.com/sudara/melatonin_blur/assets/472/f9e30cd7-5e2a-45fb-ab27-a353088bee31)
 
 Melatonin Blur is a batteries-included CPU blur library for the C++ JUCE framework with a focus on performance and ease of use.
 
