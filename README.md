@@ -216,7 +216,7 @@ melatonin::DropShadow thumbShadow {
 
 ### Animating Shadows
 
-For paths like slider thumbs that look the same but move around, the underlying path data *will* be different as it moves, invalidating the blur cache. I've optimized single channel blurs to make this trivial, but there's open issues to investigate options for improving caching here.
+For paths like slider thumbs that look the same but move around, the underlying path data *will* be different as it moves, invalidating the blur cache. I've optimized single channel blurs to make this trivial, but there's an open issue for improving cache performance here.
 
 ### Full Color Blurs
 
@@ -237,13 +237,10 @@ g.drawImageAt (blur.render (mySourceImage), 0, 0);
 or something fancier like:
 
 ```cpp
-g.drawImageTransformed (backgroundImage, backgroundTransform);
+g.drawImageTransformed (blur.render (mySourceImage), backgroundTransform);
 ```
 
-and so on.
-
-
-Alternatively, if you have strategic times you are updating the blur (such as capturing a screenhshot when someone clicks to open a modal window), you can call `blur.update` with a `juce::Image`. That frees you up to do things like this:
+Alternatively, if you have specific times you are updating the blur (such as capturing a screenshot when someone clicks to open a modal window), you can call `blur.update` with the new image:
 
 ```cpp
 void updateBackgroundBlur()
@@ -264,7 +261,7 @@ I've got plans to add some more background blur helpers for these use cases!
 
 Blurs are essential to modern design. Layered drop shadows, frosted glass effects, blurred backgrounds — you won't see a nice looking app in the 2020s without them. 
 
-Designers tend to work in vector based tools such as Figma. Shadows are a big part of their workflow, how they bring depth and life to 2D interfaces. Melatonin Blur is designed to let you can take a designer's work in CSS/Figma and quickly translate it (no need to export image strips and so on like it's still the 90s!). 
+Designers tend to work in vector based tools such as Figma. Shadows are a big part of their workflow. It's how they bring depth and life to 2D interfaces. Melatonin Blur is designed to let you can take a designer's work in CSS/Figma and quickly translate it (no need to export image strips and so on like it's still the 90s!). 
 
 For example, I have a slider that look like this:
 
