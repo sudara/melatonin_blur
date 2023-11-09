@@ -188,7 +188,7 @@ Caching does most of the heavy lifting here, giving a 10-30x improvement over us
 
 On Windows, with IPP as a dependency:
 
-<img src="github.com/sudara/melatonin_blur/assets/472/77882917-880f-4eb2-9378-8c292ba1b922" width="750" />
+<img src="https://github.com/sudara/melatonin_blur/assets/472/d660ef4c-8807-4c4d-b9eb-cfb5a28655bd" width="750" />
 
 Note: I haven't been including JUCE's DropShadow class. That's in part because it's not compatible with design programs like Figma or standards like CSS, but also because it performs 20-30x worse than Stack Blur and up to 500x worse than Melatonin Blur, so the scale in `µs` has to logarithmic: 
 
