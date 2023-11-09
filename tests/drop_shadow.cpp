@@ -7,6 +7,8 @@
 TEST_CASE ("Melatonin Blur Drop Shadow")
 {
     // here's what our test image looks like:
+    // 0=white, 1=black, just to be annoying...
+
     // 0  0  0  0  0  0  0  0  0
     // 0  0  0  0  0  0  0  0  0
     // 0  0  0  0  0  0  0  0  0
@@ -16,6 +18,7 @@ TEST_CASE ("Melatonin Blur Drop Shadow")
     // 0  0  0  0  0  0  0  0  0
     // 0  0  0  0  0  0  0  0  0
     // 0  0  0  0  0  0  0  0  0
+
 
     // create a 3px by 3px square
     auto bounds = juce::Rectangle<float> (3, 3);

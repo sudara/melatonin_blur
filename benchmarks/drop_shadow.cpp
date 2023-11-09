@@ -35,6 +35,12 @@ TEST_CASE ("Melatonin Blur Drop Shadow Benchmarks")
                     shadow.render (g, p);
                     return image.getPixelAt (20, 20);
                 };
+
+                BENCHMARK ("juce")
+                {
+                    juce::DropShadow(juce::Colours::red, 48, { 2, 2 }).drawForPath (g, p);
+                    juce::DropShadow(juce::Colours::black, 36, { 0, 8 }).drawForPath (g, p);
+                };
             }
         }
     }
