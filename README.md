@@ -265,7 +265,7 @@ I've got plans to add some more background blur helpers for these use cases!
 
 Blurs are essential to modern design. Layered drop shadows, frosted glass effects, blurred backgrounds — you won't see a nice looking app in the 2020s without them. 
 
-Designers tend to work in vector based tools such as Figma. Shadows are a big part of their workflow. It's how they bring depth and life to 2D interfaces. Melatonin Blur is designed to let you can take a designer's work in CSS/Figma and quickly translate it (no need to export image strips and so on like it's still the 90s!). 
+Designers tend to work in vector based tools such as Figma. Shadows are a big part of their workflow. It's how they bring depth and life to 2D interfaces. Melatonin Blur lets you take a designer's work in CSS/Figma and quickly translate it. No need to export image strips and so on like it's the 1990s!
 
 For example, I have a slider that look like this:
 
@@ -375,11 +375,11 @@ In JUCE, graphics options are limited, as it's a cross-platform C++ framework. Y
 
 JUCE + Stack Blur got me very close to having what I needed to happily make modern plugin UIs. This library was the last piece of the puzzle.
 
-### What's up with the tests?
+### What tested?
 
-The tests were necessary to verify implementations were correct and attempt to test the horizontal and vertical blur passes in isolation. Most of the implementations in this repository pass the tests.
+Tests were necessary to verify implementations were correct. Horizontal and vertical blur passes of Stack Blur are tested in isolation. Most of the implementations in this repository pass the tests.
 
-<img src="https://github.com/sudara/sinemachine/assets/472/1e931984-6a55-4f63-8d95-a18c64e6c4f9" width="450"/>
+![1e931984-6a55-4f63-8d95-a18c64e6c4f9](https://github.com/sudara/melatonin_blur/assets/472/b1490023-d9c9-440e-a6b0-d814e548b4b8)
 
 Tests aren't currently run in CI, there's an issue open for it.
 
