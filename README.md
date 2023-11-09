@@ -90,7 +90,17 @@ It's not too bad! It's fantastic tool to have for dsp as well (albeit with an an
 
 ### Drop Shadows
 
-Drop shadows work on a `juce::Path`. For caching to work, `melatonin::DropShadow` needs to be a member of your `juce::Component`. In the `paint` call you will then `shadow.render()`, passing in the graphics context and the path to render. 
+Drop shadows work on a `juce::Path`. 
+
+Just add a `melatonin::DropShadow` as a member of your `juce::Component` and you'll instantly take advantage of caching:
+
+```cpp
+melatonin::DropShadow valueTrackShadow = {{ juce::Colours::black, 8, { -2, 0 } }};
+```
+
+In your `paint` call you will then `shadow.render(g, path)`, passing in the graphics context and the path to render. **Remember to render the shadow *before* rendering the path!**
+
+Example:
 
 ```cpp
 
@@ -119,7 +129,8 @@ private:
 }
 ```
 
-The `juce::Path` doesn't *have* to be a member variable to take advantage of the shadow caching. We pass in the path to be on `render` (instead of on shadow construction) precisely to check for equality on the path before re-rendering the shadow. This lets you recalcuate the path in `paint` (for example, when `resized` isn't called), while still retaining the cached shadow (as long as the path data is the same).
+The `juce::Path` itself doesn't *have* to be a member variable to take advantage of the caching. The path is passed in on `render` (instead of on construction) which means the path is checked before each render. This frees you up to recalcuate the path in `paint` (i.e. there are times when `resized` won't be called, such as when animating), while still retaining the cached shadow (as long as the path data is identical).
+
 
 ```cpp
 class MySlider : public juce::Component
@@ -143,8 +154,90 @@ private:
 
 ```
 
-Note: For paths like slider thumbs that look the same but move around, the underlying path data *will* be different as it moves, invalidating the blur cache. To avoid this, you can use a `juce::AffineTransform` to move the path around, and the cache will be retained. 
+### Inner Shadows
 
+Inner shadows function identically to drop shadows, **but remember to render them *after* the path**. 
+
+```cpp
+class MySlider : public juce::Component
+{
+public:
+    void paint (juce::Graphics& g) override
+    {
+        g.setColour (juce::Colours::red);
+        path.fillPath (valueTrack);
+        
+        // inner shadows get painted *after* the path
+        innerShadow.render (g, valueTrack);
+    }
+    
+    void resized()
+    {
+        valueTrack.clear();
+        valueTrack.addRoundedRectangle (10, 10, 100, 20, 2);
+    }
+private:
+        melatonin::DropShadow innerShadow = {{ juce::Colours::black, 3, { 0, 0 } }};
+}
+```
+
+### Multiple Shadows
+
+You can easily stack shadows by feeding `melatonin::DropShadow` or `melatonin::InnerShadow` multiple sets of parameters.
+
+```cpp
+melatonin::DropShadow thumbShadow {
+    { juce::Colours::black, 6, { 0, 0 } },
+    { juce::Colours::gray, 4, { 0, 0 } },
+    { juce::Colours::blue, 16, { 0, 0 } }};
+```
+
+
+### Animating Shadows
+
+For paths like slider thumbs that look the same but move around, the underlying path data *will* be different as it moves, invalidating the blur cache. I've optimized single channel blurs to make this trivial, but there's open issues to investigate options for improving caching here.
+
+### Full Color Blurs
+
+As detailed later in the benchmarks, these are still "expensive" for larger images on first render, but caching makes them trivial to re-render.
+
+Just add a `melatonin::CachedBlur` member to your component, specifying the radius:
+
+```cpp 
+melatonin::CachedBlur blur { 48 };
+```
+
+In your paint call, you can use `blur.render(mySourceImage)` as a juce::Image, like so:
+
+```
+g.drawImageAt (blur.render (mySourceImage), 0, 0);
+```
+
+or something fancier like:
+
+```cpp
+g.drawImageTransformed (backgroundImage, backgroundTransform);
+```
+
+and so on.
+
+
+Alternatively, if you have strategic times you are updating the blur (such as capturing a screenhshot when someone clicks to open a modal window), you can call `blur.update` with a `juce::Image`. That frees you up to do things like this:
+
+```cpp
+void updateBackgroundBlur()
+{
+    blur.update (getParentComponent()->createComponentSnapshot (getContentBoundsInParent()));
+}
+```
+
+You can then call `render()` without needing to pass an image argument:
+
+```cpp
+g.drawImageAt (blur.render(), 0, 0);
+```
+
+I've got plans to add some more background blur helpers for these use cases!
 
 ## Motivation
 
