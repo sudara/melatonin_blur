@@ -209,14 +209,16 @@ You can easily stack shadows by feeding `melatonin::DropShadow` or `melatonin::I
 
 ```cpp
 melatonin::DropShadow thumbShadow {
-    { juce::Colours::black, 6, { 0, 0 } },
-    { juce::Colours::gray, 4, { 0, 0 } },
-    { juce::Colours::blue, 16, { 0, 0 } }};
+    { juce::Colours::black, 16, { 0, 0 } },
+    { juce::Colours::gray, 8, { 0, 0 } },
+    { juce::Colours::blue, 3, { 0, 0 } }};
 ```
+
+Shadows are rendered in the order they are specified. 
 
 ### Animating Shadows
 
-For paths like slider thumbs that look the same but move around, the underlying path data *will* be different as it moves, invalidating the blur cache. I've optimized single channel blurs to make this trivial, but there's an open issue for improving cache performance here.
+For `juce::Path`s that look the same each paint but move around (such as slider thumbs), the underlying path data *will* change as it moves, invalidating the blur cache. I've optimized single channel blurs to make this trivial, but there's an open issue for improving cache performance here.
 
 ### Full Color Blurs
 
