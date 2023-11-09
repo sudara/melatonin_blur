@@ -2,7 +2,7 @@
 
 Melatonin Blur is a batteries-included, cross-platform CPU blur library for the [JUCE C++ framework](https://juce.com/). 
 
-The goal: Get drop shadows and inner shadows fast enough that entire modern vector interfaces in JUCE can be built without resorting to deprecated solutions with less quality of life (looking at you, OpenGL on macOS!). 
+The goal: Get drop shadows and inner shadows fast enough that entire modern vector interfaces in JUCE can be built without resorting to deprecated solutions with lower quality of life (looking at you, OpenGL on macOS!). 
 
 Melatonin Blur provides a 10-30x speed up over using Stack Blur alone.
 
@@ -19,7 +19,7 @@ If IPP is not present, it will fall back to a JUCE FloatVectorOperations impleme
 *Batteries-included* means it aims to do everything you need out of the box:
 
 * Fast! (see [benchmarks](#more-benchmarks)).
-* Figma/CSS Accurate Drop and Inner shadows.
+* Tested! Figma/CSS-accurate drop shadows and inner shadows
 * Trivial to stack / layer shadows.
 * Behind the scenes caching of shadows and blurs (they won't re-calculated unless their underlying data changes).
 * Debug optimized!
@@ -273,14 +273,14 @@ Every single part of this slider is a vector path with shadows. The background t
 
 Stack Blur [via the Gin implementation](https://github.com/FigBug/Gin) first made this feel technically possible for me. Thanks Roland! 
 
-However, performance is death by 1000 cuts. I was still finding myself building little caching helpers. Sometimes these shadows add up, and I didn't feel "safe", in particular on Windows. On larger images (above 500px in a dimension) Stack Blur can takes milliseconds of CPU time (which is unacceptable for responsive UI targeting 60fps). I was also seeing some slowdows in Debug mode.
+However, performance is death by 1000 cuts. I was still finding myself building little caching helpers. Sometimes these shadows add up, and I didn't feel "safe", in particular on Windows. On larger images (above 500px in a dimension) Stack Blur can takes milliseconds of CPU time (which is unacceptable for responsive UI targeting 60fps). I was also seeing some sluggishness in Debug mode, which drives me crazy!
 
 So I started to get curious about the Stack Blur algorithm. I kept thinking I could make it:
 
-* **Faster**. I figured a vectorized implementation would be faster than the original. The original stack blur algorithm was made for an environment without access to SIMD or intel/apple vendor libs, in 2004. For larger images, I was seeing images take `ms`. I wanted them to stay in the `µs`. In Debug, the unoptimized algorithm was sluggish and couldn't provide 60fps, even on a fast machine, so as a Bonus, this implementation is also very fast in Debug.
-* **Cleaner**. The implementation in gin comes from a long line of ports starting with [Mario's old js implementation](https://web.archive.org/web/20110707030516/http://www.quasimondo.com/StackBlurForCanvas/StackBlur.js). That means there's no templates, no code reuse, there's multiplication and left shift tables to avoid division, and all kinds of trickery that's felt no longer needed with C++ and modern compilers. 
-* **Understandable**. The concept of the "stack" in Stack Blur can take a while to click. I had a hard time finding resources that made it easy to understand. The original notes on the algorithm don't align with how implementations semeed to work in practice. So I was interested in understanding how the algorithm works. 
-* **Tested**. This is critical when iteratively re-implementing algorithms, and I felt like it was a must-have.
+* **Faster**. The original stack blur algorithm was made for an environment without access to SIMD or intel/apple vendor libs, in 2004. For larger images, I was seeing images take `ms`. I wanted to see them in the `µs`. In Debug, Stack Blur is sluggish and can't always provide 60fps, even on a fast machine. 
+* **Cleaner**. The Gin Stack Blur implementation comes from a long line of ports originating with [Mario's js implementation](https://web.archive.org/web/20110707030516/http://www.quasimondo.com/StackBlurForCanvas/StackBlur.js). That means there's no templates, no code reuse, there's multiplication and left shift tables to avoid division, and all kinds of trickery that I felt was needed with modern C++ and modern compilers. 
+* **Understandable**. The concept of the "stack" in Stack Blur — what is it? I had a hard time finding resources that made it easy to understand. The original notes on the algorithm don't align with how implementations worked in practice. So I was interested in understanding how the algorithm works. 
+* **Fully Tested**. This is critical when iteratively re-implementing algorithms, and I felt like it was a must-have.
 * **Benchmarked**. The only way to effectively compare implementations was to test on Windows and MacOS.
 * **Batteries included**. 
 
