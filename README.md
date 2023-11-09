@@ -226,11 +226,22 @@ Because it directly talks to vendor vector libraries and the caching is still in
 
 <img src="https://github.com/sudara/melatonin_blur/assets/472/9e6e0551-d6ca-4df6-a842-de09a9a6f5f3" width="550" />
 
-### ARGB
+### Full Color Blurs (ARGB)
 
-ARGB blurs are often used to blur a whole window or a big part of the screen. The blur itself usually has to be a good 32px or 48px something to look nice. So the image dimensions are large. The radii are large. And there are 4 channels. This is rough on performance.
+ARGB blurs are often used to blur a whole window or a big part of the screen. 
 
-ARGB on Windows just about killed me. I tried many implementations, and [still have a few left to try](https://github.com/sudara/melatonin_blur/issues/2). Nothing consistenly outperforms Gin (vImage can get 2x on larger images but suffers on larger radii), so Gin is being used as the blur implementation backing Windows ARGB.
+The blur itself usually has to be a good 32px or 48px something to look nice. The image dimensions are large. The radii are large. And there are 4 channels. This is rough on performance.
+
+Initial Melatonin ARGB blurs usually break into the `ms` once image dimensions go above 500x500 with radii above 16. However, caching gives up to a 30x speedup on repaint:
+
+<img src="https://github.com/sudara/melatonin_blur/assets/472/b520cd39-5cbb-4d1d-b69f-8c66d80acd89" width="750" />
+
+ARGB on Windows just about killed me. I tried many implementations, and [still have a few left to try](https://github.com/sudara/melatonin_blur/issues/2). Nothing consistenly outperforms Gin (vImage can be 2x on larger images but suffers on larger radii), so Gin is being used as the blur implementation backing Windows ARGB.
+
+What you need to know: 
+* Debug will also be fast thanks to caching.
+* You won't be able to animate RGBA blurs.
+* Very large blurs (over 1000x1000px with large radii) may cause UI sluggishness. Please measure! 
 
 ## FAQ
 
