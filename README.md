@@ -2,9 +2,9 @@
 
 Melatonin Blur is a batteries-included, cross-platform CPU blur library for the [JUCE C++ framework](https://juce.com/). 
 
-My primary goal: get drop shadows and inner shadows fast enough that entire vector interfaces in JUCE can be built without resorting to deprecated solutions with less quality of life (looking at you, OpenGL on macOS!). 
+The goal: Get drop shadows and inner shadows fast enough that entire modern vector interfaces in JUCE can be built without resorting to deprecated solutions with less quality of life (looking at you, OpenGL on macOS!). 
 
-Melatonin Blur provides a 10-30x improvement over using Stack Blur alone.
+Melatonin Blur provides a 10-30x speed up over using Stack Blur alone.
 
 <img src="https://github.com/sudara/melatonin_blur/assets/472/598115b8-9c9d-42d8-b868-e921978cda17" width="550" />
 
@@ -18,11 +18,11 @@ If IPP is not present, it will fall back to a JUCE FloatVectorOperations impleme
 
 *Batteries-included* means it aims to do everything you need out of the box:
 
-* Fast! (see [benchmarks](#more-benchmarks).
+* Fast! (see [benchmarks](#more-benchmarks)).
 * Figma/CSS Accurate Drop and Inner shadows.
-* Trivial to stack / layer shadows
+* Trivial to stack / layer shadows.
 * Behind the scenes caching of shadows and blurs (they won't re-calculated unless their underlying data changes).
-* Debug optimized (Nothing worse than painting sluggishness in Debug!)
+* Debug optimized!
 
 ## Installation 
 
