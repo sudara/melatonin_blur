@@ -4,13 +4,19 @@ TEST_CASE ("Melatonin Blur ARGB Benchmarks")
     {
         DYNAMIC_SECTION ("ARGB, Image Size " << dimension << "x" << dimension)
         {
+            juce::Image context (juce::Image::PixelFormat::ARGB, dimension, dimension, true);
+
             juce::Image src (juce::Image::PixelFormat::ARGB, dimension, dimension, true);
             juce::Image::BitmapData srcData (src, juce::Image::BitmapData::readOnly);
 
             juce::Image dst (juce::Image::PixelFormat::ARGB, dimension, dimension, true);
             juce::Image::BitmapData dstData (dst, juce::Image::BitmapData::readOnly);
 
-            for (auto radius : { 8, 16, 32 })
+            juce::ScopedJuceInitialiser_GUI juce;
+            juce::Graphics g (context);
+            g.fillAll (juce::Colours::white);
+
+            for (auto radius : { 8, 16, 32, 48 })
             {
                 if (dimension < radius * 2 + 1)
                     continue;
@@ -24,13 +30,16 @@ TEST_CASE ("Melatonin Blur ARGB Benchmarks")
                     {
                         // this modifies the image directly!
                         melatonin::stackBlur::ginRGBA (src, radius);
+                        g.drawImageAt (src, 0, 0, true);
                         auto color = srcData.getPixelColour (20, 20);
                         return color;
                     };
 
-                    BENCHMARK ("Melatonin")
+                    BENCHMARK ("Melatonin uncached")
                     {
-                        melatonin::blur::argb (src, dst, radius);
+                        // uses a temp copy internally
+                        melatonin::blur::argb (src, radius);
+                        g.drawImageAt (src, 0, 0, true);
                         auto color = dstData.getPixelColour (20, 20);
                         return color;
                     };
@@ -39,6 +48,15 @@ TEST_CASE ("Melatonin Blur ARGB Benchmarks")
                     BENCHMARK ("Float Vector")
                     {
                         melatonin::blur::juceFloatVectorARGB (dst, radius);
+                        g.drawImageAt (dst, 0, 0, true);
+                        auto color = dstData.getPixelColour (20, 20);
+                        return color;
+                    };
+
+                    BENCHMARK ("Melatonin Cached")
+                    {
+                        // returns a juce::Image to render
+                        g.drawImageAt (blur.render (src), 0, 0, true);
                         auto color = dstData.getPixelColour (20, 20);
                         return color;
                     };
