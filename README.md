@@ -26,11 +26,7 @@ If IPP is not present, it will fall back to a JUCE FloatVectorOperations impleme
 
 ## Installation 
 
-### IPP on Windows
-
-If you aren't already using it, Intel IPP might feel like an annoying dependency. Understandable! I have a blog post describing how to set it up locally and in CI. 
-
-It's not too bad! It's fantastic tool to have for dsp as well (albeit with an annoying API!) and it'll speed up the single channel (shadows, etc) on Windows. But you'll still get Stack Blur performance and shadow caching without it.
+Melatonin Blur is a JUCE Module. If you are new to JUCE modules, don't be scared! They are trivial to set up.
 
 ### Via CMake and git submodules
 
@@ -83,6 +79,12 @@ Download (via git like above, or via the UI here) and "Add a module from a speci
 ```cpp
 #include <melatonin_blur/melatonin_blur.h>
 ```
+
+### IPP on Windows
+
+If you aren't already using it, Intel IPP might feel like an annoying dependency. Understandable! [I wrote a blog post describing how to set it up locally and in CI](https://melatonin.dev/blog/using-intel-performance-primitives-ipp-with-juce-and-cmake/). 
+
+It's not too bad! It's fantastic tool to have for dsp as well (albeit with an annoying API!) and it'll speed up the single channel (shadows, etc) on Windows. And don't worry, without IPP you'll still get Stack Blur performance + shadow caching.
 
 ## Usage
 
