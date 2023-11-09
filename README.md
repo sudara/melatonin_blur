@@ -145,7 +145,7 @@ Designers work in vector based tools such as Figma. Shadows are a big part of th
 
 For example, I have sliders that look like this:
 
-![Figma - 2023-11-04 47@2x](https://github.com/sudara/sinemachine/assets/472/fff21c53-5fb4-4430-8fd7-8edbc5ba0eb9)
+![Figma - 2023-11-09 05](https://github.com/sudara/melatonin_blur/assets/472/2c7671d4-1431-4c17-abf1-0351b8243cec)
 
 
 Every single part of this slider is a vector path with shadows. The background track (2 inner), to the level indicator (3 inner, 2 drop) to the knob (3 drop shadow), is a vector path with shadows. They all need to be rendered fast enough that several of them can be happily animated at 60fps without freezing up the UI on older machines.
