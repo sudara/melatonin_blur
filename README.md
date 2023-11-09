@@ -176,7 +176,7 @@ Benchmarks are REALLY messy things.
 * Using benchmark averages obscure outliers (and outliers matter, especially in dsp, but even in UI).
 * Results differ on different machines. 
 
-So, here are some cherry-picked benchmarks. Here, the Windows machine is an AMD Ryzen 9 and the mac is a M1 MacBook Pro. In all cases, the image dimensions are square (e.g. 50x50px) and the times are averaged over 100 runs. Please open issues if you are seeing discrepancies or want to contribute to the benchmarks. 
+So, here are some cherry-picked benchmarks. Here, the Windows machine is an AMD Ryzen 9 and the mac is a M1 MacBook Pro. In all cases, the image dimensions are square (e.g. 50x50px) and the times are `µs` (microseconds, or a millionth of a second) averaged over 100 runs. That means that when you see a number like 1000, it means 1ms. Please open issues if you are seeing discrepancies or want to contribute to the benchmarks. 
 
 ### Cached Drop Shadows
 
@@ -184,34 +184,47 @@ My #1 performance goal with this library was for drop-shadows to be screaming fa
 
 99% of the time I'm rendering single channel shadows for vector UI.
 
-Caching does most of the heavy lifting here, so there's a 5x improvement over baseline:
+Caching does most of the heavy lifting here, giving a 10-30x improvement over using just StackBlur:
 
-<img src="https://github.com/sudara/sinemachine/assets/472/b5e2a1be-ade7-479e-951e-a446e56d175b" width="600" />
-<img src="https://github.com/sudara/sinemachine/assets/472/fe8f0d1d-57cf-49bc-a323-b33719a4dd24" width="750" />
+<img src="https://github.com/sudara/melatonin_blur/assets/472/a17ece20-d3e4-4502-bdbc-df36f097c769" width="550" />
 
+On Windows, with IPP as a dependency:
 
-### Uncached Single Channel Blurs
+<img src="https://github.com/sudara/melatonin_blur/assets/472/44ee8df7-2855-4b79-a779-4e4b8b0aeb46" width="750" />
 
-My #2 performance goal was for single channel blurs to take `µs`, not `ms`.
+Note: I haven't been including JUCE's DropShadow class. That's in part because it's not compatible with design programs like Figma or standards like CSS, but also because it performs 20-30x worse than Stack Blur and up to 500x worse than Melatonin Blur, so the scale in `µs` has to logarithmic: 
 
-Stack Blur (and in particular the Gin implementation) is already *very* optimized, especially for smaller dimensions. It's hard to beat the raw blur performance on smaller images like a 32x32px (although caching the blur is still very much worth it). However, as image dimensions scale, Stack Blur gets into the `ms`, even on single channels. Note that as radii increases, the performance profile remains almost exactly the same. This is the special sauce of the Stack Blur algorithm.
+<img src="https://github.com/sudara/melatonin_blur/assets/472/46646f22-2353-4f04-a8b5-7d1a9bc46742" width="550" />
 
-Optimizing larger image sizes ensures that drop shadows won't be a cause for dropped frames on their first render, and can even be animated. Melatonin Blur stays under `1ms` for the initial render of most realistic image sizes and radii.  
+### Single Channel Blurs (Uncached Shadows)
 
-<img src="https://github.com/sudara/sinemachine/assets/472/c012b701-72f0-48d7-ae5f-a6281df31865" width="750" />
-<img src="https://github.com/sudara/sinemachine/assets/472/08a81f61-7510-4ffd-80a2-764130a945b1" width="750" />
+My #2 performance goal was for single channel blurs underlying shadows themselves to take `µs`, not `ms`. So you can also think of these as the timings for the *first* time the shadow is built. Optimizing these larger image sizes ensures that drop shadows won't be a cause for dropped frames on their first render, and can even be animated. 
 
+Stack Blur (and in particular the Gin implementation) is already *very* optimized, especially for smaller dimensions. It's hard to beat the raw blur performance on smaller images like a 32x32px (although caching the blur is still very much worth it). However, as image dimensions scale, Stack Blur gets into the `ms`, even on single channels. 
+
+Melatonin Blur stays under `1ms` for the initial render of most realistic image sizes and radii. 
+
+<img src="https://github.com/sudara/melatonin_blur/assets/472/3a757c0f-d221-43f2-8a9a-ce4ae8ac8246" width="750" />
+
+On Windows, the IPP implementation has a more consistent performance profile (when the radii changes, the timings remain about the same):
+
+<img src="https://github.com/sudara/melatonin_blur/assets/472/9d976883-8aa9-4d41-abd1-55550dc59055" width="750" />
 
 ### Optimized for Debug Too
 
-Debug is where we spend 95% of our day! 
+Debug is where we spend 95% of our day! Nothing worse than clicking around a janky low FPS UI, uncertain of how it will perform in Release. 
 
-Because it directly talks to vendor vector libraries, Melatonin Blur is almost as fast in Debug as it is in release. It performs 5-15x faster in Debug. 
+Because it directly talks to vendor vector libraries and the caching is still in play, Melatonin Blur is *almost* as fast in Debug as it is in Release. Individual drop shadows are up to 30x-50x faster and will stay in µs, not ms. The following chart is again on a logarithmic scale:
 
-
+<img src="https://github.com/sudara/melatonin_blur/assets/472/b2b50259-2e7a-4d96-b75d-c8d508791117" width="550" />
 
 ### ARGB
 
+The problem with ARGB blurs is it's often used to blur a whole window or a big part of the screen. The blur itself usually has to be a good 32px or something to get a good result. So the sizes are large, the radii are large, and there are 4 channels. Yikes. Bad for performance.
+
+ARGB on Windows just about killed me. I tried many implementations, and [still have a few left to try](https://github.com/sudara/melatonin_blur/issues/2). But almost nothing outperforms Gin, so it's currently being used as the blur implementation backing Windows.
+
+Again, the key to getting usable performance is caching. 
 
 
 ## FAQ
