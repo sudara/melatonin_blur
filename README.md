@@ -97,7 +97,7 @@ Drop shadows work on a `juce::Path`.
 Add a `melatonin::DropShadow` as a member of your `juce::Component`, specifying the blur radius like so:
 
 ```cpp
-melatonin::DropShadow valueTrackShadow = {{ juce::Colours::black, 8 }};
+melatonin::DropShadow shadow = {{ juce::Colours::black, 8 }};
 ```
 
 In your `paint` call you will then `shadow.render(g, path)`, passing in the graphics context and the path to render. **Remember to render the shadow *before* rendering the path!**
@@ -147,7 +147,7 @@ public:
     
 private:
     juce::Path valueTrack;
-    melatonin::DropShadow valueTrackShadow = {{ juce::Colours::black, 8, { -2, 0 } }};
+    melatonin::DropShadow shadow = {{ juce::Colours::black, 8, { -2, 0 } }};
 }
 ```
 
@@ -171,7 +171,7 @@ public:
     }
     
 private:
-    melatonin::DropShadow valueTrackShadow = {{ juce::Colours::black, 8, { -2, 0 } }};
+    melatonin::DropShadow shadow = {{ juce::Colours::black, 8, { -2, 0 } }};
 }
 
 ```
