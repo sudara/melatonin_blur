@@ -4,7 +4,7 @@ Melatonin Blur is a batteries-included, cross-platform CPU blur library for the 
 
 The goal: Get drop shadows and inner shadows fast enough that entire modern vector interfaces in JUCE can be built without resorting to deprecated solutions with lower quality of life (looking at you, OpenGL on macOS!). 
 
-Melatonin Blur provides a 10-30x speed up over using Stack Blur alone.
+Melatonin Blur provides a 10-30x speedup over using Stack Blur.
 
 <img src="https://github.com/sudara/melatonin_blur/assets/472/598115b8-9c9d-42d8-b868-e921978cda17" width="550" />
 
@@ -102,9 +102,11 @@ melatonin::DropShadow valueTrackShadow = {{ juce::Colours::black, 8 }};
 
 In your `paint` call you will then `shadow.render(g, path)`, passing in the graphics context and the path to render. **Remember to render the shadow *before* rendering the path!**
 
-### Offset, Spread, Blur
+### Color, Radius, Offset, Spread
 
-Melatonin Blur comes with a test suite that verifies compatibility with design programs like Figma and the CSS standard. That means you have control over the color, radius, offset and spread of the blur.
+Melatonin Blur comes with a test suite that verifies compatibility with design programs like Figma and the CSS standard. 
+
+That also means it's fully featured. You can specify the color, radius, offset and spread of each blur.
 
 ```cpp
 struct ShadowParameters
@@ -176,9 +178,9 @@ private:
 
 ### Inner Shadows
 
-Inner shadows function identically to drop shadows, with the same parameters. 
+Inner shadows function identically and have the same API as drop shadows. Just call `melatonin::InnerShadow`.
 
-**Remember to render inner shadows *after* the path is rendered**. 
+**Remember, inner shadows are rendered *after* the path is rendered**. 
 
 ```cpp
 class MySlider : public juce::Component
@@ -199,7 +201,7 @@ public:
         valueTrack.addRoundedRectangle (10, 10, 100, 20, 2);
     }
 private:
-        melatonin::DropShadow innerShadow = {{ juce::Colours::black, 3, { 0, 0 } }};
+        melatonin::InnerShadow innerShadow = {{ juce::Colours::black, 3, { 0, 0 } }};
 }
 ```
 
