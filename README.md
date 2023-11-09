@@ -59,7 +59,7 @@ juce_add_module("modules/melatonin_blur")
 Make sure to link to your plugin target *after* the `juce_add_plugin` call:
 
 ```cmake
-target_link_libraries("YourProject" PRIVATE melatonin_inspector)
+target_link_libraries("YourProject" PRIVATE melatonin_blur)
 
 ```
 
