@@ -10,7 +10,7 @@ For this use case, Melatonin Blur gives a 10-30x improvement over using just Sta
 
 On macOS, it depends on the built-in Accelerate framework.
 
-On Windows, it optionally depends on the Intel IPP library. If not present will fall back to a JUCE FloatVectorOperations implementation for single channel (shadows, etc) and Gin's Stack Blur for ARGB. 
+On Windows, it optionally depends on the Intel IPP library. If IPP is not present, it will fall back to a JUCE FloatVectorOperations implementation for single channel (shadows, etc) and Gin's Stack Blur for ARGB. 
 
 
 ## Features
