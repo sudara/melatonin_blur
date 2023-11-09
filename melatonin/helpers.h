@@ -29,6 +29,9 @@ namespace melatonin
         s.area = (originalPath.getBounds().getSmallestIntegerContainer() + s.offset)
                      .expanded (s.radius + s.spread + 1);
 
+        // TODO: Investigate/test what this line does — makes the clip smaller for certain cases?
+        //.getIntersection (g.getClipBounds().expanded (s.radius + s.spread + 1));
+
         // Reconsider your parameters: one of the dimensions is 0 so the blur doesn't exist!
         if (s.area.getWidth() < 1 || s.area.getHeight() < 1)
             jassertfalse;
@@ -175,7 +178,7 @@ namespace melatonin
                 }
 
                 // Not sure why, but this is required despite fillAlphaChannelWithCurrentBrush=false
-                g.setOpacity (1.0);
+                g.setColour (s.color);
 
                 // Specifying `false` for `fillAlphaChannelWithCurrentBrush` here
                 // is a 2-3x speedup on the actual image rendering
