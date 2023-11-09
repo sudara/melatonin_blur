@@ -2,9 +2,9 @@
 
 Melatonin Blur is a batteries-included, cross-platform CPU blur library for the [JUCE C++ framework](https://juce.com/). 
 
-The primary goal of the project: get drop shadows and inner shadows fast enough that entire vector interfaces in JUCE can be built without resorting to deprecated solutions with less quality of life (looking at you, OpenGL on macOS!). 
+My primary goal: get drop shadows and inner shadows fast enough that entire vector interfaces in JUCE can be built without resorting to deprecated solutions with less quality of life (looking at you, OpenGL on macOS!). 
 
-For drop shadows, Melatonin Blur gives a 10-30x improvement over using just StackBlur.
+Melatonin Blur provides a 10-30x improvement over using Stack Blur alone.
 
 <img src="https://github.com/sudara/melatonin_blur/assets/472/598115b8-9c9d-42d8-b868-e921978cda17" width="550" />
 
@@ -16,9 +16,9 @@ If IPP is not present, it will fall back to a JUCE FloatVectorOperations impleme
 
 ## Features
 
-*Batteries-included* means it that it aims to do everything you need out of the box:
+*Batteries-included* means it aims to do everything you need out of the box:
 
-* Fast! (see benchmarks below)
+* Fast! (see [benchmarks](#more-benchmarks).
 * Figma/CSS Accurate Drop and Inner shadows.
 * Trivial to stack / layer shadows
 * Behind the scenes caching of shadows and blurs (they won't re-calculated unless their underlying data changes).
@@ -26,12 +26,11 @@ If IPP is not present, it will fall back to a JUCE FloatVectorOperations impleme
 
 ## Installation 
 
-Melatonin Blur is a JUCE Module. If you are new to JUCE modules, don't be scared! They are trivial to set up.
+Melatonin Blur is a JUCE Module. 
 
-### Via CMake and git submodules
+If you are new to JUCE modules, don't be scared! They are easy to set up.
 
-
-Add the submodule:
+### CMake option 1: Submodules
 
 ```git
 git submodule add -b main https://github.com/sudara/melatonin_blur.git modules/melatonin_blur
@@ -40,8 +39,7 @@ git submodule add -b main https://github.com/sudara/melatonin_blur.git modules/m
 # git submodule update --remote --merge modules/melatonin_blur
 ```
 
-
-or use FetchContent
+### CMake option 2: FetchContent
 
 ```cmake
 Include (FetchContent)
@@ -52,14 +50,18 @@ FetchContent_Declare (melatonin_blur
 FetchContent_MakeAvailable (melatonin_blur)
 ```
 
-Then add this *before* your `juce_add_plugin` call:
+### Tell CMake about the module
+
+Add  *before* your `juce_add_plugin` call:
 
 ```cmake
 juce_add_module("modules/melatonin_blur")
 
 ```
 
-Make sure to link to your plugin target *after* the `juce_add_plugin` call:
+### Link your plugin target
+
+Link *after* the `juce_add_plugin` call:
 
 ```cmake
 target_link_libraries("YourProject" PRIVATE melatonin_blur)
@@ -92,15 +94,33 @@ It's not too bad! It's fantastic tool to have for dsp as well (albeit with an an
 
 Drop shadows work on a `juce::Path`. 
 
-Just add a `melatonin::DropShadow` as a member of your `juce::Component` and you'll instantly take advantage of caching:
+Add a `melatonin::DropShadow` as a member of your `juce::Component`, specifying the blur radius like so:
 
 ```cpp
-melatonin::DropShadow valueTrackShadow = {{ juce::Colours::black, 8, { -2, 0 } }};
+melatonin::DropShadow valueTrackShadow = {{ juce::Colours::black, 8 }};
 ```
 
 In your `paint` call you will then `shadow.render(g, path)`, passing in the graphics context and the path to render. **Remember to render the shadow *before* rendering the path!**
 
-Example:
+### Offset, Spread, Blur
+
+Melatonin Blur comes with a test suite that verifies compatibility with design programs like Figma and the CSS standard. That means you have control over the color, radius, offset and spread of the blur.
+
+```cpp
+struct ShadowParameters
+{
+    // one single color per shadow
+    const juce::Colour color = {};
+    const int radius = 1;
+    const juce::Point<int> offset = { 0, 0 };
+
+    // Spread literally just expands or contracts the path size
+    // Inverted for inner shadows
+    const int spread = 0;
+}
+```
+
+### Drop Shadow Example
 
 ```cpp
 
@@ -156,7 +176,9 @@ private:
 
 ### Inner Shadows
 
-Inner shadows function identically to drop shadows, **but remember to render them *after* the path**. 
+Inner shadows function identically to drop shadows, with the same parameters. 
+
+**Remember to render inner shadows *after* the path is rendered**. 
 
 ```cpp
 class MySlider : public juce::Component
@@ -191,7 +213,6 @@ melatonin::DropShadow thumbShadow {
     { juce::Colours::gray, 4, { 0, 0 } },
     { juce::Colours::blue, 16, { 0, 0 } }};
 ```
-
 
 ### Animating Shadows
 
