@@ -14,6 +14,8 @@ On Windows, it optionally depends on the Intel IPP library.
 
 If IPP is not present, it will fall back to a JUCE FloatVectorOperations implementation for single channel (shadows, etc) and Gin's Stack Blur for ARGB. 
 
+Interested in how this all work? [I wrote a in-depth article about Stack Blur](https://melatonin.dev/blog/implementing-marios-stack-blur-15-times-in-cpp/).
+
 ## Features
 
 *Batteries-included* means it aims to do everything you need out of the box:
