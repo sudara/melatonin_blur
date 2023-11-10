@@ -55,11 +55,11 @@ namespace melatonin::blur
 #elif defined(MELATONIN_BLUR_IPP)
         ippVectorSingleChannel (img, radius);
 #else
-        melatonin::stackBlur::floatVectorSingleChannel (img, radius);
+        melatonin::blur::juceFloatVectorSingleChannel (img, radius); 
 #endif
     }
 
-    static void argb (const juce::Image& img, size_t radius)
+    static void argb (juce::Image& img, size_t radius)
     {
         jassert (img.getFormat() == juce::Image::PixelFormat::ARGB);
 
@@ -83,7 +83,7 @@ namespace melatonin::blur
 #endif
     }
 
-    static void argb (const juce::Image& srcImage, juce::Image& dstImage, size_t radius)
+    static void argb (juce::Image& srcImage, juce::Image& dstImage, size_t radius)
     {
         jassert (srcImage.getFormat() == juce::Image::PixelFormat::ARGB);
 #if JUCE_MAC || JUCE_IOS
@@ -99,7 +99,7 @@ namespace melatonin::blur
         vImage_Buffer dst = { dstData.getLinePointer (0), h, w, (size_t) dstData.lineStride };
         vImageSepConvolve_ARGB8888 (&src, &dst, nullptr, 0, 0, kernel.data(), (unsigned int) kernel.size(), kernel.data(), (unsigned int) kernel.size(), 0, Pixel_8888 { 0, 0, 0, 0 }, kvImageEdgeExtend);
 #else
-        stackBlur::ginRGBA (img, radius);
+        stackBlur::ginRGBA (srcImage, radius);
 #endif
     }
 }
