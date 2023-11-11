@@ -1,5 +1,7 @@
 ![Figma - 2023-11-09 42@2x](https://github.com/sudara/melatonin_blur/assets/472/0cb16190-bce7-4d9a-8a7c-d15846946354)
 
+![](https://github.com/sudara/melatonin_blur/actions/workflows/tests.yml/badge.svg)
+
 Melatonin Blur is a batteries-included, cross-platform CPU blur library for the [JUCE C++ framework](https://juce.com/). 
 
 The goal: Get drop shadows and inner shadows fast enough that entire modern vector interfaces in JUCE can be built without resorting to deprecated solutions with lower quality of life (looking at you, OpenGL on macOS!). 
