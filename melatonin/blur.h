@@ -3,13 +3,13 @@
 #if JUCE_MAC || JUCE_IOS
     #include <Accelerate/Accelerate.h>
 #elif defined(PAMPLEJUCE_IPP) || defined(JUCE_IPP_AVAILABLE)
-    #include "implementations/gin.h" // still needed for rgba windows
     #include "implementations/ipp_vector.h"
     #define MELATONIN_BLUR_IPP
 #else
     #include "implementations/float_vector_stack_blur.h"
-    #include "implementations/gin.h" // still needed for rgba windows
 #endif
+
+#include "implementations/gin.h" // still needed for rgba
 
 namespace melatonin::blur
 {
@@ -55,7 +55,7 @@ namespace melatonin::blur
 #elif defined(MELATONIN_BLUR_IPP)
         ippVectorSingleChannel (img, radius);
 #else
-        melatonin::blur::juceFloatVectorSingleChannel (img, radius); 
+        melatonin::blur::juceFloatVectorSingleChannel (img, radius);
 #endif
     }
 
@@ -74,7 +74,6 @@ namespace melatonin::blur
         auto copy = img.createCopy();
         juce::Image::BitmapData copyData (copy, juce::Image::BitmapData::readWrite);
 
-        // vImageSepConvolve isn't happy operating in-place
         vImage_Buffer src = { copyData.getLinePointer (0), h, w, (size_t) copyData.lineStride };
         vImage_Buffer dst = { data.getLinePointer (0), h, w, (size_t) data.lineStride };
         vImageSepConvolve_ARGB8888 (&src, &dst, nullptr, 0, 0, kernel.data(), (unsigned int) kernel.size(), kernel.data(), (unsigned int) kernel.size(), 0, Pixel_8888 { 0, 0, 0, 0 }, kvImageEdgeExtend);
@@ -130,7 +129,7 @@ namespace melatonin
             }
         }
 
-        juce::Image& render(juce::Image& newSource)
+        juce::Image& render (juce::Image& newSource)
         {
             update (newSource);
             return dst;
