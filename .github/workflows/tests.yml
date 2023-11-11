@@ -1,0 +1,69 @@
+name: Tests
+
+on:
+  workflow_dispatch:
+  push:
+
+env:
+  BUILD_TYPE: Release
+  BUILD_DIR: Builds
+  CMAKE_BUILD_PARALLEL_LEVEL: 3 # Use up to 3 cpus to build juceaide, etc
+  HOMEBREW_NO_INSTALL_CLEANUP: 1
+  SCCACHE_GHA_ENABLED: "true"
+
+concurrency:
+  group: ${{ github.workflow }}.${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+permissions:
+  contents: read
+
+jobs:
+
+  BuildAndTest:
+    name: Tests
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+
+    strategy:
+      fail-fast: false # show errors for each platform vs. cancel build
+      matrix:
+        os: [ macos-11, macos-12, macos-latest, windows-latest ]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+      - name: Install Ninja (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: choco install ninja
+
+      - name: Install macOS Deps
+        if: ${{ matrix.name == 'macOS' }}
+        run: brew install ninja osxutils
+
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Run sccache-cache
+        uses: mozilla-actions/sccache-action@v0.0.3
+
+      - name: Configure
+        shell: bash
+        run: cmake -B ${{ env.BUILD_DIR }} -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache .
+
+      - name: Build
+        shell: bash
+        run: cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }} --parallel 4
+
+      - name: Test
+        working-directory: ${{ env.BUILD_DIR }}
+        run: ctest --output-on-failure -j4 -VV
