@@ -7,8 +7,7 @@ namespace melatonin::stackBlur
     template <Orientation orientation>
     static inline void convertToFloats (juce::Image::BitmapData& data, size_t rowOrColumnNumber, std::vector<float>& destination, size_t vectorSize)
     {
-        TRACE_COMPONENT();
-        if constexpr (orientation == Orientation::Horizontal)
+                if constexpr (orientation == Orientation::Horizontal)
         {
             melatonin::vector::convertToFloats (data.getLinePointer (rowOrColumnNumber), data.pixelStride, destination, vectorSize);
         }
@@ -21,8 +20,7 @@ namespace melatonin::stackBlur
     template <Orientation orientation>
     static inline void convertToUInt8s (juce::Image::BitmapData& data, size_t rowOrColumnNumber, std::vector<float>& source, size_t vectorSize)
     {
-        TRACE_COMPONENT();
-        if constexpr (orientation == Orientation::Horizontal)
+                if constexpr (orientation == Orientation::Horizontal)
         {
             melatonin::vector::convertToUInt8s (source, data.getLinePointer (rowOrColumnNumber), data.pixelStride, vectorSize);
         }

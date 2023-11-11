@@ -2,7 +2,6 @@
 
 #pragma once
 #include "juce_gui_basics/juce_gui_basics.h"
-#include "melatonin_perfetto/melatonin_perfetto.h"
 #include "melatonin_vector/melatonin_vector.h"
 #include "melatonin_vector/melatonin/utilities.h"
 
@@ -117,7 +116,6 @@ namespace melatonin
         // This one is optimized for readability and simplicity
         void singleChannel ()
         {
-            TRACE_COMPONENT ("dimensions", img.getWidth(), "radius", radius);
 
             blurPass<Orientation::Horizontal> ();
             blurPass<Orientation::Vertical> ();
@@ -142,8 +140,7 @@ namespace melatonin
         template <Orientation orientation>
         static inline void convertToFloats (juce::Image::BitmapData& data, size_t pixelOffset, std::vector<float>& destination, size_t vectorSize)
         {
-            TRACE_COMPONENT();
-            if constexpr (orientation == Orientation::Horizontal)
+                        if constexpr (orientation == Orientation::Horizontal)
             {
                 vector::convertToFloats (data.getLinePointer (0) + (unsigned int) data.pixelStride * pixelOffset, data.lineStride, destination, vectorSize);
             }
@@ -156,8 +153,7 @@ namespace melatonin
         template <Orientation orientation>
         static inline void convertToUInt8s (juce::Image::BitmapData& data, size_t offset, std::vector<float>& source, size_t vectorSize)
         {
-            TRACE_COMPONENT();
-            if constexpr (orientation == Orientation::Horizontal)
+                        if constexpr (orientation == Orientation::Horizontal)
             {
                 vector::convertToUInt8s (source, data.getLinePointer (0) + (unsigned int) data.pixelStride * offset, data.lineStride, vectorSize);
             }

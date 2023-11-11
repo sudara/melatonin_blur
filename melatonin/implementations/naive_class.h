@@ -1,6 +1,5 @@
 #pragma once
 #include "juce_gui_basics/juce_gui_basics.h"
-#include "melatonin_perfetto/melatonin_perfetto.h"
 
 namespace melatonin
 {
@@ -24,8 +23,6 @@ namespace melatonin
 
         inline void singleChannel()
         {
-            TRACE_COMPONENT ("dimensions", image.getWidth(), "radius", radius);
-
             auto height = (size_t) data.height;
             auto width = (size_t) data.width;
             stackBlurPass<Orientation::Horizontal> (width, height);
@@ -81,7 +78,7 @@ namespace melatonin
                     // edge case where queue is bigger than image width!
                     // for example vertical test where width = 1
                     if (i <= dimensionSize - 1)
-                        queue[radius + i] = *getPixel<orientation> (lineNumber ,i);
+                        queue[radius + i] = *getPixel<orientation> (lineNumber, i);
                     else
                         queue[radius + i] = *getPixel<orientation> (lineNumber, dimensionSize - 1);
 
@@ -132,7 +129,7 @@ namespace melatonin
         }
 
         template <Orientation orientation>
-        inline uint8_t* getPixel (auto lineNumber, auto pixelNumber)
+        inline uint8_t* getPixel (int lineNumber, int pixelNumber)
         {
             if constexpr (orientation == Orientation::Horizontal)
                 return &data.getLinePointer (lineNumber)[pixelNumber];
