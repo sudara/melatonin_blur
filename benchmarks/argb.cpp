@@ -29,7 +29,7 @@ TEST_CASE ("Melatonin Blur ARGB Benchmarks")
                     BENCHMARK ("gin")
                     {
                         // this modifies the image directly!
-                        melatonin::stackBlur::ginRGBA (src, radius);
+                        melatonin::stackBlur::ginARGB (src, radius);
                         g.drawImageAt (src, 0, 0, true);
                         auto color = srcData.getPixelColour (20, 20);
                         return color;
@@ -38,7 +38,7 @@ TEST_CASE ("Melatonin Blur ARGB Benchmarks")
                     BENCHMARK ("Melatonin uncached")
                     {
                         // uses a temp copy internally
-                        melatonin::blur::argb (src, radius);
+                        melatonin::blur::argb (src, dst, radius);
                         g.drawImageAt (src, 0, 0, true);
                         auto color = dstData.getPixelColour (20, 20);
                         return color;

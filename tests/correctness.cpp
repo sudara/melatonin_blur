@@ -31,9 +31,9 @@ inline auto singleColorBlurImplementation()
 inline auto rgbaBlurImplementation()
 {
     return GENERATE (
-        std::make_pair ("gin", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::ginRGBA (img, radius); } }),
+        std::make_pair ("gin", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::ginARGB (img, radius); } }),
         std::make_pair ("juce's FloatVectorOperations", BlurFunction { [&] (juce::Image& img, int radius) { melatonin::blur::juceFloatVectorARGB (img, radius); } }),
-        std::make_pair ("Melatonin", BlurFunction { [&] (juce::Image& img, int radius) { melatonin::blur::argb (img, radius); } }));
+        std::make_pair ("Melatonin", BlurFunction { [&] (juce::Image& img, int radius) { melatonin::blur::argb (img, img, radius); } }));
 }
 
 /*

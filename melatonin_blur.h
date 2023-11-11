@@ -15,4 +15,5 @@ END_JUCE_MODULE_DECLARATION
 */
 
 #include "juce_graphics/juce_graphics.h"
+#include "melatonin/cached_blur.h"
 #include "melatonin/shadows.h"
