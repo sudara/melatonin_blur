@@ -1,4 +1,19 @@
-#include "../melatonin/implementations/all.h"
+#pragma once
+
+#include "../melatonin/implementations/dequeue.h"
+#include "../melatonin/implementations/float_vector_stack_blur.h"
+#include "../melatonin/implementations/gin.h"
+#include "../melatonin/implementations/naive.h"
+#include "../melatonin/implementations/naive_class.h"
+#include "../melatonin/implementations/naive_with_martin_optimization.h"
+#include "../melatonin/implementations/templated_function.h"
+
+// These require melatonin::vector, not in this repo
+// #include "../melatonin/implementations/templated_function_float.h"
+// #include "vector.h"
+// #include "vector_class.h"
+// #include "vector_optimized.h"
+
 #include "../melatonin_blur.h"
 #include "helpers/pixel_helpers.h"
 #include <catch2/catch_approx.hpp>
@@ -18,9 +33,9 @@ inline auto singleColorBlurImplementation()
         std::make_pair ("dequeue", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::dequeueSingleChannel (img, radius); } }),
         std::make_pair ("circularBuffer", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::circularBufferSingleChannel (img, radius); } }),
         std::make_pair ("martin optimization", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::martinOptimizationSingleChannel (img, radius); } }),
-        std::make_pair ("vector", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::vectorSingleChannel (img, radius); } }),
-        std::make_pair ("vector optimized", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::vectorOptimizedSingleChannel (img, radius); } }),
-        std::make_pair ("vector class", BlurFunction { [&] (juce::Image& img, int radius) { melatonin::VectorStackBlur stackBlur (img, radius); } }),
+        //    std::make_pair ("vector", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::vectorSingleChannel (img, radius); } }),
+        //    std::make_pair ("vector optimized", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::vectorOptimizedSingleChannel (img, radius); } }),
+        //    std::make_pair ("vector class", BlurFunction { [&] (juce::Image& img, int radius) { melatonin::VectorStackBlur stackBlur (img, radius); } }),
         std::make_pair ("juce's FloatVectorOperations", BlurFunction { [&] (juce::Image& img, int radius) { melatonin::blur::juceFloatVectorSingleChannel (img, radius); } }),
         std::make_pair ("naive class", BlurFunction { [&] (juce::Image& img, int radius) { melatonin::NaiveStackBlur stackBlur (img, radius); } }),
         std::make_pair ("templated function", BlurFunction { [&] (juce::Image& img, int radius) { melatonin::stackBlur::singleChannelTemplated (img, radius); } }),
@@ -31,9 +46,13 @@ inline auto singleColorBlurImplementation()
 inline auto rgbaBlurImplementation()
 {
     return GENERATE (
-        std::make_pair ("gin", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::ginRGBA (img, radius); } }),
+        std::make_pair ("gin", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::ginARGB (img, radius); } }),
         std::make_pair ("juce's FloatVectorOperations", BlurFunction { [&] (juce::Image& img, int radius) { melatonin::blur::juceFloatVectorARGB (img, radius); } }),
-        std::make_pair ("Melatonin", BlurFunction { [&] (juce::Image& img, int radius) { melatonin::blur::argb (img, radius); } }));
+        std::make_pair ("Melatonin", BlurFunction { [&] (juce::Image& img, int radius) {
+            // argb goes haywire in-place, so we need to copy
+            auto src = img.createCopy();
+            melatonin::blur::argb (src, img, radius);
+        } }));
 }
 
 /*
@@ -43,7 +62,6 @@ inline auto rgbaBlurImplementation()
  */
 TEST_CASE ("Melatonin Blur")
 {
-
     /*
      * One big advantage of the blur occuring in the two passes is that to a large extent
      * we can test the horizontal and vertical passes seperetely,
@@ -387,7 +405,7 @@ TEST_CASE ("Melatonin Blur")
                         {
                             // sanity check our pixelRow helper and state before the blur
                             REQUIRE_THAT (pixelCol (image, 0, i), Catch::Matchers::Approx (initial).margin (0.004f));
-                            print_test_image(image);
+                            print_test_image (image);
                             blur (image, 2);
                             REQUIRE_THAT (pixelCol (image, 0, i), Catch::Matchers::Approx (expected).margin (0.004f));
                         }

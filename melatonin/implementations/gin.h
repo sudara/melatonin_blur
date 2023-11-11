@@ -210,7 +210,7 @@ namespace melatonin::stackBlur
         }
     }
 
-    static void ginRGBA (juce::Image& img, unsigned int radius)
+    static void ginARGB (juce::Image& img, unsigned int radius)
     {
         const unsigned int w = (unsigned int) img.getWidth();
         const unsigned int h = (unsigned int) img.getHeight();

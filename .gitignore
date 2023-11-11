@@ -1,0 +1,13 @@
+.DS_Store
+JuceLibraryCode
+Builds
+Testing/
+.idea/
+cmake-build-release
+cmake-build-relwithdebinfo
+cmake-build-debug
+CMakeCache.txt
+CMakeFiles/
+xcode
+.vs
+out
