@@ -65,4 +65,6 @@ jobs:
 
       - name: Test
         working-directory: ${{ env.BUILD_DIR }}
-        run: ctest --output-on-failure -j4 -VV
+        run: |
+          ls -ahl
+          ctest --output-on-failure -j4 -VV
