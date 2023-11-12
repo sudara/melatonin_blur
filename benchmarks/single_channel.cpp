@@ -50,19 +50,19 @@ TEST_CASE ("Melatonin Blur Single Channel Benchmarks")
                     //                        return color;
                     //                    };
 
-                    BENCHMARK ("templated function float")
-                    {
-                        melatonin::stackBlur::templatedFloatSingleChannel (image, radius);
-                        auto color = data.getPixelColour (dimension - radius, dimension - radius);
-                        return color;
-                    };
-
-                    BENCHMARK ("melatonin vector")
-                    {
-                        melatonin::stackBlur::vectorSingleChannel (image, radius);
-                        auto color = data.getPixelColour (dimension - radius, dimension - radius);
-                        return color;
-                    };
+//                    BENCHMARK ("templated function float")
+//                    {
+//                        melatonin::stackBlur::templatedFloatSingleChannel (image, radius);
+//                        auto color = data.getPixelColour (dimension - radius, dimension - radius);
+//                        return color;
+//                    };
+//
+//                    BENCHMARK ("melatonin vector")
+//                    {
+//                        melatonin::stackBlur::vectorSingleChannel (image, radius);
+//                        auto color = data.getPixelColour (dimension - radius, dimension - radius);
+//                        return color;
+//                    };
                     //                    BENCHMARK ("vector class")
                     //                    {
                     //                        melatonin::VectorStackBlur stackBlur (image, radius);
