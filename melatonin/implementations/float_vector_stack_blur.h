@@ -166,9 +166,9 @@ namespace melatonin::blur
         // VERTICAL PASS: this does all columns at once, progressing from top to bottom
         // This pass is VERY nicely optimized for vectors, since it uses data.pixelStride
         // clear our reusable vectors first
-        memset (stackSumVector.data(), 0, vectorSize);
-        memset (sumInVector.data(), 0, vectorSize);
-        memset (sumOutVector.data(), 0, vectorSize);
+        std::fill (stackSumVector.begin(), stackSumVector.end(), 0);
+        std::fill (sumInVector.begin(), sumInVector.end(), 0);
+        std::fill (sumOutVector.begin(), sumOutVector.end(), 0);
         queueIndex = 0;
 
         // populate our temp vector with float values of the topmost pixels
@@ -215,7 +215,7 @@ namespace melatonin::blur
 
             // ...before being placed back in our image data as uint8
             for (auto i = 0u; i < w; ++i)
-                data.getLinePointer (y)[i] = (unsigned char) tempPixelVector[i];
+                data.getLinePointer (y)[i] = (uint8_t) tempPixelVector[i];
 
             // remove the outgoing sum from the stack
             juce::FloatVectorOperations::subtract (stackSumVector.data(), sumOutVector.data(), w);
