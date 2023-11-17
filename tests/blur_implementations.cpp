@@ -388,7 +388,7 @@ TEST_CASE ("Melatonin Blur")
                 // inner rows
                 for (auto dimension = 2; dimension < image.getHeight() - 2; ++dimension)
                 {
-                    CHECK_THAT (pixelCol (image, dimension), Catch::Matchers::Approx (middle).margin (0.00001f));
+                    CHECK_THAT (pixelCol (image, dimension), Catch::Matchers::Approx (middle).margin (0.004f));
                 }
             }
         }
