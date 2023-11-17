@@ -215,7 +215,7 @@ namespace melatonin::blur
 
             // ...before being placed back in our image data as uint8
             for (auto i = 0u; i < w; ++i)
-                data.getLinePointer (y)[i] = (unsigned char) tempPixelVector[i];
+                data.getLinePointer (y)[i] = (uint8_t) tempPixelVector[i];
 
             // remove the outgoing sum from the stack
             juce::FloatVectorOperations::subtract (stackSumVector.data(), sumOutVector.data(), w);

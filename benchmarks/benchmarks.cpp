@@ -1,7 +1,7 @@
 #include "catch2/benchmark/catch_benchmark.hpp"
 #include "catch2/catch_approx.hpp"
 #include "catch2/catch_test_macros.hpp"
-#include "melatonin/implementations/gin.h"
+#include "../melatonin/implementations/gin.h"
 #include "juce_graphics/juce_graphics.h"
 #include "melatonin_blur/melatonin_blur.h"
 #include "../melatonin/implementations/naive.h"

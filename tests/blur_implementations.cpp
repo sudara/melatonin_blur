@@ -30,6 +30,7 @@ inline auto singleColorBlurImplementation()
 {
     return GENERATE (
         std::make_pair ("gin", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::ginSingleChannel (img, radius); } }),
+        // std::make_pair ("prefix sum naive", BlurFunction { [] (juce::Image& img, int radius) { melatonin::blur::prefixSumSingleChannel (img, radius); } }),
         std::make_pair ("dequeue", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::dequeueSingleChannel (img, radius); } }),
         std::make_pair ("circularBuffer", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::circularBufferSingleChannel (img, radius); } }),
         std::make_pair ("martin optimization", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::martinOptimizationSingleChannel (img, radius); } }),
@@ -253,6 +254,142 @@ TEST_CASE ("Melatonin Blur")
             {
                 blur (image, 1);
                 REQUIRE_THAT (pixelCol (image, 0), Catch::Matchers::Approx (expected).margin (0.004f));
+            }
+        }
+    }
+
+    SECTION ("Happy in 2D")
+    {
+        juce::Image image (juce::Image::PixelFormat::SingleChannel, 10, 10, true);
+        juce::Image::BitmapData data (image, juce::Image::BitmapData::readWrite);
+
+        std::vector<float> edge = { 0.74902f, 0.74902f, 0.74902f, 0.74902f, 0.74902f, 0.74902f, 0.74902f, 0.74902f, 0.74902f, 0.74902f };
+        std::vector<float> nextToEdge = { 0.24706f, 0.24706f, 0.24706f, 0.24706f, 0.24706f, 0.24706f, 0.24706f, 0.24706f, 0.24706f, 0.24706f };
+        std::vector<float> empty = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+
+        SECTION ("top edge outlined (radius 1)")
+        {
+            const auto& [name, blur] = singleColorBlurImplementation();
+
+            // fill image with 1.0
+            for (auto x = 0; x < image.getHeight(); ++x)
+            {
+                data.setPixelColour (x, 0, juce::Colours::black);
+            }
+
+            DYNAMIC_SECTION (name)
+            {
+                blur (image, 1);
+                CHECK_THAT (pixelRow (image, 0), Catch::Matchers::Approx (edge).margin (0.004f));
+                CHECK_THAT (pixelRow (image, 1), Catch::Matchers::Approx (nextToEdge).margin (0.004f));
+                for (auto y = 2; y < image.getHeight(); ++y)
+                {
+                    CHECK_THAT (pixelRow (image, y), Catch::Matchers::Approx (empty).margin (0.00001f));
+                }
+            }
+        }
+
+        SECTION ("left edge outlined (radius 1)")
+        {
+            const auto& [name, blur] = singleColorBlurImplementation();
+
+            // left edge at 1.0
+            for (auto y = 0; y < image.getHeight(); ++y)
+            {
+                data.setPixelColour (0, y, juce::Colours::black);
+            }
+
+            DYNAMIC_SECTION (name)
+            {
+                blur (image, 1);
+                CHECK_THAT (pixelCol (image, 0), Catch::Matchers::Approx (edge).margin (0.004f));
+                CHECK_THAT (pixelCol (image, 1), Catch::Matchers::Approx (nextToEdge).margin (0.004f));
+                for (auto y = 2; y < image.getHeight(); ++y)
+                {
+                    CHECK_THAT (pixelCol (image, y), Catch::Matchers::Approx (empty).margin (0.00001f));
+                }
+            }
+        }
+
+        SECTION ("right edge outlined")
+        {
+            const auto& [name, blur] = singleColorBlurImplementation();
+
+            // right edge at 1.0
+            for (auto y = 0; y < image.getHeight(); ++y)
+            {
+                data.setPixelColour (image.getWidth() - 1, y, juce::Colours::black);
+            }
+
+            DYNAMIC_SECTION (name)
+            {
+                blur (image, 1);
+                CHECK_THAT (pixelCol (image, image.getWidth() - 1), Catch::Matchers::Approx (edge).margin (0.004f));
+                CHECK_THAT (pixelCol (image, image.getWidth() - 2), Catch::Matchers::Approx (nextToEdge).margin (0.004f));
+                for (auto y = 0; y < image.getHeight() - 2; ++y)
+                {
+                    CHECK_THAT (pixelCol (image, y), Catch::Matchers::Approx (empty).margin (0.00001f));
+                }
+            }
+        }
+
+        SECTION ("bottom edge outlined")
+        {
+            const auto& [name, blur] = singleColorBlurImplementation();
+
+            // bottom edge at 1.0
+            for (auto x = 0; x < image.getWidth(); ++x)
+            {
+                data.setPixelColour (x, image.getHeight() - 1, juce::Colours::black);
+            }
+
+            DYNAMIC_SECTION (name)
+            {
+                blur (image, 1);
+                CHECK_THAT (pixelRow (image, image.getHeight() - 1), Catch::Matchers::Approx (edge).margin (0.004f));
+                CHECK_THAT (pixelRow (image, image.getHeight() - 2), Catch::Matchers::Approx (nextToEdge).margin (0.004f));
+                for (auto y = 0; y < image.getHeight() - 2; ++y)
+                {
+                    CHECK_THAT (pixelRow (image, y), Catch::Matchers::Approx (empty).margin (0.00001f));
+                }
+            }
+        }
+
+        SECTION ("ALL outer edges outlined")
+        {
+            const auto& [name, blur] = singleColorBlurImplementation();
+
+            // outline with 1.0
+            for (auto y = 0; y < image.getHeight(); ++y)
+            {
+                data.setPixelColour (0, y, juce::Colours::black);
+                data.setPixelColour (image.getWidth() - 1, y, juce::Colours::black);
+            }
+
+            for (auto x = 0; x < image.getWidth(); ++x)
+            {
+                data.setPixelColour (x, 0, juce::Colours::black);
+                data.setPixelColour (x, image.getHeight() - 1, juce::Colours::black);
+            }
+
+            std::vector<float> corners = { 0.93725f, 0.81176f, 0.74902f, 0.74902f, 0.74902f, 0.74902f, 0.74902f, 0.74902f, 0.81176f, 0.93725f };
+            std::vector<float> middle = { 0.74902f, 0.24706f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.24706f, 0.74902f };
+
+            DYNAMIC_SECTION (name)
+            {
+                blur (image, 1);
+
+                // all outside edges
+                CHECK_THAT (pixelCol (image, 0), Catch::Matchers::Approx (corners).margin (0.004f));
+                CHECK_THAT (pixelRow (image, 0), Catch::Matchers::Approx (corners).margin (0.004f));
+                CHECK_THAT (pixelCol (image, image.getWidth() - 1), Catch::Matchers::Approx (corners).margin (0.004f));
+                CHECK_THAT (pixelRow (image, image.getHeight() - 1), Catch::Matchers::Approx (corners).margin (0.004f));
+
+                // inner rows
+                for (auto dimension = 2; dimension < image.getHeight() - 2; ++dimension)
+                {
+                    CHECK_THAT (pixelCol (image, dimension), Catch::Matchers::Approx (middle).margin (0.00001f));
+                }
             }
         }
     }
