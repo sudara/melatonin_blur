@@ -542,7 +542,6 @@ TEST_CASE ("Melatonin Blur")
                         {
                             // sanity check our pixelRow helper and state before the blur
                             REQUIRE_THAT (pixelCol (image, 0, i), Catch::Matchers::Approx (initial).margin (0.004f));
-                            print_test_image (image);
                             blur (image, 2);
                             REQUIRE_THAT (pixelCol (image, 0, i), Catch::Matchers::Approx (expected).margin (0.004f));
                         }
