@@ -7,6 +7,7 @@
 #include "../melatonin/implementations/naive_class.h"
 #include "../melatonin/implementations/naive_with_martin_optimization.h"
 #include "../melatonin/implementations/templated_function.h"
+#include "../melatonin/implementations/prefix_sum_naive.h"
 
 // These require melatonin::vector, not in this repo
 // #include "../melatonin/implementations/templated_function_float.h"
@@ -30,7 +31,7 @@ inline auto singleColorBlurImplementation()
 {
     return GENERATE (
         std::make_pair ("gin", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::ginSingleChannel (img, radius); } }),
-        // std::make_pair ("prefix sum naive", BlurFunction { [] (juce::Image& img, int radius) { melatonin::blur::prefixSumSingleChannel (img, radius); } }),
+        std::make_pair ("prefix sum naive", BlurFunction { [] (juce::Image& img, int radius) { melatonin::blur::prefixSumSingleChannel (img, radius); } }),
         std::make_pair ("dequeue", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::dequeueSingleChannel (img, radius); } }),
         std::make_pair ("circularBuffer", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::circularBufferSingleChannel (img, radius); } }),
         std::make_pair ("martin optimization", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::martinOptimizationSingleChannel (img, radius); } }),

@@ -83,6 +83,14 @@ TEST_CASE ("Melatonin Blur Single Channel Benchmarks")
                         auto color = data.getPixelColour (dimension - radius, dimension - radius);
                         return color;
                     };
+
+                    BENCHMARK ("Prefix Sum")
+                    {
+                        melatonin::blur::prefixSumSingleChannel (image, radius);
+                        auto color = data.getPixelColour (dimension - radius, dimension - radius);
+                        return color;
+                    };
+
                 }
             }
         }
