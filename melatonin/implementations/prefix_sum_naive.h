@@ -1,6 +1,5 @@
 #pragma once
 
-#pragma once
 #include "juce_gui_basics/juce_gui_basics.h"
 
 namespace melatonin::blur
@@ -12,7 +11,7 @@ namespace melatonin::blur
     // shifting right divides by a power of two
     const unsigned char stackblur_shr[255] = { 9, 11, 12, 13, 13, 14, 14, 15, 15, 15, 15, 16, 16, 16, 16, 17, 17, 17, 17, 17, 17, 17, 18, 18, 18, 18, 18, 18, 18, 18, 18, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 21, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 22, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 23, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24, 24 };
 
-     static void prefixSumSingleChannel (juce::Image& img, unsigned int radius)
+    static void prefixSumSingleChannel (juce::Image& img, unsigned int radius)
     {
         const auto w = (unsigned int) img.getWidth();
         const auto h = (unsigned int) img.getHeight();
@@ -22,41 +21,51 @@ namespace melatonin::blur
         auto divisor = (radius + 1) * (radius + 1);
         unsigned int mul_sum = stackblur_mul[radius];
         unsigned char shr_sum = stackblur_shr[radius];
-        // initialization
+
+        // used for both prefixSum and double
+        std::vector<uint32_t> prefixSum (w + 2 * radius + 2);
+
+        unsigned int actualSize = w + 2 * radius + 2;
+
         auto row = data.getLinePointer (0);
 
         // horizontal pass
         for (auto rowNumber = 0; rowNumber < h; ++rowNumber)
         {
-            // exclusive prefix sum
-            auto prefixSum = 0;
-            auto secondOrderPrefixSum = 0;
+            // prefix sum (exclusive, with extra 0 at the start)
+            prefixSum[0] = 0;
 
-            // get the left padding going
+            // left padding
             for (unsigned int i = 1; i < radius + 1; ++i)
             {
-                prefixSum += row[0];
-                secondOrderPrefixSum += prefixSum;
+                prefixSum[i] = prefixSum[i - 1] + row[0];
             }
 
-            for (auto i = 0; i < w; ++i)
+            // calculate prefix sum for the row, with padding
+            for (unsigned int i = radius + 1; i < w + radius; ++i)
             {
-                prefixSum += row[i];
-                secondOrderPrefixSum += prefixSum;
-                row[i] = (uint8_t) ((secondOrderPrefixSum * mul_sum) >> shr_sum);
+                prefixSum[i] = prefixSum[i - 1] + row[i - radius - 1];
             }
-            
+
             // right padding
-            for (unsigned int i = w + radius; i < prefixSum.size(); ++i)
+            for (unsigned int i = w + radius; i < actualSize; ++i)
             {
                 prefixSum[i] = prefixSum[i - 1] + row[w - 1];
             }
 
-            // calculate 2nd order prefix sum for the row
-            for (unsigned int i = 2; i < secondOrderPrefixSum.size(); ++i)
+            uint32_t lastPrefix = 0;
+            uint32_t nextPrefix = 0;
+            // calculate 2nd order prefix sum for the row in-place!
+            for (unsigned int i = 2; i < actualSize; ++i)
             {
-                secondOrderPrefixSum[i] = secondOrderPrefixSum[i - 1] + prefixSum[i - 1];
+                // stash the current prefixSum, we'll need it next iteration
+                nextPrefix = prefixSum[i];
+
+                // overwrite with the secondPrefix
+                prefixSum[i] = prefixSum[i-1] + lastPrefix;
+                lastPrefix = nextPrefix;
             }
+            prefixSum[1] = 0;
 
             // calculate blur value for the row
             for (unsigned int i = 0; i < w; ++i)
@@ -67,16 +76,16 @@ namespace melatonin::blur
                 // [4]    [0]    [2]
                 // for radius 2, index 0
                 // [6]    [0]    [3]
-                auto sum = secondOrderPrefixSum[i + 2 * radius + 2] + secondOrderPrefixSum[i] - 2 * (secondOrderPrefixSum[i + radius + 1]);
+                auto sum = prefixSum[i + 2 * radius + 2] + prefixSum[i] - 2 * (prefixSum[i + radius + 1]);
                 jassert (sum / divisor <= 255);
-                row[i] = (uint8_t) ((sum / divisor));
+                row[i] = (uint8_t) ((sum * mul_sum) >> shr_sum);
             }
 
             row += rowNumber * data.lineStride;
         }
     }
 
-    static void prefixSumSingleChannelLinear (juce::Image& img, unsigned int radius)
+    static void prefixSumSingleChannelNaive (juce::Image& img, unsigned int radius)
     {
         const auto w = (unsigned int) img.getWidth();
         const auto h = (unsigned int) img.getHeight();
@@ -148,4 +157,74 @@ namespace melatonin::blur
             row += rowNumber * data.lineStride;
         }
     }
+
+#if false
+    // this version maintains 2 "diameters" worth of prefix sums
+    static void prefixSumSingleChannel (juce::Image& img, unsigned int radius)
+    {
+        const auto w = (unsigned int) img.getWidth();
+        const auto h = (unsigned int) img.getHeight();
+
+        juce::Image::BitmapData data (img, juce::Image::BitmapData::readWrite);
+
+        auto divisor = (radius + 1) * (radius + 1);
+        unsigned int mul_sum = stackblur_mul[radius];
+        unsigned char shr_sum = stackblur_shr[radius];
+
+        // initialization
+        auto row = data.getLinePointer (0);
+
+        // exclusive prefix sum
+        constexpr auto maxDiameter = 10;
+        uint32_t prefixSum = 0;
+        std::array<uint32_t, maxDiameter> secondOrderPrefixSum {};
+
+        // calculate the left padding
+        for (unsigned int i = 1; i < radius + 1; ++i)
+        {
+            prefixSum += row[0];
+            secondOrderPrefixSum[i] = prefixSum;
+        }
+
+        // horizontal pass
+        for (auto rowNumber = 0; rowNumber < h; ++rowNumber)
+        {
+            for (auto i = 0; i < w; ++i)
+            {
+                prefixSum += row[i];
+                secondOrderPrefixSum += prefixSum;
+                auto sum = secondOrderPrefixSum[i + 2 * radius + 2] + secondOrderPrefixSum[i] - 2 * (secondOrderPrefixSum[i + radius + 1]);
+                row[i] = (uint8_t) ((sum * mul_sum) >> shr_sum);
+            }
+
+            // right padding
+            for (unsigned int i = w + radius; i < prefixSum.size(); ++i)
+            {
+                prefixSum[i] = prefixSum[i - 1] + row[w - 1];
+            }
+
+            // calculate 2nd order prefix sum for the row
+            for (unsigned int i = 2; i < secondOrderPrefixSum.size(); ++i)
+            {
+                secondOrderPrefixSum[i] = secondOrderPrefixSum[i - 1] + prefixSum[i - 1];
+            }
+
+            // calculate blur value for the row
+            for (unsigned int i = 0; i < w; ++i)
+            {
+                // right + left - 2 * middle
+                // [i + radius*2 + 2] + [i] + 2 * [i + radius + 1]
+                // for radius 1, index 0
+                // [4]    [0]    [2]
+                // for radius 2, index 0
+                // [6]    [0]    [3]
+                auto sum = secondOrderPrefixSum[i + 2 * radius + 2] + secondOrderPrefixSum[i] - 2 * (secondOrderPrefixSum[i + radius + 1]);
+                jassert (sum / divisor <= 255);
+                row[i] = (uint8_t) ((sum / divisor));
+            }
+
+            row += rowNumber * data.lineStride;
+        }
+    }
+#endif
 }
