@@ -86,7 +86,7 @@ TEST_CASE ("Melatonin Blur Single Channel Benchmarks")
 
                     BENCHMARK ("Prefix Sum")
                     {
-                        melatonin::blur::prefixSumSingleChannel (image, radius);
+                        melatonin::blur::prefixSumSingleChannelNeon (image, radius);
                         auto color = data.getPixelColour (dimension - radius, dimension - radius);
                         return color;
                     };
