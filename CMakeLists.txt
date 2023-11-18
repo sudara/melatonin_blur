@@ -13,9 +13,9 @@ if (MelatoninBlur_IS_TOP_LEVEL)
 
     FetchContent_Declare(JUCE
             GIT_REPOSITORY https://github.com/juce-framework/JUCE.git
-            GIT_TAG origin/master
-            GIT_SHALLOW TRUE
-            GIT_PROGRESS TRUE)
+            GIT_TAG 7.0.8
+            GIT_PROGRESS TRUE
+    )
     FetchContent_MakeAvailable(JUCE)
 
     FetchContent_Declare(Catch2

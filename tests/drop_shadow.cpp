@@ -55,49 +55,53 @@ TEST_CASE ("Melatonin Blur Drop Shadow")
         g.setColour (juce::Colours::black);
         g.fillPath (p);
 
+
+        // TODO: I'd like to reduce the margin on these tests
+        // Right now they are within 2 hex values of the expected value
+        // It seems that windows itself may be compositing slightly differently?
         SECTION ("left edge")
         {
-            CHECK (result.getPixelAt (0, 4).toDisplayString (true) == "FFFFFFFF"); // completely white
-            CHECK (result.getPixelAt (1, 4).toDisplayString (true) == "FFE9E9E9"); // 1st px blur
-            CHECK (result.getPixelAt (2, 4).toDisplayString (true) == "FFBDBDBD"); // 2nd px blur
-            CHECK (result.getPixelAt (3, 4).toDisplayString (true) == "FF000000");
+            CHECK (result.getPixelAt (0, 4).getBrightness() == Catch::Approx(1.0)); // completely white
+            CHECK (result.getPixelAt (1, 4).getBrightness() == Catch::Approx(0.91372549).margin(0.01)); // 1st px blur
+            CHECK (result.getPixelAt (2, 4).getBrightness() == Catch::Approx(0.741176471).margin(0.01)); // 2nd px blur
+            CHECK (result.getPixelAt (3, 4).getBrightness() == Catch::Approx(0.0));
         }
 
         SECTION ("top edge")
         {
-            CHECK (result.getPixelAt (4, 0).toDisplayString (true) == "FFFFFFFF");
-            CHECK (result.getPixelAt (4, 1).toDisplayString (true) == "FFE9E9E9");
-            CHECK (result.getPixelAt (4, 2).toDisplayString (true) == "FFBDBDBD");
-            CHECK (result.getPixelAt (4, 3).toDisplayString (true) == "FF000000");
+            CHECK (result.getPixelAt (4, 0).getBrightness() == Catch::Approx(1.0));
+            CHECK (result.getPixelAt (4, 1).getBrightness() == Catch::Approx(0.91372549).margin(0.01));
+            CHECK (result.getPixelAt (4, 2).getBrightness() == Catch::Approx(0.741176471).margin(0.01));
+            CHECK (result.getPixelAt (4, 3).getBrightness() == Catch::Approx(0.0));
         }
 
         SECTION ("right edge")
         {
-            CHECK (result.getPixelAt (8, 4).toDisplayString (true) == "FFFFFFFF");
-            CHECK (result.getPixelAt (7, 4).toDisplayString (true) == "FFE9E9E9");
-            CHECK (result.getPixelAt (6, 4).toDisplayString (true) == "FFBDBDBD");
-            CHECK (result.getPixelAt (5, 4).toDisplayString (true) == "FF000000");
+            CHECK (result.getPixelAt (8, 4).getBrightness() == Catch::Approx(1.0));
+            CHECK (result.getPixelAt (7, 4).getBrightness() == Catch::Approx(0.91372549).margin(0.01));
+            CHECK (result.getPixelAt (6, 4).getBrightness() == Catch::Approx (0.741176471).margin(0.01));
+            CHECK (result.getPixelAt (5, 4).getBrightness() == Catch::Approx(0.0));
         }
 
         SECTION ("bottom edge")
         {
             // check the bottom edge, 1 pixel into the left
-            CHECK (result.getPixelAt (4, 8).toDisplayString (true) == "FFFFFFFF");
-            CHECK (result.getPixelAt (4, 7).toDisplayString (true) == "FFE9E9E9");
-            CHECK (result.getPixelAt (4, 6).toDisplayString (true) == "FFBDBDBD");
-            CHECK (result.getPixelAt (4, 5).toDisplayString (true) == "FF000000");
+            CHECK (result.getPixelAt (4, 8).getBrightness() == Catch::Approx(1.0));
+            CHECK (result.getPixelAt (4, 7).getBrightness() == Catch::Approx(0.91372549).margin(0.01));
+            CHECK (result.getPixelAt (4, 6).getBrightness() == Catch::Approx (0.741176471).margin(0.01));
+            CHECK (result.getPixelAt (4, 5).getBrightness() == Catch::Approx(0.0));
         }
 
         // the differences between corners have to do with edge bleed of the stack blur algorithm?
         SECTION ("corners")
         {
             // check top left corner for blur
-            CHECK (result.getPixelAt (2, 2).toDisplayString (true) == "FFE3E3E3");
+            CHECK (result.getPixelAt (2, 2).getBrightness() == Catch::Approx(0.890196078).margin(0.01));
 
             // rest of corners
-            CHECK (result.getPixelAt (7, 2).toDisplayString (true) == "FFF6F6F6"); // right top
-            CHECK (result.getPixelAt (7, 7).toDisplayString (true) == "FFFCFCFC"); // right bottom
-            CHECK (result.getPixelAt (2, 7).toDisplayString (true) == "FFF6F6F6"); // left bottom
+            CHECK (result.getPixelAt (7, 2).getBrightness() == Catch::Approx(0.964705882).margin(0.01)); // right top
+            CHECK (result.getPixelAt (7, 7).getBrightness() == Catch::Approx(0.988235294).margin(0.01)); // right bottom
+            CHECK (result.getPixelAt (2, 7).getBrightness() == Catch::Approx(0.964705882).margin(0.01)); // left bottom
         }
     }
 
@@ -141,7 +145,7 @@ TEST_CASE ("Melatonin Blur Drop Shadow")
                 shadow.render (g, p);
                 g.setColour (juce::Colours::black);
                 g.fillPath (p);
-                CHECK (result.getPixelAt (4, 0).toDisplayString (true) == "FFE9E9E9"); // 1st px of blur
+                CHECK (result.getPixelAt (4, 0).getBrightness() == Catch::Approx(0.91372549).margin(0.01)); // 1st px of blur
             }
 
             SECTION ("negative X offset means left pixel is no longer white")
@@ -150,7 +154,7 @@ TEST_CASE ("Melatonin Blur Drop Shadow")
                 shadow.render (g, p);
                 g.setColour (juce::Colours::black);
                 g.fillPath (p);
-                CHECK (result.getPixelAt (0, 4).toDisplayString (true) == "FFE9E9E9"); // 1st px of blur
+                CHECK (result.getPixelAt (0, 4).getBrightness() == Catch::Approx(0.91372549).margin(.01)); // 1st px of blur
             }
         }
     }
