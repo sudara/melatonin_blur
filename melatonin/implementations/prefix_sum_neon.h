@@ -1,6 +1,9 @@
 #pragma once
 
+#define LIBDIVIDE_NEON 1
+#include "../support/libdivide.h"
 #include "juce_gui_basics/juce_gui_basics.h"
+#include <Accelerate/Accelerate.h>
 #include <arm_neon.h>
 
 namespace melatonin::blur
@@ -67,7 +70,6 @@ namespace melatonin::blur
 
         juce::Image::BitmapData data (img, juce::Image::BitmapData::readWrite);
 
-        auto divisor = (radius + 1) * (radius + 1);
         unsigned int mul_sum = stackblur_mul[radius];
         unsigned char shr_sum = stackblur_shr[radius];
 
@@ -75,41 +77,53 @@ namespace melatonin::blur
         // this doesn't seem to suffer from being std::vector vs. std::array
         // but a static std::array<uint32_t, 1024> prefixSum seems a bit faster
         // TODO: alignment on M1 ARM doesn't seem to matter, need to test on Windows
-        auto vectorSize = w + 2 * radius + 2;
+        auto vectorSize = std::max (h, w) + 2 * radius + 2; // 2 extra px for prefix sum 0s
         vectorSize = (vectorSize + 3) & ~3; // round up to nearest multiple of 4
         std::vector<uint32_t> buffer (vectorSize);
+
+        // this is used a lot in loops
+        // it's the radius + the 2 zeros for the prefix sums
+        auto imageOffset = radius + 2;
 
         unsigned int actualSize = w + 2 * radius + 2;
 
         // horizontal pass
+
+        // pointer to the row we're working with
+        auto row = data.getLinePointer (0);
         for (auto rowNumber = 0; rowNumber < h; ++rowNumber)
         {
-            // pointer to the row we're working with
-            auto row = data.getLinePointer (rowNumber);
-
             // copy over the row to our buffer so we can operate in-place
-            std::copy (row, row + w, buffer.begin() + radius);
+            // add two pixels of 0 to the start to offset for the prefix sum
+            // the compiler should vectorize this
+            std::copy (row, row + w, &buffer[imageOffset]);
 
             // left padding
-            auto leftValue = buffer[radius + 1];
-            for (unsigned int i = 0; i < radius; ++i)
+            // left pixel would normally be at [radius], but it's offset by the two pixel sum 0s
+            auto leftValue = buffer[imageOffset];
+            // again, offset by 2 for the two pixel sum 0s
+            for (unsigned int i = 2; i < imageOffset; ++i)
             {
                 buffer[i] = leftValue;
             }
 
             // right padding
-            auto rightValue = buffer[w + radius];
-            for (unsigned int i = w + radius; i < actualSize; ++i)
+            auto rightValue = buffer[w + radius + 1];
+            for (unsigned int i = w + imageOffset; i < actualSize; ++i)
             {
                 buffer[i] = rightValue;
             }
 
-            prefix (&buffer[0], vectorSize);
+            // first prefix sum
+            prefix (&buffer[0], buffer.size());
 
             // second prefix sum
-            prefix (&buffer[0], vectorSize);
+            prefix (&buffer[0], buffer.size());
 
             // calculate blur value for the row
+            // check the #if block at bottom of file
+            // In release, this faster than the SIMD route there (3.3 vs. 4.1µs on 50x50x5)
+            // Presumably because it's using SIMD, magically with the shr_sum
             auto left = &buffer[0];
             auto middle = left + radius + 1;
             auto right = left + 2 * radius + 2;
@@ -122,13 +136,125 @@ namespace melatonin::blur
                 // for radius 2, index 0
                 // [6]    [0]    [3]
                 auto sum = *right + *left - 2 * *middle;
-                jassert (sum / divisor <= 255);
+                // jassert (sum / divisor <= 255);
+
+                // this line alone adds .6µs to the 50x50x5 benchmark
                 row[i] = (uint8_t) ((sum * mul_sum) >> shr_sum);
+                ++left;
+                ++middle;
+                ++right;
+            }
+
+            // jump down a row
+            row += data.lineStride;
+        }
+        // vertical pass
+        if (h < 2)
+            return;
+
+        auto colPointer = data.getLinePointer (0);
+        for (auto col = 0; col < w; ++col)
+        {
+            // makes a big difference to performance to use a pointer here
+            colPointer += data.lineStride;
+
+            // copy over the col to our buffer so we can operate in-place
+            // add two pixels of 0 to the start to offset for the prefix sum
+            // the compiler should vectorize this
+            auto index = radius + 2;
+            for (auto i = 0; i < h; ++i)
+            {
+                buffer[i + index] = *(colPointer + i);
+            }
+
+            // left padding
+            // left pixel would normally be at [radius], but it's offset by the two pixel sum 0s
+            auto leftValue = buffer[radius + 2];
+            // again, offset by 2 for the two pixel sum 0s
+            for (unsigned int i = 2; i < radius + 2; ++i)
+            {
+                buffer[i] = leftValue;
+            }
+
+            // right padding
+            auto rightValue = buffer[w + radius + 1];
+            for (unsigned int i = w + radius + 2; i < actualSize; ++i)
+            {
+                buffer[i] = rightValue;
+            }
+
+            // first prefix sum
+            prefix (&buffer[0], buffer.size());
+
+            // second prefix sum
+            prefix (&buffer[0], buffer.size());
+
+            // calculate blur value for the row
+            // In release, this faster than my SIMD route below (3.3 vs. 4.1µs on 50x50x5)
+            // Presumably because it's using SIMD, magically with the shr_sum
+            auto left = &buffer[0];
+            auto middle = left + radius + 1;
+            auto right = left + 2 * radius + 2;
+            for (unsigned int i = 0; i < w; ++i)
+            {
+                // right + left - 2 * middle
+                // [i + radius*2 + 2] + [i] + 2 * [i + radius + 1]
+                // for radius 1, index 0
+                // [4]    [0]    [2]
+                // for radius 2, index 0
+                // [6]    [0]    [3]
+                auto sum = *right + *left - 2 * *middle;
+                // jassert (sum / divisor <= 255);
+
+                // this line alone adds .6µs to the 50x50x5 benchmark
+                // TODO: faster to place in yet another temp buffer?
+                *(colPointer + i) = (uint8_t) ((sum * mul_sum) >> shr_sum);
                 ++left;
                 ++middle;
                 ++right;
             }
         }
     }
-
 }
+
+#if false
+// shr isn't happy on SIMD, so we're using libdivide
+// libdivide requires a special constructor
+//            auto divisor = libdivide::libdivide_u32_gen ((radius + 1) * (radius + 1));
+//
+//            // Load the constant '2' into a NEON vector
+//            v4i two = vdupq_n_u32 (2);
+//
+//            // set up the pointers to the resultant prefix sums
+//            auto left = &buffer[0];
+//            auto middle = left + radius + 1;
+//            auto right = left + 2 * radius + 2;
+//
+//            for (unsigned int i = 0; i < w; i += 4)
+//            {
+//                // Process four pixels at a time
+//                // Load the values into NEON vectors
+//                v4i v_left = vld1q_u32 (left);
+//                v4i v_middle = vld1q_u32 (middle);
+//                v4i v_right = vld1q_u32 (right);
+//
+//                // Perform the arithmetic
+//                v4i sum = vaddq_u32 (v_right, v_left);
+//                sum = vmlsq_u32 (sum, two, v_middle); // Equivalent to sum - 2 * middle
+//
+//                // Assuming mul_sum and shr_sum can be applied without overflow
+//                // Multiply and shift, this isn't any faster using the branchless one
+//                sum = libdivide::libdivide_u32_do_vec128 (sum, &divisor);
+//
+//                // Store the result back to the row
+//                uint16x4_t narrow_values = vmovn_u32 (sum); // Narrow from 32-bit to 16-bit
+//                uint8x8_t result = vreinterpret_u8_u16 (vmovn_u16 (vcombine_u16 (narrow_values, narrow_values))); // Narrow from 16-bit to 8-bit
+//                vst1_u8 (&row[i], result); // Store the result
+//
+//                // Increment pointers
+//                left += 4;
+//                middle += 4;
+//                right += 4;
+//            }
+
+#endif
