@@ -155,9 +155,6 @@ namespace melatonin::blur
         auto colPointer = data.getLinePointer (0);
         for (auto col = 0; col < w; ++col)
         {
-            // makes a big difference to performance to use a pointer here
-            colPointer += data.lineStride;
-
             // copy over the col to our buffer so we can operate in-place
             // add two pixels of 0 to the start to offset for the prefix sum
             // the compiler should vectorize this
@@ -213,6 +210,8 @@ namespace melatonin::blur
                 ++middle;
                 ++right;
             }
+            // makes a big difference to performance to use a pointer here
+            colPointer += data.lineStride;
         }
     }
 }
