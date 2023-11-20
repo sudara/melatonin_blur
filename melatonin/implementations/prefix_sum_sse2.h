@@ -25,7 +25,7 @@ namespace melatonin::blur
     static inline v4i accumulate (uint32_t* currentValues, v4i previous_prefix_sum)
     {
         // Broadcast last element of block to all elements of vector
-        v4i lastValueBroadcast = _mm_castps_si128( _mm_broadcast_ss((float*) &currentValues[3]));
+        v4i lastValueBroadcast = _mm_set1_epi32 (currentValues[3]);
 
         // Load the current values into lanes
         v4i currentBlock = _mm_load_si128((v4i*) currentValues);
