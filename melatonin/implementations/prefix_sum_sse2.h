@@ -164,7 +164,7 @@ namespace melatonin::blur
             auto index = radius + 2;
             for (auto i = 0; i < h; ++i)
             {
-                buffer[i + index] = *(colPointer + i);
+                buffer[i + index] = *(colPointer + i * data.lineStride);
             }
 
             // left padding
@@ -208,14 +208,14 @@ namespace melatonin::blur
 
                 // this line alone adds .6µs to the 50x50x5 benchmark
                 // TODO: faster to place in yet another temp buffer?
-                *(colPointer + i) = (uint8_t) ((sum * mul_sum) >> shr_sum);
+                *(colPointer + i * data.lineStride) = (uint8_t) ((sum * mul_sum) >> shr_sum);
                 ++left;
                 ++middle;
                 ++right;
             }
 
             // makes a big difference to performance to use a pointer here
-            colPointer += data.lineStride;
+            colPointer += data.pixelStride;
         }
     }
 }
