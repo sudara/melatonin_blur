@@ -30,7 +30,6 @@ if (MelatoninBlur_IS_TOP_LEVEL)
     add_executable(Benchmarks)
     target_compile_features(Tests PUBLIC cxx_std_17)
     target_compile_features(Benchmarks PUBLIC cxx_std_17)
-
     file(GLOB_RECURSE BlurTests CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/tests/*.cpp")
     target_sources(Tests PRIVATE ${BlurTests})
     target_sources(Benchmarks PRIVATE "benchmarks/benchmarks.cpp")

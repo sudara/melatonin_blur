@@ -2,6 +2,7 @@
 
 #define LIBDIVIDE_NEON 1
 #include "../support/libdivide.h"
+#include "../support/rotation.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 #include <Accelerate/Accelerate.h>
 #include <arm_neon.h>
@@ -42,6 +43,7 @@ namespace melatonin::blur
     }
 
     // assumes buffer is always in chunks of 4
+    // this takes about 2.7µs for a 50x50x5 on my M1
     static void prefix (uint32_t* a, int n)
     {
         for (int i = 0; i < n; i += 4)
@@ -79,6 +81,7 @@ namespace melatonin::blur
         // TODO: alignment on M1 ARM doesn't seem to matter, need to test on Windows
         auto vectorSize = std::max (h, w) + 2 * radius + 2; // 2 extra px for prefix sum 0s
         vectorSize = (vectorSize + 3) & ~3; // round up to nearest multiple of 4
+
         std::vector<uint32_t> buffer (vectorSize);
 
         // this is used a lot in loops
@@ -86,6 +89,9 @@ namespace melatonin::blur
         auto imageOffset = radius + 2;
 
         unsigned int actualSize = w + 2 * radius + 2;
+        unsigned int prefixWidth = (actualSize + 3) & ~3;
+
+        std::vector<uint8_t> rotated (w * h);
 
         // horizontal pass
 
@@ -96,6 +102,7 @@ namespace melatonin::blur
             // copy over the row to our buffer so we can operate in-place
             // add two pixels of 0 to the start to offset for the prefix sum
             // the compiler should vectorize this
+            std::fill (buffer.begin(), buffer.begin() + prefixWidth, 0);
             std::copy (row, row + w, &buffer[imageOffset]);
 
             // left padding
@@ -115,10 +122,10 @@ namespace melatonin::blur
             }
 
             // first prefix sum
-            prefix (&buffer[0], buffer.size());
+            prefix (&buffer[0], prefixWidth);
 
             // second prefix sum
-            prefix (&buffer[0], buffer.size());
+            prefix (&buffer[0], prefixWidth);
 
             // calculate blur value for the row
             // check the #if block at bottom of file
@@ -146,48 +153,51 @@ namespace melatonin::blur
             }
 
             // jump down a row
+            // std::copy (result.begin(), result.begin() + w, row);
             row += data.lineStride;
         }
+
         // vertical pass
         if (h < 2)
             return;
 
-        auto colPointer = data.getLinePointer (0);
-        for (auto col = 0; col < w; ++col)
+        // rotate
+        melatonin::rotateSingleChannel (img, rotated.data());
+
+        row = rotated.data();
+        for (auto rowNumber = 0; rowNumber < h; ++rowNumber)
         {
-            // copy over the col to our buffer so we can operate in-place
+            // copy over the row to our buffer so we can operate in-place
             // add two pixels of 0 to the start to offset for the prefix sum
             // the compiler should vectorize this
-            auto index = radius + 2;
-            for (auto i = 0; i < h; ++i)
-            {
-                buffer[i + index] = *(colPointer + i);
-            }
+            std::fill (buffer.begin(), buffer.begin() + prefixWidth, 0);
+            std::copy (row, row + w, &buffer[imageOffset]);
 
             // left padding
             // left pixel would normally be at [radius], but it's offset by the two pixel sum 0s
-            auto leftValue = buffer[radius + 2];
+            auto leftValue = buffer[imageOffset];
             // again, offset by 2 for the two pixel sum 0s
-            for (unsigned int i = 2; i < radius + 2; ++i)
+            for (unsigned int i = 2; i < imageOffset; ++i)
             {
                 buffer[i] = leftValue;
             }
 
             // right padding
             auto rightValue = buffer[w + radius + 1];
-            for (unsigned int i = w + radius + 2; i < actualSize; ++i)
+            for (unsigned int i = w + imageOffset; i < actualSize; ++i)
             {
                 buffer[i] = rightValue;
             }
 
             // first prefix sum
-            prefix (&buffer[0], buffer.size());
+            prefix (&buffer[0], prefixWidth);
 
             // second prefix sum
-            prefix (&buffer[0], buffer.size());
+            prefix (&buffer[0], prefixWidth);
 
             // calculate blur value for the row
-            // In release, this faster than my SIMD route below (3.3 vs. 4.1µs on 50x50x5)
+            // check the #if block at bottom of file
+            // In release, this faster than the SIMD route there (3.3 vs. 4.1µs on 50x50x5)
             // Presumably because it's using SIMD, magically with the shr_sum
             auto left = &buffer[0];
             auto middle = left + radius + 1;
@@ -204,15 +214,19 @@ namespace melatonin::blur
                 // jassert (sum / divisor <= 255);
 
                 // this line alone adds .6µs to the 50x50x5 benchmark
-                // TODO: faster to place in yet another temp buffer?
-                *(colPointer + i) = (uint8_t) ((sum * mul_sum) >> shr_sum);
+                row[i] = (uint8_t) ((sum * mul_sum) >> shr_sum);
                 ++left;
                 ++middle;
                 ++right;
             }
-            // makes a big difference to performance to use a pointer here
-            colPointer += data.lineStride;
+
+            // jump down a row
+            // std::copy (result.begin(), result.begin() + w, row);
+            row += h;
         }
+
+        // rotate back
+        melatonin::unrotateSingleChannel(rotated.data(), img);
     }
 }
 

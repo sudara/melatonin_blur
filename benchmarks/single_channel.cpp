@@ -7,7 +7,9 @@ TEST_CASE ("Melatonin Blur Single Channel Benchmarks")
             juce::Image image (juce::Image::PixelFormat::SingleChannel, dimension, dimension, true);
             juce::Image::BitmapData data (image, juce::Image::BitmapData::readOnly);
 
-            for (auto radius : { 5, 10, 15, 20, 50 })
+            static std::array<uint32_t, 1000> buffer = { 0 };
+
+            for (auto radius : { 5 })
             {
                 if (dimension < radius * 2 + 1)
                     continue;
