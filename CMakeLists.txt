@@ -29,7 +29,8 @@ if (MelatoninBlur_IS_TOP_LEVEL)
     add_executable(Tests ${TestFiles})
     target_compile_features(Tests PUBLIC cxx_std_17)
 
-    target_sources(Tests PRIVATE "tests/blur_implementations.cpp" "tests/drop_shadow.cpp" "tests/inner_shadow.cpp")
+    file(GLOB_RECURSE BlurTests CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/tests/*.cpp")
+    target_sources(Tests PRIVATE ${BlurTests})
 
     # Our test executable also wants to know about our plugin code...
     target_include_directories(Tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/source)

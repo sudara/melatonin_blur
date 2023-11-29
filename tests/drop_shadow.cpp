@@ -182,7 +182,6 @@ TEST_CASE ("Melatonin Blur Drop Shadow")
             }
         }
 
-        // This is how inner shadows are made
         SECTION ("negative")
         {
             SECTION ("reduces the size of the blur by 1px")
@@ -202,7 +201,8 @@ TEST_CASE ("Melatonin Blur Drop Shadow")
 
             SECTION ("cancels out the blur when -spread = radius")
             {
-                melatonin::DropShadow shadow = { { juce::Colours::black, 2, {}, -2 } };
+                // spread can't be more than -1 in our example, since our path is 3x3
+                melatonin::DropShadow shadow = { { juce::Colours::black, 1, {}, -1 } };
 
                 shadow.render (g, p);
                 g.setColour (juce::Colours::black);

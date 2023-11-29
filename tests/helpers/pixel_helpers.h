@@ -126,6 +126,20 @@ static juce::String getPixels (juce::Image& img, juce::Range<int> xRange, int y)
     return result;
 }
 
+static bool isImageFilled (juce::Image& img, juce::Colour color)
+{
+    juce::Image::BitmapData data (img, juce::Image::BitmapData::readOnly);
+    for (auto y = 0; y < img.getHeight(); ++y)
+    {
+        for (auto x = 0; x < img.getWidth(); ++x)
+        {
+            if (data.getPixelColour (x, y) != color)
+                return false;
+        }
+    }
+    return true;
+}
+
 static void print_test_image (juce::Image& image)
 {
     // this is meant for testing trivial examples
@@ -145,4 +159,13 @@ static void print_test_image (juce::Image& image)
         std::cout << std::endl;
     }
     std::cout << std::endl;
+}
+
+static void save_test_image (juce::Image& image, juce::String name="test")
+{
+    auto file = juce::File::getSpecialLocation (juce::File::SpecialLocationType::userHomeDirectory).getChildFile("Downloads").getChildFile (name+".png");
+    file.deleteFile();
+    juce::FileOutputStream stream (file);
+    juce::PNGImageFormat png;
+    png.writeImageToStream (image, stream);
 }

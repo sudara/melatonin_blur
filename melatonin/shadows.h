@@ -1,11 +1,10 @@
 #pragma once
 #include "implementations/gin.h"
 #include "juce_gui_basics/juce_gui_basics.h"
-#include "support/cached_shadow.h"
+#include "support/cached_shadows.h"
 
 namespace melatonin
 {
-
     /*  A drop shadow is a path filled by a single color and then blurred.
         These shadows are cached.
 
@@ -23,25 +22,57 @@ namespace melatonin
             const int radius = 1;
             const juce::Point<int> offset = { 0, 0 };
 
-            // Spread expands or contracts the path size
+            // Spread literally just expands or contracts the *path* size
             // Inverted for inner shadows
             const int spread = 0;
+
+            // by default we match the main graphics context's scaling factor
+            bool lowQuality = false;
         }
     */
-    class DropShadow : public CachedShadow
+    class DropShadow : public CachedShadows
     {
     public:
-        DropShadow (std::initializer_list<ShadowParameters> p) : CachedShadow (p) {}
+        // multiple shadows
+        DropShadow (std::initializer_list<ShadowParameters> p) : CachedShadows (p) {}
+
+        // single ShadowParameters
+        // melatonin::DropShadow ({Colour::fromRGBA (255, 183, 43, 111), pulse (6)}).render (g, button);
+        explicit DropShadow (ShadowParameters p) : CachedShadows ({ p }) {}
+
+        // individual arguments
+        DropShadow (juce::Colour color, int radius, juce::Point<int> offset = { 0, 0 }, int spread = 0)
+            : CachedShadows ({ { color, radius, offset, spread } }) {}
     };
 
     // An inner shadow is basically the *inverted* filled path, blurred and clipped to the path
     // so the blur is only visible *inside* the path.
-    class InnerShadow : public CachedShadow
+    class InnerShadow : public CachedShadows
     {
     public:
-        InnerShadow (std::initializer_list<ShadowParameters> p) : CachedShadow (p)
-        {
-            std::for_each (shadowParameters.begin(), shadowParameters.end(), [] (auto& s) { s.inner = true; });
-        }
+        // multiple shadows
+        InnerShadow (std::initializer_list<ShadowParameters> p) : CachedShadows (p, true) {}
+
+        // single initializer list
+        explicit InnerShadow (ShadowParameters p) : CachedShadows ({ p }, true) {}
+
+        // individual arguments
+        InnerShadow (juce::Colour color, int radius, juce::Point<int> offset = { 0, 0 }, int spread = 0)
+            : CachedShadows ({ { color, radius, offset, spread } }, true) {}
+    };
+
+    // Renders a collection of inner and drop shadows plus a path
+    class PathWithShadows : public CachedShadows
+    {
+        // multiple shadows
+        PathWithShadows (std::initializer_list<ShadowParameters> p) : CachedShadows (p) {}
+
+        // single ShadowParameters
+        // melatonin::DropShadow ({Colour::fromRGBA (255, 183, 43, 111), pulse (6)}).render (g, button);
+        explicit PathWithShadows (ShadowParameters p) : CachedShadows ({ p }) {}
+
+        // individual arguments
+        PathWithShadows (juce::Colour color, int radius, juce::Point<int> offset = { 0, 0 }, int spread = 0)
+            : CachedShadows ({ { color, radius, offset, spread } }) {}
     };
 }
