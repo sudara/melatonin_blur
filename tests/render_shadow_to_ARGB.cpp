@@ -6,17 +6,18 @@
 
 // most of the shadow implementation is tested as a part of Drop/Inner shadow tests
 // but we're testing juce::Image sizing / scaling here
-TEST_CASE ("Melatonin Blur renderShadowToARGB")
+TEST_CASE ("Melatonin Blur rendering to Single Channel")
 {
+    using namespace melatonin::internal;
     auto dummyShadow = melatonin::ShadowParameters ({ juce::Colours::black, 2, { 0, 0 }, 0 });
 
     SECTION ("no scaling")
     {
         juce::Path p;
         p.addRectangle (juce::Rectangle<float> (4, 4));
-        auto result = melatonin::renderShadowToARGB (dummyShadow, p, 1);
+        auto result = renderShadowToSingleChannel (dummyShadow, p, 1);
 
-        CHECK (result.isARGB() == true);
+        CHECK (result.isSingleChannel() == true);
 
         // path size + 2*shadow radius
         CHECK (result.getWidth() == 8);
@@ -27,9 +28,9 @@ TEST_CASE ("Melatonin Blur renderShadowToARGB")
     {
         juce::Path p;
         p.addRectangle (juce::Rectangle<float> (4, 4));
-        auto result = melatonin::renderShadowToARGB (dummyShadow, p, 2);
+        auto result = renderShadowToSingleChannel (dummyShadow, p, 2);
 
-        CHECK (result.isARGB() == true);
+        CHECK (result.isSingleChannel() == true);
 
         // (path size + 2*shadow radius) * scale
         CHECK (result.getWidth() == 16);
@@ -40,12 +41,12 @@ TEST_CASE ("Melatonin Blur renderShadowToARGB")
     {
         juce::Path p;
         p.addRectangle (juce::Rectangle<float> (4, 4));
-        auto result = melatonin::renderShadowToARGB (dummyShadow, p, 1.5);
+        auto result = renderShadowToSingleChannel (dummyShadow, p, 1.5);
 
-        CHECK (result.isARGB() == true);
+        CHECK (result.isSingleChannel() == true);
 
-        // (path size + 2*shadow radius) * scale
-        CHECK (result.getWidth() == 12);
-        CHECK (result.getHeight() == 12);
+        // rounded ((path size + 2*shadow radius) * scale) + 2 extra pixels with subpixel bleed
+        CHECK (result.getWidth() == 14);
+        CHECK (result.getHeight() == 14);
     }
 }

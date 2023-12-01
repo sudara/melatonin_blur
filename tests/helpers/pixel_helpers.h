@@ -101,6 +101,13 @@ static juce::String getPixel (juce::Image& img, int x, int y)
     return img.getPixelAt (x, y).toDisplayString (true);
 }
 
+static float getScaledBrightness(juce::Image& img, int x, int y, float scale)
+{
+    x = juce::roundToInt((float) x * scale);
+    y = juce::roundToInt((float) y * scale);
+    return img.getPixelAt (x, y).getBrightness();
+}
+
 // get pixels in a range, *includes* the start/end of range
 static juce::String getPixels (juce::Image& img, int x, juce::Range<int> yRange)
 {
@@ -163,9 +170,14 @@ static void print_test_image (juce::Image& image)
 
 static void save_test_image (juce::Image& image, juce::String name="test")
 {
+    juce::Image imageToSave = image;
+    if(imageToSave.isSingleChannel())
+        imageToSave = imageToSave.convertedToFormat(juce::Image::ARGB);
+
     auto file = juce::File::getSpecialLocation (juce::File::SpecialLocationType::userHomeDirectory).getChildFile("Downloads").getChildFile (name+".png");
-    file.deleteFile();
     juce::FileOutputStream stream (file);
+    stream.setPosition (0);
+    stream.truncate();
     juce::PNGImageFormat png;
-    png.writeImageToStream (image, stream);
+    png.writeImageToStream (imageToSave, stream);
 }

@@ -24,7 +24,7 @@ TEST_CASE ("Melatonin Blur Inner Shadow")
     auto bounds = juce::Rectangle<float> (5, 5);
     juce::Path p;
 
-    // stick the 3x3 box centered inside a 9x9
+    // stick the 5x5 box centered inside a 9x9
     p.addRectangle (bounds.translated (2, 2));
 
     // needed for JUCE not to pee its pants (aka leak) when working with graphics
@@ -47,47 +47,7 @@ TEST_CASE ("Melatonin Blur Inner Shadow")
         REQUIRE (getPixel (result, 2, 2) == "FF000000");
     }
 
-    SECTION ("old implementation inner shadow")
-    {
-        g.fillAll (juce::Colours::white);
-        g.setColour (juce::Colours::black);
-        g.fillPath (p);
-
-        // inner shadow renders AFTER the path render!
-        melatonin::stackBlur::renderInnerShadow (g, p, juce::Colours::white, 2);
-
-        SECTION ("outside of the path isn't touched (still white)")
-        {
-            REQUIRE (getPixel (result, 1, 1) == "FFFFFFFF");
-
-            // left edge
-            CHECK (getPixels (result, 1, { 2, 6 }) == "FFFFFFFF, FFFFFFFF, FFFFFFFF, FFFFFFFF, FFFFFFFF");
-
-            // top edge
-            CHECK (getPixels (result, { 2, 6 }, 1) == "FFFFFFFF, FFFFFFFF, FFFFFFFF, FFFFFFFF, FFFFFFFF");
-
-            // right edge
-            CHECK (getPixels (result, 7, { 2, 6 }) == "FFFFFFFF, FFFFFFFF, FFFFFFFF, FFFFFFFF, FFFFFFFF");
-
-            // bottom edge
-            CHECK (getPixels (result, { 2, 6 }, 7) == "FFFFFFFF, FFFFFFFF, FFFFFFFF, FFFFFFFF, FFFFFFFF");
-        }
-
-        SECTION ("path corners are blurred (no longer black)")
-        {
-            CHECK (getPixel (result, 2, 2) != "FF000000");
-            CHECK (getPixel (result, 2, 7) != "FF000000");
-            CHECK (getPixel (result, 7, 7) != "FF000000");
-            CHECK (getPixel (result, 2, 2) != "FF000000");
-        }
-
-        SECTION ("center value (more than 2px from edge) is still black")
-        {
-            CHECK (getPixel (result, 4, 4) == "FF000000");
-        }
-    }
-
-    SECTION ("Melatonin InnerShadow 2px")
+    SECTION ("InnerShadow 2px")
     {
         g.fillAll (juce::Colours::white);
         melatonin::InnerShadow shadow = { { juce::Colours::white, 2 } };
@@ -96,6 +56,9 @@ TEST_CASE ("Melatonin Blur Inner Shadow")
 
         // inner shadow render must come AFTER the path render
         shadow.render (g, p);
+
+        save_test_image (result, "inner_shadow_2px.png");
+
         SECTION ("outside of the path isn't touched (still white)")
         {
             REQUIRE (getPixel (result, 1, 1) == "FFFFFFFF");
@@ -113,12 +76,21 @@ TEST_CASE ("Melatonin Blur Inner Shadow")
             CHECK (getPixels (result, { 2, 6 }, 7) == "FFFFFFFF, FFFFFFFF, FFFFFFFF, FFFFFFFF, FFFFFFFF");
         }
 
-        SECTION ("path corners are blurred (no longer black)")
+        SECTION ("path corners are blurred (no longer black or white)")
         {
             CHECK (getPixel (result, 2, 2) != "FF000000");
-            CHECK (getPixel (result, 2, 7) != "FF000000");
-            CHECK (getPixel (result, 7, 7) != "FF000000");
-            CHECK (getPixel (result, 2, 2) != "FF000000");
+            CHECK (getPixel (result, 2, 2) != "FFFFFFFF");
+            CHECK (getPixel (result, 2, 6) != "FF000000");
+            CHECK (getPixel (result, 2, 6) != "FFFFFFFF");
+            CHECK (getPixel (result, 6, 2) != "FF000000");
+            CHECK (getPixel (result, 6, 2) != "FFFFFFFF");
+            CHECK (getPixel (result, 6, 6) != "FF000000");
+            CHECK (getPixel (result, 6, 6) != "FFFFFFFF");
+        }
+
+        SECTION ("center value (more than 2px from edge) is still black")
+        {
+            CHECK (getPixel (result, 4, 4) == "FF000000");
         }
 
         SECTION ("path corners are symmetrical")
@@ -128,14 +100,9 @@ TEST_CASE ("Melatonin Blur Inner Shadow")
             CHECK (getPixel (result, 2, 2) == getPixel (result, 2, 6));
         }
 
-        SECTION ("center value (more than 2px from edge) is still black")
-        {
-            CHECK (getPixel (result, 4, 4) == "FF000000");
-        }
-
         SECTION ("With spread")
         {
-            SECTION ("positive spread adds")
+            SECTION ("positive spread adds more blur")
             {
                 auto cornerValueWithoutSpread = result.getPixelAt (2, 2).getBrightness();
 
@@ -158,6 +125,32 @@ TEST_CASE ("Melatonin Blur Inner Shadow")
                     CHECK (getPixel (result, 4, 4) != "FF000000");
                 }
             }
+        }
+
+        // TODO: This isn't quite there.
+        // Figma seems darker
+        // Need to check CSS
+        SECTION ("Figma compatibility")
+        {
+            auto fixtures = juce::File (PROJECT_ROOT).getChildFile ("tests/fixtures/figma");
+            auto expected = fixtures.getChildFile ("5x5blackin9x9white2px-inner@1x.png");
+            auto expectedImage = juce::ImageCache::getFromFile (expected);
+
+            CHECK (result.getWidth() == expectedImage.getWidth());
+            CHECK (result.getHeight() == expectedImage.getHeight());
+
+            // check each pixel
+            for (auto x = 0; x < result.getWidth(); ++x)
+            {
+                for (auto y = 0; y < result.getHeight(); ++y)
+                {
+                    auto actualPixel = result.getPixelAt (x, y).toString();
+                    auto expectedPixel = expectedImage.getPixelAt (x, y).toString();
+
+                    //CHECK (actualPixel == expectedPixel);
+                }
+            }
+
         }
     }
 }

@@ -54,6 +54,7 @@ TEST_CASE ("Melatonin Blur Drop Shadow")
         shadow.render (g, p);
         g.setColour (juce::Colours::black);
         g.fillPath (p);
+        save_test_image (result, "single_shadow");
 
 
         // TODO: I'd like to reduce the margin on these tests

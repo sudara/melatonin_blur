@@ -30,7 +30,7 @@ namespace melatonin
             bool lowQuality = false;
         }
     */
-    class DropShadow : public CachedShadows
+    class DropShadow : public internal::CachedShadows
     {
     public:
         // multiple shadows
@@ -47,7 +47,7 @@ namespace melatonin
 
     // An inner shadow is basically the *inverted* filled path, blurred and clipped to the path
     // so the blur is only visible *inside* the path.
-    class InnerShadow : public CachedShadows
+    class InnerShadow : public internal::CachedShadows
     {
     public:
         // multiple shadows
@@ -62,7 +62,7 @@ namespace melatonin
     };
 
     // Renders a collection of inner and drop shadows plus a path
-    class PathWithShadows : public CachedShadows
+    class PathWithShadows : public internal::CachedShadows
     {
         // multiple shadows
         PathWithShadows (std::initializer_list<ShadowParameters> p) : CachedShadows (p) {}

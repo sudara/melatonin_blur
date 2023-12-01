@@ -50,6 +50,8 @@ if (MelatoninBlur_IS_TOP_LEVEL)
     # Enable this once tests are happy fundamentally in CI
     # set_target_properties("${TARGET_NAME}" PROPERTIES COMPILE_WARNING_AS_ERROR ON)
 
+    target_compile_definitions(Tests PRIVATE PROJECT_ROOT="${CMAKE_SOURCE_DIR}")
+
     include(${Catch2_SOURCE_DIR}/extras/Catch.cmake)
     catch_discover_tests(Tests)
 else ()
