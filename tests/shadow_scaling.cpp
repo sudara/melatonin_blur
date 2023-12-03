@@ -43,7 +43,7 @@ TEST_CASE ("Melatonin Blur Shadow Scaling")
             g.setColour (juce::Colours::black);
             g.fillPath (p);
 
-            save_test_image(result, "at1x");
+            save_test_image (result, "at1x");
 
             // 2 lines of white pixels on all edges
             SECTION ("edges are white")
@@ -104,7 +104,7 @@ TEST_CASE ("Melatonin Blur Shadow Scaling")
                             g.setColour (juce::Colours::black);
                             g.fillPath (p);
 
-                            save_test_image(result, "at2xbaybee");
+                            save_test_image (result, "at2xbaybee");
 
                             SECTION ("2 outer edges white")
                             {
@@ -130,15 +130,18 @@ TEST_CASE ("Melatonin Blur Shadow Scaling")
                             }
                         }
 
+                        // use the same context, but render lofi
+                        // this will then scale up during context compositing
                         SECTION ("lowQuality")
                         {
                             melatonin::DropShadow shadow = { { juce::Colours::black, 1, {}, 0 } };
 
+                            // passing true here renders low quality!
                             shadow.render (g, p, true);
                             g.setColour (juce::Colours::black);
                             g.fillPath (p);
 
-                            save_test_image(result, "lowQualityRadius1");
+                            save_test_image (result, "at2xlofi");
 
                             // left
                             CHECK (getScaledBrightness (result, 0, 4, scale) == Catch::Approx (1.0f));
@@ -160,6 +163,105 @@ TEST_CASE ("Melatonin Blur Shadow Scaling")
                             CHECK (getScaledBrightness (result, 4, 7, scale) == Catch::Approx (1.0f));
                             CHECK (getScaledBrightness (result, 4, 6, scale) != Catch::Approx (1.0f));
                         }
+                    }
+                }
+            }
+
+            SECTION ("at higher resolutions shadows have more detail")
+            {
+                // render an unscaled shadow as reference
+                juce::Image noScale (juce::Image::SingleChannel, 9, 9, true);
+                juce::Graphics g2 (noScale);
+                g2.fillAll (juce::Colours::white);
+                melatonin::DropShadow noScaleShadow = { { juce::Colours::black, 2 } };
+                noScaleShadow.render (g2, p);
+
+                auto firstPixelBrightness = getScaledBrightness (noScale, 1, 4, 1.0f);
+                auto secondPixelBrightness = getScaledBrightness (noScale, 2, 4, 1.0f);
+
+                SECTION ("logical radius 2, scale 2, lofi")
+                {
+                    auto scale = 2.0f;
+                    auto contextWidth = juce::roundToInt (9 * scale);
+                    auto contextHeight = juce::roundToInt (9 * scale);
+                    juce::Image result (juce::Image::ARGB, contextWidth, contextHeight, true);
+                    juce::Graphics g (result);
+                    g.addTransform (juce::AffineTransform::scale (scale));
+                    g.fillAll (juce::Colours::white);
+
+                    melatonin::DropShadow shadow = { { juce::Colours::black, 2 } };
+
+                    // lowQuality! this OS will render up the image to 2x
+                    shadow.render (g, p, true);
+                    g.setColour (juce::Colours::black);
+                    g.fillPath (p);
+
+                    SECTION ("brighteness derived from 1x")
+                    {
+                        // first pixel left side is EXACT brightness as @1x
+                        CHECK (result.getPixelAt (2, 8).getBrightness() == Catch::Approx (firstPixelBrightness));
+
+                        // first pixel right side is darker
+                        CHECK (result.getPixelAt (3, 8).getBrightness() < firstPixelBrightness);
+                    }
+
+                    SECTION ("inconsistent rate of brightness change")
+                    {
+                        // include [0,8] and [1,8] which are white
+                        auto brightnesses = getPixelsBrightness (result, { 0, 6 }, 8);
+
+                        // this is the REAL difference between lofi and hi-fi
+                        // white to first blur px
+                        CHECK (brightnesses[2] - brightnesses[1] == Catch::Approx (-0.08627f).margin (0.0001));
+                        CHECK (brightnesses[3] - brightnesses[2] == Catch::Approx (-0.01961f).margin (0.0001));
+
+                        // second blur px — this is a huge jump
+                        CHECK (brightnesses[4] - brightnesses[3] == Catch::Approx (-0.12549f).margin (0.0001));
+                        CHECK (brightnesses[5] - brightnesses[4] == Catch::Approx (-0.0549f).margin (0.0001));
+                    }
+                }
+
+                SECTION ("logical radius 2, default high quality")
+                {
+                    auto scale = 2.0f;
+                    auto contextWidth = juce::roundToInt (9 * scale);
+                    auto contextHeight = juce::roundToInt (9 * scale);
+                    juce::Image result (juce::Image::ARGB, contextWidth, contextHeight, true);
+                    juce::Graphics g (result);
+                    g.addTransform (juce::AffineTransform::scale (scale));
+                    g.fillAll (juce::Colours::white);
+
+                    melatonin::DropShadow shadow = { { juce::Colours::black, 2 } };
+
+                    // HIGH QUALITY!
+                    shadow.render (g, p);
+                    g.setColour (juce::Colours::black);
+                    g.fillPath (p);
+
+                    save_test_image (result, "2pxhighquality");
+
+                    SECTION ("brightnesses with more detail than @1x")
+                    {
+                        // first pixel left side is BRIGHTER than @1x
+                        CHECK (result.getPixelAt (2, 8).getBrightness() > firstPixelBrightness);
+
+                        // first pixel right side is darker
+                        CHECK (result.getPixelAt (3, 8).getBrightness() < firstPixelBrightness);
+                    }
+
+                    // this is the real difference between lofi and hi-fi
+                    SECTION ("consistent rate of change of ~.03 to 0.04")
+                    {
+                        // include [0,8] and [1,8] which are white
+                        auto brightnesses = getPixelsBrightness (result, { 0, 6 }, 8);
+
+                        // white to first blur px
+                        CHECK (brightnesses[2] - brightnesses[1] == Catch::Approx (-0.03529f).margin (0.0001));
+                        CHECK (brightnesses[3] - brightnesses[2] == Catch::Approx (-0.06667f).margin (0.0001));
+
+                        // second blur px — this is a huge jump
+                        CHECK (brightnesses[4] - brightnesses[3] == Catch::Approx (-0.09804f).margin (0.0001));
+                        CHECK (brightnesses[5] - brightnesses[4] == Catch::Approx (-0.13725f).margin (0.0001));
                     }
                 }
             }
@@ -207,28 +309,32 @@ TEST_CASE ("Melatonin Blur Shadow Scaling")
                 shadow.render (g, p);
                 g.setColour (juce::Colours::black);
 
-                // this will now have an origin of 4.5, 4.5 and a width of 4.5
+                // this will have an origin of [4.5, 4.5] and a width of 4.5
                 g.fillPath (p);
 
-                save_test_image(result, "shadow1.5");
+                // due to subpixel rendering, our blur image is 14px
+                // On the left / top, we are blurring a bit more than 3px away from 4.5 (path's left x)
+                // On the right, we are blurring a bit more than 3px away from 9 (path's right x)
 
-                // there should be no more white pixels left as the radius is now 3
+                // left has only a single white pixel (in the scaled up result)
+                CHECK (result.getPixelAt (0, 6).getBrightness() == Catch::Approx (1.0f));
 
-                // left
-                CHECK (getScaledBrightness (result, 0, 4, scale) == Catch::Approx (0.96078f));
-                CHECK (getScaledBrightness (result, 1, 4, scale) == Catch::Approx (0.89804f));
+                // the shadow is barely present here: origin of 4.5 with radius of 3
+                CHECK (result.getPixelAt (1, 6).getBrightness() == Catch::Approx (0.97255f));
 
-                // top
-                CHECK (getScaledBrightness (result, 4, 0, scale) == Catch::Approx (0.96078f));
-                CHECK (getScaledBrightness (result, 4, 1, scale) == Catch::Approx (0.89804f));
+                // top is like left: 1 real pixel of white, 1 very close to it
+                CHECK (result.getPixelAt (6, 0).getBrightness() == Catch::Approx (1.0f));
+                CHECK (result.getPixelAt (6, 1).getBrightness() == Catch::Approx (0.97255f));
 
                 // right
-                CHECK (getScaledBrightness (result, 8, 4, scale) == Catch::Approx (0.96078f));
-                CHECK (getScaledBrightness (result, 7, 4, scale) == Catch::Approx (0.89804f));
+                CHECK (result.getPixelAt (11, 6).getBrightness() == Catch::Approx (0.94118f));
+                CHECK (result.getPixelAt (12, 6).getBrightness() == Catch::Approx (0.98824));
+                CHECK (result.getPixelAt (13, 6).getBrightness() == Catch::Approx (1.0f));
 
                 // bottom
-                CHECK (getScaledBrightness (result, 4, 8, scale) == Catch::Approx (0.96078f));
-                CHECK (getScaledBrightness (result, 4, 7, scale) == Catch::Approx (0.88235f));
+                CHECK (result.getPixelAt (6, 11).getBrightness() ==  Catch::Approx (0.94118f));
+                CHECK (result.getPixelAt (6, 12).getBrightness() ==  Catch::Approx (0.98824));
+                CHECK (result.getPixelAt (6, 13).getBrightness() ==  Catch::Approx (1.0f));
             }
         }
     }

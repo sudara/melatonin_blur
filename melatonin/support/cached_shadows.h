@@ -31,6 +31,7 @@ namespace melatonin::internal
                 scale = g.getInternalContext().getPhysicalPixelScaleFactor();
 
             // store a copy of the new path, stripping and storing its float x/y offset to 0,0
+            // stripping the origin lets us translate paths without breaking blur cache
             auto incomingOrigin = newPath.getBounds().getPosition();
             auto incomingOriginAgnosticPath = newPath;
             incomingOriginAgnosticPath.applyTransform (juce::AffineTransform::translation (-incomingOrigin));
@@ -44,20 +45,23 @@ namespace melatonin::internal
                 // remember the new placement in the context
                 pathPositionInContext = incomingOrigin;
 
+                // create the single channel shadows
                 recalculateBlurs (scale);
             }
 
             // the path is the same, but it's been moved to new coordinates
             else if (incomingOrigin != pathPositionInContext)
             {
-                // just reposition the cached shadows
+                // reposition the cached single channel shadows
                 pathPositionInContext = incomingOrigin;
             }
 
             // have any of the shadows changed color/opacity or been recalculated?
+            // if so, recreate the ARGB composite of all the shadows together
             if (needsRecomposite)
                 compositeShadowsToARGB (scale);
 
+            // finally, draw the cached composite into the main graphics context
             drawARGBComposite (g, scale);
         }
 
@@ -149,14 +153,15 @@ namespace melatonin::internal
                 if (s.radius < 1)
                     continue;
 
-                // 0,0 is still the start of the path here and in compositeBounds
                 auto shadowPosition = s.blurContextBoundsScaled.getPosition();
+
+                // this particular single channel blur might have a different offset from the overall composite
+                auto offsetFromComposite = shadowPosition - compositeBounds.getPosition();
 
                 // lets us temporarily clip the region if needed
                 juce::Graphics::ScopedSaveState saveState (g2);
 
-                // for inner shadows, don't draw anything outside the path bounds
-                // ideally this would be done in compositing, but we'd have to pass the shadowPath bounds
+                // for inner shadows, we don't draw anything outside the path bounds
                 if (s.inner)
                 {
                     auto scaledOriginAgnosticPathBounds = (lastOriginAgnosticPath.getBounds() * scale).getSmallestIntegerContainer();
@@ -170,7 +175,7 @@ namespace melatonin::internal
                 g2.setColour (s.color);
 
                 // the "true" means "fill the alpha channel with the current brush" — aka s.color
-                g2.drawImageAt (renderedSingleChannelShadows[i], 0, 0, true);
+                g2.drawImageAt (renderedSingleChannelShadows[i], offsetFromComposite.getX(), offsetFromComposite.getY(), true);
             }
             needsRecomposite = false;
         }

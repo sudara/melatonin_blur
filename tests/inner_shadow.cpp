@@ -104,7 +104,8 @@ TEST_CASE ("Melatonin Blur Inner Shadow")
         {
             SECTION ("positive spread adds more blur")
             {
-                auto cornerValueWithoutSpread = result.getPixelAt (2, 2).getBrightness();
+                auto centerWithoutSpread = result.getPixelAt (4, 4).getBrightness();
+                auto cornerWithoutSpread = result.getPixelAt (2, 2).getBrightness();
 
                 // redo the blur with spread
                 g.fillAll (juce::Colours::white);
@@ -117,9 +118,14 @@ TEST_CASE ("Melatonin Blur Inner Shadow")
 
                 save_test_image (result, "inner_shadow_2px_positive_spread");
 
-                SECTION ("increases shadow amount (brightness)")
+                SECTION ("increases brightness at center")
                 {
-                    CHECK (result.getPixelAt (2, 2).getBrightness() > cornerValueWithoutSpread);
+                    CHECK (result.getPixelAt (4, 4).getBrightness() > centerWithoutSpread);
+                }
+
+                SECTION ("corners actually go darker as original image bleeds through more")
+                {
+                    CHECK (result.getPixelAt (2, 2).getBrightness() < cornerWithoutSpread);
                 }
 
                 SECTION ("center pixel is no longer black")

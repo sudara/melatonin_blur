@@ -133,6 +133,26 @@ static juce::String getPixels (juce::Image& img, juce::Range<int> xRange, int y)
     return result;
 }
 
+static std::vector<float> getPixelsBrightness (juce::Image& img, int x, juce::Range<int> yRange)
+{
+    std::vector<float> result;
+    for (auto y = yRange.getStart(); y <= yRange.getEnd(); ++y)
+    {
+        result.push_back (img.getPixelAt (x, y).getBrightness());
+    }
+    return result;
+}
+
+static std::vector<float> getPixelsBrightness (juce::Image& img, juce::Range<int> xRange, int y)
+{
+    std::vector<float> result;
+    for (auto x = xRange.getStart(); x <= xRange.getEnd(); ++x)
+    {
+        result.push_back (img.getPixelAt (x, y).getBrightness());
+    }
+    return result;
+}
+
 static bool isImageFilled (juce::Image& img, juce::Colour color)
 {
     juce::Image::BitmapData data (img, juce::Image::BitmapData::readOnly);

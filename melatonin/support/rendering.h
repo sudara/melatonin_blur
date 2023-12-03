@@ -71,8 +71,12 @@ namespace melatonin
             // this is a problem because we're going to be blurring the image
             // and don't want to cut our blurs off early
             if (!juce::approximatelyEqual (scale - std::floor (scale), 0.0f))
+            {
+                // lazily add a buffer all around the image for sub-pixel-ness
                 s.blurContextBoundsScaled.expand (1, 1);
 
+
+            }
             // offsets don't add anything to the size of the blur
             // they simply translate placement in the final compositing
             s.blurContextBoundsScaled += scaledOffset;

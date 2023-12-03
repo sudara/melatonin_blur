@@ -9,7 +9,8 @@ TEST_CASE ("Melatonin Blur Composite ARGB")
     // needed for JUCE not to pee its pants (aka leak) when working with graphics
     juce::ScopedJuceInitialiser_GUI juce;
 
-    // this tests which parts of the end graphics context get painted to
+    // this tests which parts of the end graphics context actually get painted to
+    // which is a proxy for what the argb composite is up to
     SECTION ("filled bounds")
     {
         // boot up the bare minimum of a CachedShadow
@@ -78,7 +79,8 @@ TEST_CASE ("Melatonin Blur Composite ARGB")
             shadow.render (g, p);
 
             // check bounds of non-white rectangle
-            CHECK (filledBounds (context).toString() == juce::Rectangle<int> (0, 0, 10, 10).toString());
+            // it's just 2px wider
+            CHECK (filledBounds (context).toString() == juce::Rectangle<int> (0, 0, 10, 8).toString());
         }
 
         SECTION ("doesn't freak out with 0 radius")
@@ -100,7 +102,4 @@ TEST_CASE ("Melatonin Blur Composite ARGB")
     {
     }
 
-    SECTION ("respects alpha")
-    {
-    }
 }
