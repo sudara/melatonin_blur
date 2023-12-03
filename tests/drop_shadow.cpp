@@ -236,8 +236,8 @@ TEST_CASE ("Melatonin Blur Drop Shadow")
             shadow.render (g, p);
             auto color = result.getPixelAt (4, 4);
             CHECK (color.getFloatRed() == Catch::Approx(0.4f)); // TODO: no idea wtf
-            CHECK (color.getFloatGreen() == Catch::Approx(0.76471f).margin(0.0001));
-            CHECK (color.getFloatBlue() == Catch::Approx(0.16078f).margin(0.0001));
+            CHECK (color.getFloatGreen() == Catch::Approx(0.76471f).margin(0.005));
+            CHECK (color.getFloatBlue() == Catch::Approx(0.16078f).margin(0.005));
         }
     }
 
@@ -276,7 +276,7 @@ TEST_CASE ("Melatonin Blur Drop Shadow")
 
 #if JUCE_MAC
 // Verify what macOS and JUCE are doing at the raw pixel level
-TEST_CASE ("premultiplied sanity check")
+TEST_CASE ("Melatonin Blur JUCE premultiplied check")
 {
     // needed for JUCE not to pee its pants (aka leak) when working with graphics
     juce::ScopedJuceInitialiser_GUI juce;

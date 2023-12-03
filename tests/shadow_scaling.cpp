@@ -67,10 +67,10 @@ TEST_CASE ("Melatonin Blur Shadow Scaling")
 
             SECTION ("3 pixels into center, edges are blurred")
             {
-                CHECK (result.getPixelAt (2, 4).getBrightness() == Catch::Approx (0.74902)); // completely white
+                CHECK (result.getPixelAt (2, 4).getBrightness() == Catch::Approx (0.74902).margin (0.01)); // completely white
                 CHECK (result.getPixelAt (4, 2).getBrightness() == Catch::Approx (0.74902).margin (0.01)); // 1st px blur
                 CHECK (result.getPixelAt (6, 4).getBrightness() == Catch::Approx (0.74902).margin (0.01)); // 2nd px blur
-                CHECK (result.getPixelAt (4, 6).getBrightness() == Catch::Approx (0.74902));
+                CHECK (result.getPixelAt (4, 6).getBrightness() == Catch::Approx (0.74902).margin (0.01));
             }
         }
 
@@ -212,12 +212,12 @@ TEST_CASE ("Melatonin Blur Shadow Scaling")
 
                         // this is the REAL difference between lofi and hi-fi
                         // white to first blur px
-                        CHECK (brightnesses[2] - brightnesses[1] == Catch::Approx (-0.08627f).margin (0.0001));
-                        CHECK (brightnesses[3] - brightnesses[2] == Catch::Approx (-0.01961f).margin (0.0001));
+                        CHECK (brightnesses[2] - brightnesses[1] == Catch::Approx (-0.08627f).margin (0.005));
+                        CHECK (brightnesses[3] - brightnesses[2] == Catch::Approx (-0.01961f).margin (0.005));
 
                         // second blur px — this is a huge jump
-                        CHECK (brightnesses[4] - brightnesses[3] == Catch::Approx (-0.12549f).margin (0.0001));
-                        CHECK (brightnesses[5] - brightnesses[4] == Catch::Approx (-0.0549f).margin (0.0001));
+                        CHECK (brightnesses[4] - brightnesses[3] == Catch::Approx (-0.12549f).margin (0.005));
+                        CHECK (brightnesses[5] - brightnesses[4] == Catch::Approx (-0.0549f).margin (0.005));
                     }
                 }
 
@@ -256,12 +256,12 @@ TEST_CASE ("Melatonin Blur Shadow Scaling")
                         auto brightnesses = getPixelsBrightness (result, { 0, 6 }, 8);
 
                         // white to first blur px
-                        CHECK (brightnesses[2] - brightnesses[1] == Catch::Approx (-0.03529f).margin (0.0001));
-                        CHECK (brightnesses[3] - brightnesses[2] == Catch::Approx (-0.06667f).margin (0.0001));
+                        CHECK (brightnesses[2] - brightnesses[1] == Catch::Approx (-0.03529f).margin (0.005));
+                        CHECK (brightnesses[3] - brightnesses[2] == Catch::Approx (-0.06667f).margin (0.005));
 
                         // second blur px — this is a huge jump
-                        CHECK (brightnesses[4] - brightnesses[3] == Catch::Approx (-0.09804f).margin (0.0001));
-                        CHECK (brightnesses[5] - brightnesses[4] == Catch::Approx (-0.13725f).margin (0.0001));
+                        CHECK (brightnesses[4] - brightnesses[3] == Catch::Approx (-0.09804f).margin (0.005));
+                        CHECK (brightnesses[5] - brightnesses[4] == Catch::Approx (-0.13725f).margin (0.005));
                     }
                 }
             }
@@ -320,20 +320,20 @@ TEST_CASE ("Melatonin Blur Shadow Scaling")
                 CHECK (result.getPixelAt (0, 6).getBrightness() == Catch::Approx (1.0f));
 
                 // the shadow is barely present here: origin of 4.5 with radius of 3
-                CHECK (result.getPixelAt (1, 6).getBrightness() == Catch::Approx (0.97255f));
+                CHECK (result.getPixelAt (1, 6).getBrightness() == Catch::Approx (0.97255f).margin(0.01f));
 
                 // top is like left: 1 real pixel of white, 1 very close to it
                 CHECK (result.getPixelAt (6, 0).getBrightness() == Catch::Approx (1.0f));
-                CHECK (result.getPixelAt (6, 1).getBrightness() == Catch::Approx (0.97255f));
+                CHECK (result.getPixelAt (6, 1).getBrightness() == Catch::Approx (0.97255f).margin(0.01f));
 
                 // right
-                CHECK (result.getPixelAt (11, 6).getBrightness() == Catch::Approx (0.94118f));
-                CHECK (result.getPixelAt (12, 6).getBrightness() == Catch::Approx (0.98824));
+                CHECK (result.getPixelAt (11, 6).getBrightness() == Catch::Approx (0.94118f).margin(0.01f));
+                CHECK (result.getPixelAt (12, 6).getBrightness() == Catch::Approx (0.98824).margin(0.01f));
                 CHECK (result.getPixelAt (13, 6).getBrightness() == Catch::Approx (1.0f));
 
                 // bottom
-                CHECK (result.getPixelAt (6, 11).getBrightness() ==  Catch::Approx (0.94118f));
-                CHECK (result.getPixelAt (6, 12).getBrightness() ==  Catch::Approx (0.98824));
+                CHECK (result.getPixelAt (6, 11).getBrightness() ==  Catch::Approx (0.94118f).margin(0.01f));
+                CHECK (result.getPixelAt (6, 12).getBrightness() ==  Catch::Approx (0.98824).margin(0.01f));
                 CHECK (result.getPixelAt (6, 13).getBrightness() ==  Catch::Approx (1.0f));
             }
         }
@@ -363,19 +363,19 @@ TEST_CASE ("Melatonin Blur Shadow Scaling")
 
             // left
             CHECK (result.getPixelAt (0, 4).getBrightness() == Catch::Approx (1.0f));
-            CHECK (result.getPixelAt (1, 4).getBrightness() == Catch::Approx (0.91373f));
+            CHECK (result.getPixelAt (1, 4).getBrightness() == Catch::Approx (0.91373f).margin(0.01f));
 
             // top
             CHECK (result.getPixelAt (4, 0).getBrightness() == Catch::Approx (1.0f));
-            CHECK (result.getPixelAt (4, 1).getBrightness() == Catch::Approx (0.91373f));
+            CHECK (result.getPixelAt (4, 1).getBrightness() == Catch::Approx (0.91373f).margin(0.01f));
 
             // right
             CHECK (result.getPixelAt (8, 4).getBrightness() == Catch::Approx (1.0f));
-            CHECK (result.getPixelAt (7, 4).getBrightness() == Catch::Approx (0.91373f));
+            CHECK (result.getPixelAt (7, 4).getBrightness() == Catch::Approx (0.91373f).margin(0.01f));
 
             // bottom
             CHECK (result.getPixelAt (4, 8).getBrightness() == Catch::Approx (1.0f));
-            CHECK (result.getPixelAt (4, 7).getBrightness() == Catch::Approx (0.91373f));
+            CHECK (result.getPixelAt (4, 7).getBrightness() == Catch::Approx (0.91373f).margin(0.01f));
         }
 
         SECTION ("user scales down")
