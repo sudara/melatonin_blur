@@ -93,6 +93,10 @@ namespace melatonin::internal
 
         void drawARGBComposite (juce::Graphics& g, float scale, bool optimizeClipBounds = false)
         {
+            // support default constructors, 0 radius blurs, etc
+            if (compositedARGB.isNull())
+                return;
+
             // TODO: requires testing/benchmarking
             if (optimizeClipBounds)
             {
@@ -118,33 +122,35 @@ namespace melatonin::internal
         {
             // figure out the largest bounds we need to composite
             // this is the union of all the shadow bounds
-            juce::Rectangle<int> unionOfAllBounds;
+            juce::Rectangle<int> compositeBounds = {};
             for (auto& s : shadowParameters)
-                unionOfAllBounds = unionOfAllBounds.getUnion (s.blurContextBoundsScaled);
+                compositeBounds = compositeBounds.getUnion (s.blurContextBoundsScaled);
 
-            compositedARGBPositionInContext = unionOfAllBounds.getPosition().toFloat();
+            compositedARGBPositionInContext = compositeBounds.getPosition().toFloat();
+
+            if (compositeBounds.isEmpty())
+                return;
 
             // YET ANOTHER graphics context to efficiently convert the image to ARGB
             // why? Because later, compositing to the main graphics context (g) is faster
             // (won't need to specify `fillAlphaChannelWithCurrentBrush` for `drawImageAt`,
             // which slows down the main compositing by a factor of 2-3x)
             // see: https://forum.juce.com/t/faster-blur-glassmorphism-ui/43086/76
-            compositedARGB = { juce::Image::ARGB, (int) unionOfAllBounds.getWidth(), (int) unionOfAllBounds.getHeight(), true };
+            compositedARGB = { juce::Image::ARGB, (int) compositeBounds.getWidth(), (int) compositeBounds.getHeight(), true };
 
-            // we already scaled up (if needed) the last round, no .addTransform here
+            // we're already scaled up (if needed) so no .addTransform here
             juce::Graphics g2 (compositedARGB);
 
             for (auto i = 0; i < shadowParameters.size(); ++i)
             {
                 auto& s = shadowParameters[i];
 
-                auto offsetFromUnionBounds = s.blurContextBoundsScaled.getPosition() - unionOfAllBounds.getPosition();
-
                 // support 0 radius blurs (for animation, etc)
                 if (s.radius < 1)
                     continue;
 
-                g2.setColour (s.color);
+                // 0,0 is still the start of the path here and in compositeBounds
+                auto shadowPosition = s.blurContextBoundsScaled.getPosition();
 
                 // lets us temporarily clip the region if needed
                 juce::Graphics::ScopedSaveState saveState (g2);
@@ -156,15 +162,16 @@ namespace melatonin::internal
                     auto scaledOriginAgnosticPathBounds = (lastOriginAgnosticPath.getBounds() * scale).getSmallestIntegerContainer();
 
                     // TODO: float is rounded here?...
-                    auto scaledPathBounds = scaledOriginAgnosticPathBounds.translated((int) pathPositionInContext.getX(), (int) pathPositionInContext.getY());
-                    auto pathInComposite = scaledPathBounds.translated (offsetFromUnionBounds.getX(), offsetFromUnionBounds.getY());
+                    auto scaledPathBounds = scaledOriginAgnosticPathBounds.translated ((int) pathPositionInContext.getX(), (int) pathPositionInContext.getY());
+                    auto pathInComposite = scaledPathBounds.translated (shadowPosition.getX(), shadowPosition.getY());
                     g2.reduceClipRegion (pathInComposite);
                 }
 
-                // the "true" means "fill the alpha channel with the current brush" — aka g's color
-                g2.drawImageAt (renderedSingleChannelShadows[i], offsetFromUnionBounds.getX(), offsetFromUnionBounds.getY(), true);
+                g2.setColour (s.color);
+
+                // the "true" means "fill the alpha channel with the current brush" — aka s.color
+                g2.drawImageAt (renderedSingleChannelShadows[i], 0, 0, true);
             }
-            save_test_image(compositedARGB, "argb composite");
             needsRecomposite = false;
         }
     };

@@ -118,6 +118,8 @@ TEST_CASE ("Melatonin Blur Drop Shadow")
             g.setColour (juce::Colours::black);
             g.fillPath (p);
 
+            save_test_image(result, "positive 1px offset");
+
             SECTION ("left and top edges have an extra white pixel")
             {
                 // left and top edges should have 1 extra white pixel

@@ -57,7 +57,7 @@ TEST_CASE ("Melatonin Blur Inner Shadow")
         // inner shadow render must come AFTER the path render
         shadow.render (g, p);
 
-        save_test_image (result, "inner_shadow_2px.png");
+        save_test_image (result, "inner_shadow_2px");
 
         SECTION ("outside of the path isn't touched (still white)")
         {
@@ -115,6 +115,8 @@ TEST_CASE ("Melatonin Blur Inner Shadow")
                 // inner shadow render must come AFTER the path render
                 shadowWithPositiveSpread.render (g, p);
 
+                save_test_image (result, "inner_shadow_2px_positive_spread");
+
                 SECTION ("increases shadow amount (brightness)")
                 {
                     CHECK (result.getPixelAt (2, 2).getBrightness() > cornerValueWithoutSpread);
@@ -147,10 +149,9 @@ TEST_CASE ("Melatonin Blur Inner Shadow")
                     auto actualPixel = result.getPixelAt (x, y).toString();
                     auto expectedPixel = expectedImage.getPixelAt (x, y).toString();
 
-                    //CHECK (actualPixel == expectedPixel);
+                    // CHECK (actualPixel == expectedPixel);
                 }
             }
-
         }
     }
 }

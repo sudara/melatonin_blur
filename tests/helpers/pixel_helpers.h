@@ -147,6 +147,25 @@ static bool isImageFilled (juce::Image& img, juce::Colour color)
     return true;
 }
 
+// tests all are on WHITE
+// so filled bounds have any other color than pure white
+static juce::Rectangle<int> filledBounds(juce::Image& img)
+{
+    juce::Rectangle<int> result;
+    juce::Image::BitmapData data (img, juce::Image::BitmapData::readOnly);
+    for (auto y = 0; y < img.getHeight(); ++y)
+    {
+        for (auto x = 0; x < img.getWidth(); ++x)
+        {
+            if (data.getPixelColour (x, y) != juce::Colours::white)
+            {
+                result = result.getUnion (juce::Rectangle<int> (x, y, 1, 1));
+            }
+        }
+    }
+    return result;
+}
+
 static void print_test_image (juce::Image& image)
 {
     // this is meant for testing trivial examples

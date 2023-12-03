@@ -32,6 +32,7 @@ namespace melatonin
 
     namespace internal
     {
+
         // WARNING: Internal only, don't use unless you know what you are doing
         // this caches expensive shadow creation into a Single Channel juce::Image for later compositing
         // Scale is piped in via CachedShadows::getPhysicalPixelScaleFactor
@@ -45,13 +46,20 @@ namespace melatonin
             auto scaledOffset = (s.offset * scale).roundToInt();
 
             // start calculating our cached "canvas" for the path
+            // this is the one piece of info we need for later compositing
             // work at the same scale as the graphics context we'll composite to
             // we need to work with integers when creating graphic contexts
-            // and we want to have our path to start at 0, 0
-            auto area = (originAgnosticPath.getBounds() * scale).getSmallestIntegerContainer();
+            // and we want our path to start at 0, 0
+            s.blurContextBoundsScaled = (originAgnosticPath.getBounds() * scale).getSmallestIntegerContainer();
 
             // account for our scaled radius, spread, offsets
-            area = (area + scaledOffset).expanded (scaledRadius + scaledSpread);
+            if (s.inner)
+                // we need an extra pixel to fill for casting shadows into the path
+                // radius travels *inwards* for inner shadows
+                // and spread can only reduce the size of the bounds, which we'll ignore
+                s.blurContextBoundsScaled.expand (1, 1);
+            else
+                s.blurContextBoundsScaled = s.blurContextBoundsScaled.expanded (scaledRadius + scaledSpread);
 
             // TODO: Investigate/test if this is ever relevant
             // I'm guessing reduces the clip size in the edge case it doesn't overlap the main context?
@@ -63,17 +71,18 @@ namespace melatonin
             // this is a problem because we're going to be blurring the image
             // and don't want to cut our blurs off early
             if (!juce::approximatelyEqual (scale - std::floor (scale), 0.0f))
-                area = area.expanded (1);
+                s.blurContextBoundsScaled.expand (1, 1);
 
-            // this is the one piece of info we need for later rendering from cache
-            s.blurContextBoundsScaled = area;
+            // offsets don't add anything to the size of the blur
+            // they simply translate placement in the final compositing
+            s.blurContextBoundsScaled += scaledOffset;
 
-            // we don't modify our original path (it would break cache)
-            // additionally, inner shadows render a modified path
-            // remember, the origin is always 0,0
+            // spread modifies the scale of the actual path
+            // we can't modify our original path (it would break cache)
+            // remember, the origin will always stay at 0,0
             auto shadowPath = juce::Path (originAgnosticPath);
 
-            if (scaledSpread != 0)
+            if (s.spread != 0)
             {
                 // expand the actual path itself
                 // note: this is 1x, it'll be upscaled as needed by fillPath
@@ -104,7 +113,7 @@ namespace melatonin
             }
 
             // each shadow is its own single channel image associated with a color
-            juce::Image renderedSingleChannel (juce::Image::SingleChannel, area.getWidth(), area.getHeight(), true);
+            juce::Image renderedSingleChannel (juce::Image::SingleChannel, s.blurContextBoundsScaled.getWidth(), s.blurContextBoundsScaled.getHeight(), true);
 
             // boot up a graphics context to give us access to fillPath, etc
             juce::Graphics g2 (renderedSingleChannel);
@@ -112,12 +121,13 @@ namespace melatonin
             // ensure we're working at the correct scale
             g2.addTransform (juce::AffineTransform::scale (scale));
 
+            // cache at full opacity, later composited with the correct color/opacity
             g2.setColour (juce::Colours::white);
 
             // we're still working @1x until fillPath happens
-            // (but we need to use the scaled+rounded offset as source of truth)
-            // the blurContextBounds x/y is negative, but we can only render in positive space
-            // so we apply specified offset + translate to 0,0 bounds
+            // blurContextBounds x/y is negative (linked to path @ 0,0) and we must render in positive space
+            // blurContextBounds includes offset for later compositing, but we're offset-agnostic for the single render
+            // TODO: sudara doesn't understand why scaledOffset is *positive* here
             auto unscaledPosition = (scaledOffset.toFloat() - s.blurContextBoundsScaled.getPosition().toFloat()) / scale;
             g2.fillPath (shadowPath, juce::AffineTransform::translation (unscaledPosition));
 
