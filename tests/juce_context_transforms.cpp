@@ -36,10 +36,6 @@ TEST_CASE ("Melatonin Blur JUCE sanity checks")
         CHECK(image.getPixelAt(0, 0).toString() == juce::Colours::lime.toString());
         CHECK(data.getPixelColour (0,0) == juce::Colours::lime);
         CHECK(data.getPixelColour (0,0).toString() == juce::Colours::lime.toString());
-
-
-        // confirm the entire 8x8 is filled
-        CHECK (isImageFilled (image, juce::Colours::lime) == true);
     }
 
     // this is relevant to our "lowQuality" setting

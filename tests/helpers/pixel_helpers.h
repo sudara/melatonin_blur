@@ -133,6 +133,21 @@ static juce::String getPixels (juce::Image& img, juce::Range<int> xRange, int y)
     return result;
 }
 
+static juce::String getPixels (juce::Image& img, juce::Range<int> xRange, juce::Range<int> yRange)
+{
+    juce::String result;
+    for (auto y = yRange.getStart(); y <= yRange.getEnd(); ++y)
+    {
+        for (auto x = xRange.getStart(); x <= xRange.getEnd(); ++x)
+        {
+            result << getPixel (img, x, y);
+            if (!(x == xRange.getEnd() && y == yRange.getEnd()))
+                result << ", ";
+        }
+    }
+    return result;
+}
+
 static std::vector<float> getPixelsBrightness (juce::Image& img, int x, juce::Range<int> yRange)
 {
     std::vector<float> result;

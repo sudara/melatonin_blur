@@ -5,6 +5,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_all.hpp>
 
+// All of these tests operate @1x
 TEST_CASE ("Melatonin Blur Inner Shadow")
 {
     // Test Image (differs from drop shadow, has more inner "meat")
@@ -133,6 +134,45 @@ TEST_CASE ("Melatonin Blur Inner Shadow")
                 SECTION ("center pixel is no longer black")
                 {
                     CHECK (getPixel (result, 4, 4) != "FF000000");
+                }
+            }
+        }
+
+        SECTION ("With offset")
+        {
+            SECTION ("x axis")
+            {
+                SECTION ("positive")
+                {
+                    g.fillAll (juce::Colours::white);
+                    shadow = { { juce::Colours::white, 2, { 2, 0 } } };
+                    g.setColour (juce::Colours::black);
+                    g.fillPath (p);
+
+                    // inner shadow render must come AFTER the path render
+                    shadow.render (g, p);
+
+                    save_test_image(result, "inner_shadow_2px_positive_offset_x");
+                    // inner left edge has more white
+
+                    // inner right 2px is black
+                    CHECK (getPixels (result, { 5, 6 }, {2, 6}) == "FF000000, FF000000, FF000000, FF000000, FF000000, FF000000, FF000000, FF000000, FF000000");
+                }
+
+                SECTION ("negative")
+                {
+                    g.fillAll (juce::Colours::white);
+                    shadow = { { juce::Colours::white, 2, { -2, 0 } } };
+                    g.setColour (juce::Colours::black);
+                    g.fillPath (p);
+
+                    // inner shadow render must come AFTER the path render
+                    shadow.render (g, p);
+
+                    save_test_image(result, "inner_shadow_2px_negative_offset_x");
+                    // inner right edge has more white
+
+                    // inner left 2px is black
                 }
             }
         }

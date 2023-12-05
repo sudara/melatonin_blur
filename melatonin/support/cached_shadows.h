@@ -161,15 +161,18 @@ namespace melatonin::internal
                 // lets us temporarily clip the region if needed
                 juce::Graphics::ScopedSaveState saveState (g2);
 
-                // for inner shadows, we don't draw anything outside the path bounds
+                // for inner shadows, we need to clip to the path bounds
                 if (s.inner)
                 {
+                    // get our path, at scale
                     auto scaledOriginAgnosticPathBounds = (lastOriginAgnosticPath.getBounds() * scale).getSmallestIntegerContainer();
 
-                    // TODO: float is rounded here?...
-                    auto scaledPathBounds = scaledOriginAgnosticPathBounds.translated ((int) pathPositionInContext.getX(), (int) pathPositionInContext.getY());
-                    auto pathInComposite = scaledPathBounds.translated (shadowPosition.getX(), shadowPosition.getY());
+                    // move the shadow where the path is in the ARGB composite
+                    auto pathInComposite = scaledOriginAgnosticPathBounds.translated (offsetFromComposite.getX(), offsetFromComposite.getY());
+
+                    // clip to the path in the ARGB bounds
                     g2.reduceClipRegion (pathInComposite);
+
                 }
 
                 g2.setColour (s.color);

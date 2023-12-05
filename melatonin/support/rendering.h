@@ -36,6 +36,7 @@ namespace melatonin
         // WARNING: Internal only, don't use unless you know what you are doing
         // this caches expensive shadow creation into a Single Channel juce::Image for later compositing
         // Scale is piped in via CachedShadows::getPhysicalPixelScaleFactor
+        // Positions are *path agnostic* here to reduce image sizes to a minimum
         [[nodiscard]] static inline juce::Image renderShadowToSingleChannel (ShadowParameters& s, const juce::Path& originAgnosticPath, float scale)
         {
             // By default, match the main graphics context's scaling factor.
@@ -52,16 +53,16 @@ namespace melatonin
             // and we want our path to start at 0, 0
             s.blurContextBoundsScaled = (originAgnosticPath.getBounds() * scale).getSmallestIntegerContainer();
 
-            // account for our scaled radius, spread, offsets
+            // account for our scaled radius and spread
+            // one might think that inner shadows don't need to expand with radius
+            // since they are clipped to path bounds
+            // however, when there's offset, and we are making position-agnostic shadows!
             if (s.inner)
-                // we need an extra pixel to fill for casting shadows into the path
-                // radius travels *inwards* for inner shadows
-                // and spread can only reduce the size of the bounds, which we'll ignore
-                s.blurContextBoundsScaled.expand (1, 1);
+                s.blurContextBoundsScaled.expand (scaledRadius - scaledSpread, scaledRadius - scaledSpread);
             else
-                s.blurContextBoundsScaled = s.blurContextBoundsScaled.expanded (scaledRadius + scaledSpread);
+                s.blurContextBoundsScaled.expand (scaledRadius + scaledSpread, scaledRadius + scaledSpread);
 
-            // TODO: Investigate/test if this is ever relevant
+            // TODO: Investigate/test if this is ever relevant / how to apply to position agnostic
             // I'm guessing reduces the clip size in the edge case it doesn't overlap the main context?
             //.getIntersection (g.getClipBounds().expanded (s.radius + s.spread + 1));
 
@@ -74,16 +75,11 @@ namespace melatonin
             {
                 // lazily add a buffer all around the image for sub-pixel-ness
                 s.blurContextBoundsScaled.expand (1, 1);
-
-
             }
-            // offsets don't add anything to the size of the blur
-            // they simply translate placement in the final compositing
-            s.blurContextBoundsScaled += scaledOffset;
 
-            // spread modifies the scale of the actual path
-            // we can't modify our original path (it would break cache)
-            // remember, the origin will always stay at 0,0
+            // Spread modifies the scale of the actual path.
+            // We can't modify our original path as it would break cache.
+            // Remember, the origin will be 0,0
             auto shadowPath = juce::Path (originAgnosticPath);
 
             if (s.spread != 0)
@@ -131,12 +127,15 @@ namespace melatonin
             // we're still working @1x until fillPath happens
             // blurContextBounds x/y is negative (linked to path @ 0,0) and we must render in positive space
             // blurContextBounds includes offset for later compositing, but we're offset-agnostic for the single render
-            // TODO: sudara doesn't understand why scaledOffset is *positive* here
-            auto unscaledPosition = (scaledOffset.toFloat() - s.blurContextBoundsScaled.getPosition().toFloat()) / scale;
+            // (we have to cancel out the offset from the negative blurContextBounds)
+            auto unscaledPosition = -s.blurContextBoundsScaled.getPosition().toFloat() / scale;
             g2.fillPath (shadowPath, juce::AffineTransform::translation (unscaledPosition));
 
             // perform the blur with the fastest algorithm available
             melatonin::blur::singleChannel (renderedSingleChannel, scaledRadius);
+
+            // Offsets will be used later to translate placement in ARGB compositing.
+            s.blurContextBoundsScaled += scaledOffset;
 
             save_test_image (renderedSingleChannel, "singleChan");
             return renderedSingleChannel;
