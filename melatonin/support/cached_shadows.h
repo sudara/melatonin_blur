@@ -156,29 +156,41 @@ namespace melatonin::internal
                 auto shadowPosition = s.blurContextBoundsScaled.getPosition();
 
                 // this particular single channel blur might have a different offset from the overall composite
-                auto offsetFromComposite = shadowPosition - compositeBounds.getPosition();
+                auto shadowOffsetFromComposite = shadowPosition - compositeBounds.getPosition();
 
                 // lets us temporarily clip the region if needed
                 juce::Graphics::ScopedSaveState saveState (g2);
 
-                // for inner shadows, we need to clip to the path bounds
-                if (s.inner)
-                {
-                    // get our path, at scale
-                    auto scaledOriginAgnosticPathBounds = (lastOriginAgnosticPath.getBounds() * scale).getSmallestIntegerContainer();
-
-                    // move the shadow where the path is in the ARGB composite
-                    auto pathInComposite = scaledOriginAgnosticPathBounds.translated (offsetFromComposite.getX(), offsetFromComposite.getY());
-
-                    // clip to the path in the ARGB bounds
-                    g2.reduceClipRegion (pathInComposite);
-
-                }
-
                 g2.setColour (s.color);
 
-                // the "true" means "fill the alpha channel with the current brush" — aka s.color
-                g2.drawImageAt (renderedSingleChannelShadows[i], offsetFromComposite.getX(), offsetFromComposite.getY(), true);
+                // for inner shadows, clip to the path bounds
+                if (s.inner)
+                {
+                    // our path's position in this context depends on shadow and composite
+                    auto pathOffsetFromComposite = shadowPosition + shadowOffsetFromComposite;
+
+                    // get our paths dimensions, scaled appropriately
+                    auto scaledOriginAgnosticPathBounds = (lastOriginAgnosticPath.getBounds() * scale).getSmallestIntegerContainer();
+
+                    // place the path is in our composite
+                    auto clippedPathInComposite = scaledOriginAgnosticPathBounds.withPosition (-pathOffsetFromComposite);
+
+                    // we've already saved the state, now clip to the path's bounds
+                    g2.reduceClipRegion (clippedPathInComposite);
+
+                    // Match Figma behavior when spread or offset exceeds radius.
+                    // In these cases, we "run out" of image to fill
+                    // so instead we fill the solid single color
+                    // we can't fillAll (we'd be filling the entire composite with our color at 1.0 alpha)
+//                    auto pathCoveredByShadow = clippedPathInComposite + shadowPosition;
+//                    g2.saveState();
+//                    g2.excludeClipRegion (pathCoveredByShadow);
+//                    g2.fillAll(s.color);
+//                    g2.restoreState();
+                }
+
+                // "true" means "fill the alpha channel with the current brush" — aka s.color
+               g2.drawImageAt (renderedSingleChannelShadows[i], shadowOffsetFromComposite.getX(), shadowOffsetFromComposite.getY(), true);
             }
             needsRecomposite = false;
         }

@@ -168,7 +168,7 @@ static std::vector<float> getPixelsBrightness (juce::Image& img, juce::Range<int
     return result;
 }
 
-static bool isImageFilled (juce::Image& img, juce::Colour& color)
+static bool isImageFilled (juce::Image& img, const juce::Colour& color)
 {
     juce::Image::BitmapData data (img, juce::Image::BitmapData::readOnly);
     for (auto y = 0; y < img.getHeight(); ++y)

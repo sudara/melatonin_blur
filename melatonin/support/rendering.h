@@ -121,13 +121,12 @@ namespace melatonin
             // ensure we're working at the correct scale
             g2.addTransform (juce::AffineTransform::scale (scale));
 
-            // cache at full opacity, later composited with the correct color/opacity
+            // cache at full opacity (later composited with the correct color/opacity)
             g2.setColour (juce::Colours::white);
 
             // we're still working @1x until fillPath happens
-            // blurContextBounds x/y is negative (linked to path @ 0,0) and we must render in positive space
-            // blurContextBounds includes offset for later compositing, but we're offset-agnostic for the single render
-            // (we have to cancel out the offset from the negative blurContextBounds)
+            // blurContextBounds x/y is negative (relative to path @ 0,0) and we must render in positive space
+            // Note that offset isn't used here,
             auto unscaledPosition = -s.blurContextBoundsScaled.getPosition().toFloat() / scale;
             g2.fillPath (shadowPath, juce::AffineTransform::translation (unscaledPosition));
 
