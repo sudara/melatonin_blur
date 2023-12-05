@@ -17,6 +17,7 @@ TEST_CASE ("Melatonin Blur JUCE sanity checks")
         // the image bounds backing our temporary context must be able to contain the transformed image
         // here we will work in 4x4, it will be transformed by the context to 8x8
         juce::Image image (juce::Image::PixelFormat::ARGB, 8, 8, true);
+        juce::Image::BitmapData data (image, juce::Image::BitmapData::readOnly);
 
         // create our new context
         juce::Graphics g2 (image);
@@ -27,11 +28,18 @@ TEST_CASE ("Melatonin Blur JUCE sanity checks")
         p.addRectangle (juce::Rectangle<float> (4, 4));
 
         // draw the rectangle
-        g2.setColour (juce::Colours::green);
+        g2.setColour (juce::Colours::lime);
         g2.fillPath (p);
 
+        save_test_image(image, "path_drawing_respects_context_scale");
+
+        CHECK(image.getPixelAt(0, 0).toString() == juce::Colours::lime.toString());
+        CHECK(data.getPixelColour (0,0) == juce::Colours::lime);
+        CHECK(data.getPixelColour (0,0).toString() == juce::Colours::lime.toString());
+
+
         // confirm the entire 8x8 is filled
-        CHECK (isImageFilled (image, juce::Colours::green) == true);
+        CHECK (isImageFilled (image, juce::Colours::lime) == true);
     }
 
     // this is relevant to our "lowQuality" setting
@@ -51,13 +59,13 @@ TEST_CASE ("Melatonin Blur JUCE sanity checks")
         // for example, our "lowQuality" drop shadows do this behind the scenes
         juce::Image source (juce::Image::PixelFormat::ARGB, 4, 4, true);
         juce::Graphics g2 (source);
-        g2.setColour (juce::Colours::green);
+        g2.setColour (juce::Colours::lime);
         g2.fillAll();
 
         g.drawImageAt (source, 0, 0, false);
 
         // confirm the entire 8x8 is filled
-        CHECK (isImageFilled (simulated2xContext, juce::Colours::green) == true);
+        CHECK (isImageFilled (simulated2xContext, juce::Colours::lime) == true);
     }
 
     SECTION ("drawImage at where source and target both @2x")
@@ -77,13 +85,13 @@ TEST_CASE ("Melatonin Blur JUCE sanity checks")
 
         // the transforms on source and target match
         g2.addTransform (juce::AffineTransform::scale (scaleFactor));
-        g2.setColour (juce::Colours::green);
+        g2.setColour (juce::Colours::lime);
         g2.fillAll();
 
         // TODO: I wonder if JUCE's drawImageAt could be cheaper if the transforms were compared?
         g.drawImageAt (source, 0, 0, false);
 
         // confirm the entire 8x8 is filled
-        CHECK (isImageFilled (simulated2xContext, juce::Colours::green) == true);
+        CHECK (isImageFilled (simulated2xContext, juce::Colours::lime) == true);
     }
 }
