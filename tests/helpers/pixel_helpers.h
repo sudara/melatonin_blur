@@ -153,7 +153,7 @@ static std::vector<float> getPixelsBrightness (juce::Image& img, juce::Range<int
     return result;
 }
 
-static bool isImageFilled (juce::Image& img, juce::Colour color)
+static bool isImageFilled (juce::Image& img, juce::Colour& color)
 {
     juce::Image::BitmapData data (img, juce::Image::BitmapData::readOnly);
     for (auto y = 0; y < img.getHeight(); ++y)
@@ -212,8 +212,11 @@ static void save_test_image (juce::Image& image, juce::String name="test")
     juce::Image imageToSave = image;
     if(imageToSave.isSingleChannel())
         imageToSave = imageToSave.convertedToFormat(juce::Image::ARGB);
-
+#if JUCE_MAC
     auto file = juce::File::getSpecialLocation (juce::File::SpecialLocationType::userHomeDirectory).getChildFile("Downloads").getChildFile (name+".png");
+#else
+    auto file = juce::File::getSpecialLocation (juce::File::SpecialLocationType::userDesktopDirectory).getChildFile (name+".png");
+#endif
     juce::FileOutputStream stream (file);
     stream.setPosition (0);
     stream.truncate();
