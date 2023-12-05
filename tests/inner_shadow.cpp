@@ -95,9 +95,11 @@ TEST_CASE ("Melatonin Blur Inner Shadow")
 
         SECTION ("path corners are symmetrical")
         {
-            CHECK (getPixel (result, 2, 2) == getPixel (result, 6, 6));
-            CHECK (getPixel (result, 2, 2) == getPixel (result, 6, 2));
-            CHECK (getPixel (result, 2, 2) == getPixel (result, 2, 6));
+            // Note: Windows blurs seem off by exactly 1 integer of brightness, hence margin
+            auto corner = result.getPixelAt (2,2).getBrightness();
+            CHECK (result.getPixelAt (2,6).getBrightness() == Catch::Approx(corner).margin(0.005f));
+            CHECK (result.getPixelAt (6,2).getBrightness() == Catch::Approx(corner).margin(0.005f));
+            CHECK (result.getPixelAt (6,6).getBrightness() == Catch::Approx(corner).margin(0.005f));
         }
 
         SECTION ("With spread")
