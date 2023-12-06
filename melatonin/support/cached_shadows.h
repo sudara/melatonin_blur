@@ -37,7 +37,7 @@ namespace melatonin::internal
             incomingOriginAgnosticPath.applyTransform (juce::AffineTransform::translation (-incomingOrigin));
 
             // has the path actually changed?
-            if (incomingOriginAgnosticPath != lastOriginAgnosticPath)
+            if (needsRecalculate || (incomingOriginAgnosticPath != lastOriginAgnosticPath))
             {
                 // we already created a copy above, this is faster than creating another
                 lastOriginAgnosticPath.swapWithPath (incomingOriginAgnosticPath);
@@ -47,6 +47,8 @@ namespace melatonin::internal
 
                 // create the single channel shadows
                 recalculateBlurs (scale);
+                needsRecalculate = false;
+                needsRecomposite = true;
             }
 
             // the path is the same, but it's been moved to new coordinates
@@ -65,6 +67,42 @@ namespace melatonin::internal
             drawARGBComposite (g, scale);
         }
 
+        void setRadius(size_t radius, size_t index = 0)
+        {
+            if (index < shadowParameters.size() && shadowParameters[index].radius != radius)
+            {
+                shadowParameters[index].radius = (int) radius;
+                needsRecalculate = true;
+            }
+        }
+
+        void setOffset(juce::Point<int> offset, size_t index = 0)
+        {
+            if (index < shadowParameters.size() && shadowParameters[index].offset != offset)
+            {
+                shadowParameters[index].offset = offset;
+                needsRecomposite = true;
+            }
+        }
+
+        void setColor(juce::Colour color, size_t index = 0)
+        {
+            if (index < shadowParameters.size() && shadowParameters[index].color != color)
+            {
+                shadowParameters[index].color = color;
+                needsRecomposite = true;
+            }
+        }
+
+        void setOpacity(float opacity, size_t index = 0)
+        {
+            if (index < shadowParameters.size() && !juce::approximatelyEqual(shadowParameters[index].color.getFloatAlpha(), opacity))
+            {
+                shadowParameters[index].color = shadowParameters[index].color.withAlpha (opacity);
+                needsRecomposite = true;
+            }
+        }
+
     private:
         // store a copy of the path to compare against for caching
         juce::Path lastOriginAgnosticPath = {};
@@ -81,6 +119,7 @@ namespace melatonin::internal
 
         // this lets us adjust color/opacity without re-rendering blurs
         bool needsRecomposite = true;
+        bool needsRecalculate = true;
 
         void recalculateBlurs (float scale)
         {
@@ -172,21 +211,11 @@ namespace melatonin::internal
                     // get our paths dimensions, scaled appropriately
                     auto scaledOriginAgnosticPathBounds = (lastOriginAgnosticPath.getBounds() * scale).getSmallestIntegerContainer();
 
-                    // place the path is in our composite
+                    // where is the path in our composite?
                     auto clippedPathInComposite = scaledOriginAgnosticPathBounds.withPosition (-pathOffsetFromComposite);
 
                     // we've already saved the state, now clip to the path's bounds
                     g2.reduceClipRegion (clippedPathInComposite);
-
-                    // Match Figma behavior when spread or offset exceeds radius.
-                    // In these cases, we "run out" of image to fill
-                    // so instead we fill the solid single color
-                    // we can't fillAll (we'd be filling the entire composite with our color at 1.0 alpha)
-//                    auto pathCoveredByShadow = clippedPathInComposite + shadowPosition;
-//                    g2.saveState();
-//                    g2.excludeClipRegion (pathCoveredByShadow);
-//                    g2.fillAll(s.color);
-//                    g2.restoreState();
                 }
 
                 // "true" means "fill the alpha channel with the current brush" — aka s.color
