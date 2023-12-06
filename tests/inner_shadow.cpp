@@ -97,10 +97,10 @@ TEST_CASE ("Melatonin Blur Inner Shadow")
         SECTION ("path corners are symmetrical")
         {
             // Note: Windows blurs seem off by exactly 1 integer of brightness, hence margin
-            auto corner = result.getPixelAt (2,2).getBrightness();
-            CHECK (result.getPixelAt (2,6).getBrightness() == Catch::Approx(corner).margin(0.005f));
-            CHECK (result.getPixelAt (6,2).getBrightness() == Catch::Approx(corner).margin(0.005f));
-            CHECK (result.getPixelAt (6,6).getBrightness() == Catch::Approx(corner).margin(0.005f));
+            auto corner = result.getPixelAt (2, 2).getBrightness();
+            CHECK (result.getPixelAt (2, 6).getBrightness() == Catch::Approx (corner).margin (0.005f));
+            CHECK (result.getPixelAt (6, 2).getBrightness() == Catch::Approx (corner).margin (0.005f));
+            CHECK (result.getPixelAt (6, 6).getBrightness() == Catch::Approx (corner).margin (0.005f));
         }
 
         SECTION ("With spread")
@@ -142,7 +142,7 @@ TEST_CASE ("Melatonin Blur Inner Shadow")
         {
             SECTION ("x axis")
             {
-                SECTION ("positive")
+                SECTION ("positive 2")
                 {
                     g.fillAll (juce::Colours::white);
                     shadow = { { juce::Colours::white, 2, { 2, 0 } } };
@@ -152,11 +152,14 @@ TEST_CASE ("Melatonin Blur Inner Shadow")
                     // inner shadow render must come AFTER the path render
                     shadow.render (g, p);
 
-                    save_test_image(result, "inner_shadow_2px_positive_offset_x");
-                    // inner left edge has more white
+                    save_test_image (result, "inner_shadow_2px_positive_offset_x");
+
+                    // inner left edge is mostly transparent, "3" is the alpha channel
+                    auto leftOpacities = pixelCol (result, 0, 3);
+                    CHECK_THAT(leftOpacities, Catch::Matchers::Approx (std::vector<float>{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f }));
 
                     // inner right 2px is black
-                    CHECK (getPixels (result, { 5, 6 }, {2, 6}) == "FF000000, FF000000, FF000000, FF000000, FF000000, FF000000, FF000000, FF000000, FF000000");
+                    CHECK (getPixels (result, { 5, 6 }, { 2, 6 }) == "FF000000, FF000000, FF000000, FF000000, FF000000, FF000000, FF000000, FF000000, FF000000");
                 }
 
                 SECTION ("negative")
@@ -169,7 +172,7 @@ TEST_CASE ("Melatonin Blur Inner Shadow")
                     // inner shadow render must come AFTER the path render
                     shadow.render (g, p);
 
-                    save_test_image(result, "inner_shadow_2px_negative_offset_x");
+                    save_test_image (result, "inner_shadow_2px_negative_offset_x");
                     // inner right edge has more white
 
                     // inner left 2px is black

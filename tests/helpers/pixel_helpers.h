@@ -56,13 +56,14 @@ static std::vector<float> pixelRow (const juce::Image& image, int row, int chann
 
             // assume little endian (aka BGRA)
             if (channel == 0)
-                result.push_back (pixel.b / 255.0f);
+                result.push_back ((float) pixel.b / 255.0f);
             else if (channel == 1)
-                result.push_back (pixel.g / 255.0f);
+                result.push_back ((float) pixel.g / 255.0f);
             else if (channel == 2)
-                result.push_back (pixel.r / 255.0f);
+                result.push_back ((float) pixel.r / 255.0f);
+            else if (channel == 3)
+                result.push_back ((float) pixel.a / 255.0f);
             else
-                // wat?
                 jassertfalse;
         }
     }
@@ -70,7 +71,6 @@ static std::vector<float> pixelRow (const juce::Image& image, int row, int chann
 }
 static std::vector<float> pixelCol (const juce::Image& image, int col, int channel = -1)
 {
-    auto singleChannel = image.getFormat() == juce::Image::PixelFormat::SingleChannel;
     std::vector<float> result;
     juce::Image::BitmapData data (image, juce::Image::BitmapData::readOnly);
     for (auto y = 0; y < image.getHeight(); ++y)
@@ -83,13 +83,14 @@ static std::vector<float> pixelCol (const juce::Image& image, int col, int chann
 
             // assume little endian (aka BGRA)
             if (channel == 0)
-                result.push_back (pixel.b / 255.0f);
+                result.push_back ((float) pixel.b / 255.0f);
             else if (channel == 1)
-                result.push_back (pixel.g / 255.0f);
+                result.push_back ((float) pixel.g / 255.0f);
             else if (channel == 2)
-                result.push_back (pixel.r / 255.0f);
+                result.push_back ((float) pixel.r / 255.0f);
+            else if (channel == 3)
+                result.push_back ((float) pixel.a / 255.0f);
             else
-                // wat?
                 jassertfalse;
         }
     }
@@ -101,10 +102,10 @@ static juce::String getPixel (juce::Image& img, int x, int y)
     return img.getPixelAt (x, y).toDisplayString (true);
 }
 
-static float getScaledBrightness(juce::Image& img, int x, int y, float scale)
+static float getScaledBrightness (juce::Image& img, int x, int y, float scale)
 {
-    x = juce::roundToInt((float) x * scale);
-    y = juce::roundToInt((float) y * scale);
+    x = juce::roundToInt ((float) x * scale);
+    y = juce::roundToInt ((float) y * scale);
     return img.getPixelAt (x, y).getBrightness();
 }
 
@@ -184,7 +185,7 @@ static bool isImageFilled (juce::Image& img, const juce::Colour& color)
 
 // tests all are on WHITE
 // so filled bounds have any other color than pure white
-static juce::Rectangle<int> filledBounds(juce::Image& img)
+static juce::Rectangle<int> filledBounds (juce::Image& img)
 {
     juce::Rectangle<int> result;
     juce::Image::BitmapData data (img, juce::Image::BitmapData::readOnly);
@@ -222,15 +223,15 @@ static void print_test_image (juce::Image& image)
     std::cout << std::endl;
 }
 
-static void save_test_image (juce::Image& image, juce::String name="test")
+static void save_test_image (juce::Image& image, juce::String name = "test")
 {
     juce::Image imageToSave = image;
-    if(imageToSave.isSingleChannel())
-        imageToSave = imageToSave.convertedToFormat(juce::Image::ARGB);
+    if (imageToSave.isSingleChannel())
+        imageToSave = imageToSave.convertedToFormat (juce::Image::ARGB);
 #if JUCE_MAC
-    auto file = juce::File::getSpecialLocation (juce::File::SpecialLocationType::userHomeDirectory).getChildFile("Downloads").getChildFile (name+".png");
+    auto file = juce::File::getSpecialLocation (juce::File::SpecialLocationType::userHomeDirectory).getChildFile ("Downloads").getChildFile (name + ".png");
 #else
-    auto file = juce::File::getSpecialLocation (juce::File::SpecialLocationType::userDesktopDirectory).getChildFile (name+".png");
+    auto file = juce::File::getSpecialLocation (juce::File::SpecialLocationType::userDesktopDirectory).getChildFile (name + ".png");
 #endif
     juce::FileOutputStream stream (file);
     stream.setPosition (0);

@@ -11,14 +11,15 @@ TEST_CASE ("Melatonin Blur Render To Single Channel")
     using namespace melatonin::internal;
     auto dummyShadow = melatonin::ShadowParameters ({ juce::Colours::black, 2, { 0, 0 }, 0 });
 
+    juce::Path p;
+    p.addRectangle (juce::Rectangle<float> (4, 4));
+
     // needed for JUCE not to pee its pants (aka leak) when working with graphics
     juce::ScopedJuceInitialiser_GUI juce;
 
     SECTION ("no scaling")
     {
-        juce::Path p;
-        p.addRectangle (juce::Rectangle<float> (4, 4));
-        auto result = renderShadowToSingleChannel (dummyShadow, p, 1);
+        auto result = RenderedSingleChannelShadow (dummyShadow).render (p, 1);
 
         CHECK (result.isSingleChannel() == true);
 
@@ -29,9 +30,7 @@ TEST_CASE ("Melatonin Blur Render To Single Channel")
 
     SECTION ("integer scaling")
     {
-        juce::Path p;
-        p.addRectangle (juce::Rectangle<float> (4, 4));
-        auto result = renderShadowToSingleChannel (dummyShadow, p, 2);
+        auto result = RenderedSingleChannelShadow (dummyShadow).render (p, 2);
 
         CHECK (result.isSingleChannel() == true);
 
@@ -42,9 +41,7 @@ TEST_CASE ("Melatonin Blur Render To Single Channel")
 
     SECTION ("wacky windows 1.5 scaling")
     {
-        juce::Path p;
-        p.addRectangle (juce::Rectangle<float> (4, 4));
-        auto result = renderShadowToSingleChannel (dummyShadow, p, 1.5);
+        auto result = RenderedSingleChannelShadow (dummyShadow).render (p, 1.5);
 
         CHECK (result.isSingleChannel() == true);
 
@@ -55,13 +52,10 @@ TEST_CASE ("Melatonin Blur Render To Single Channel")
 
     SECTION ("alpha is irrelevant to single channel render")
     {
-        juce::Path p;
-        p.addRectangle (juce::Rectangle<float> (4, 4));
-
-        auto result = renderShadowToSingleChannel (dummyShadow, p, 1);
+        auto result = RenderedSingleChannelShadow (dummyShadow).render (p, 1);
 
         auto lowerAlpha = melatonin::ShadowParameters ({ juce::Colours::black, 2, { 0, 0 }, 0 });
-        auto resultWithLowerAlpha = renderShadowToSingleChannel (lowerAlpha, p, 1);
+        auto resultWithLowerAlpha = RenderedSingleChannelShadow (lowerAlpha).render (p, 1);
 
         // check each pixel
         for (auto x = 0; x < result.getWidth(); ++x)
@@ -78,17 +72,14 @@ TEST_CASE ("Melatonin Blur Render To Single Channel")
 
     SECTION ("offset is irrelevant to single channel render")
     {
-        juce::Path p;
-        p.addRectangle (juce::Rectangle<float> (4, 4));
-
-        auto result = renderShadowToSingleChannel (dummyShadow, p, 1);
+        auto result = RenderedSingleChannelShadow (dummyShadow).render (p, 1);
 
         auto offsetShadow = melatonin::ShadowParameters ({ juce::Colours::black, 2, { 2, 2 }, 0 });
-        auto resultWithOffset = renderShadowToSingleChannel (offsetShadow, p, 1);
+        auto resultWithOffset = RenderedSingleChannelShadow (offsetShadow).render (p, 1);
 
         // TODO: this isn't working for some reason, even when bounds differ, these pass
-        CHECK(result.getWidth() == resultWithOffset.getWidth());
-        CHECK(result.getHeight() == resultWithOffset.getHeight());
+        CHECK (result.getWidth() == resultWithOffset.getWidth());
+        CHECK (result.getHeight() == resultWithOffset.getHeight());
 
         // check each pixel
         for (auto x = 0; x < result.getWidth(); ++x)
@@ -103,36 +94,37 @@ TEST_CASE ("Melatonin Blur Render To Single Channel")
         }
     }
 
-    SECTION ("blurContextBoundsScaled")
+    SECTION ("scaledShadowBounds")
     {
         juce::Path p;
         p.addRectangle (juce::Rectangle<float> (4, 4));
 
         SECTION ("is set after render")
         {
-            CHECK (dummyShadow.blurContextBoundsScaled.isEmpty() == true);
-            auto result = renderShadowToSingleChannel (dummyShadow, p, 1);
-            CHECK (dummyShadow.blurContextBoundsScaled.isEmpty() == false);
+            auto shadow = RenderedSingleChannelShadow (dummyShadow);
+            CHECK (shadow.getScaledBounds().isEmpty() == true);
+            shadow.render(p, 1);
+            CHECK (shadow.getScaledBounds().isEmpty() == false);
         }
 
         SECTION ("scales with incoming scale")
         {
-            auto result = renderShadowToSingleChannel (dummyShadow, p, 1);
-            CHECK (dummyShadow.blurContextBoundsScaled.getWidth() == 8);
-            auto resultScaled = renderShadowToSingleChannel (dummyShadow, p, 2);
-            CHECK (dummyShadow.blurContextBoundsScaled.getWidth() == 16);
+            auto shadow = RenderedSingleChannelShadow (dummyShadow);
+            shadow.render(p, 1);
+            CHECK (shadow.getScaledBounds().getWidth() == 8);
+            shadow.render(p, 2);
+            CHECK (shadow.getScaledBounds().getWidth() == 16);
         }
 
-        SECTION ("stores scaled shadow offset")
+        SECTION ("accounts for scaled shadow offset")
         {
-            auto shadow = melatonin::ShadowParameters ({ juce::Colours::black, 2, { 3, 3 }, 0 });
-            auto result = renderShadowToSingleChannel (shadow, p, 1);
-            CHECK (shadow.blurContextBoundsScaled.getX() == 1);
-            CHECK (shadow.blurContextBoundsScaled.getY() == 1);
-            auto resultScaled = renderShadowToSingleChannel (shadow, p, 2);
-            CHECK (shadow.blurContextBoundsScaled.getX() == 2);
-            CHECK (shadow.blurContextBoundsScaled.getY() == 2);
-
+            auto shadow = RenderedSingleChannelShadow ({ juce::Colours::black, 2, { 3, 3 }, 0 });
+            shadow.render(p, 1);
+            CHECK (shadow.getScaledBounds().getX() == 1);
+            CHECK (shadow.getScaledBounds().getY() == 1);
+            shadow.render(p, 2);
+            CHECK (shadow.getScaledBounds().getX() == 2);
+            CHECK (shadow.getScaledBounds().getY() == 2);
         }
     }
 }

@@ -1,5 +1,5 @@
 #pragma once
-#include "rendering.h"
+#include "rendered_single_channel_shadow.h"
 
 namespace melatonin::internal
 {
@@ -8,18 +8,18 @@ namespace melatonin::internal
     class CachedShadows
     {
     protected:
-        std::vector<ShadowParameters> shadowParameters;
-
-        CachedShadows (std::initializer_list<ShadowParameters> p, bool inner = false)
-            : shadowParameters (p)
+        CachedShadows (std::initializer_list<ShadowParameters> shadowParameters, bool force_inner = false)
         {
-            jassert (!shadowParameters.empty());
+            // gotta feed some shadows!
+            jassert (shadowParameters.size() > 0);
 
-            renderedSingleChannelShadows.resize (shadowParameters.size());
+            for (auto& parameters : shadowParameters)
+            {
+                auto& shadow = renderedSingleChannelShadows.emplace_back (parameters);
 
-            // allow specifying of inner shadows in bulk
-            if (inner)
-                std::for_each (shadowParameters.begin(), shadowParameters.end(), [] (auto& s) { s.inner = true; });
+                if(force_inner)
+                    shadow.parameters.inner = true;
+            }
         }
 
     public:
@@ -28,7 +28,13 @@ namespace melatonin::internal
             // Before Melatonin Blur, it was all low quality!
             float scale = 1.0;
             if (!lowQuality)
-                scale = g.getInternalContext().getPhysicalPixelScaleFactor();
+                lastScale = g.getInternalContext().getPhysicalPixelScaleFactor();
+
+            if (!juce::approximatelyEqual (lastScale, scale))
+            {
+                needsRecalculate = true;
+                lastScale = scale;
+            }
 
             // store a copy of the new path, stripping and storing its float x/y offset to 0,0
             // stripping the origin lets us translate paths without breaking blur cache
@@ -67,40 +73,28 @@ namespace melatonin::internal
             drawARGBComposite (g, scale);
         }
 
-        void setRadius(size_t radius, size_t index = 0)
+        void setRadius (size_t radius, size_t index = 0)
         {
-            if (index < shadowParameters.size() && shadowParameters[index].radius != radius)
-            {
-                shadowParameters[index].radius = (int) radius;
-                needsRecalculate = true;
-            }
+            if (index < renderedSingleChannelShadows.size())
+                needsRecalculate = renderedSingleChannelShadows[index].updateRadius ((int) radius);
         }
 
-        void setOffset(juce::Point<int> offset, size_t index = 0)
+        void setOffset (juce::Point<int> offset, size_t index = 0)
         {
-            if (index < shadowParameters.size() && shadowParameters[index].offset != offset)
-            {
-                shadowParameters[index].offset = offset;
-                needsRecomposite = true;
-            }
+            if (index < renderedSingleChannelShadows.size())
+                needsRecomposite = renderedSingleChannelShadows[index].updateOffset(offset, lastScale);
         }
 
-        void setColor(juce::Colour color, size_t index = 0)
+        void setColor (juce::Colour color, size_t index = 0)
         {
-            if (index < shadowParameters.size() && shadowParameters[index].color != color)
-            {
-                shadowParameters[index].color = color;
-                needsRecomposite = true;
-            }
+            if (index < renderedSingleChannelShadows.size())
+                needsRecomposite = renderedSingleChannelShadows[index].updateColor(color);
         }
 
-        void setOpacity(float opacity, size_t index = 0)
+        void setOpacity (float opacity, size_t index = 0)
         {
-            if (index < shadowParameters.size() && !juce::approximatelyEqual(shadowParameters[index].color.getFloatAlpha(), opacity))
-            {
-                shadowParameters[index].color = shadowParameters[index].color.withAlpha (opacity);
-                needsRecomposite = true;
-            }
+            if (index < renderedSingleChannelShadows.size())
+                needsRecomposite = renderedSingleChannelShadows[index].updateOpacity(opacity);
         }
 
     private:
@@ -115,21 +109,19 @@ namespace melatonin::internal
         juce::Point<float> compositedARGBPositionInContext;
 
         // each component blur is stored here, their positions are stored in ShadowParameters
-        std::vector<juce::Image> renderedSingleChannelShadows;
+        std::vector<RenderedSingleChannelShadow> renderedSingleChannelShadows;
 
         // this lets us adjust color/opacity without re-rendering blurs
         bool needsRecomposite = true;
         bool needsRecalculate = true;
 
+        float lastScale = 1.0;
+
         void recalculateBlurs (float scale)
         {
-            for (size_t i = 0; i < shadowParameters.size(); ++i)
+            for (auto& shadow : renderedSingleChannelShadows)
             {
-                auto& s = shadowParameters[i];
-                if (s.radius < 1)
-                    continue;
-
-                renderedSingleChannelShadows[i] = renderShadowToSingleChannel (s, lastOriginAgnosticPath, scale);
+                shadow.render (lastOriginAgnosticPath, scale);
                 needsRecomposite = true;
             }
         }
@@ -166,8 +158,8 @@ namespace melatonin::internal
             // figure out the largest bounds we need to composite
             // this is the union of all the shadow bounds
             juce::Rectangle<int> compositeBounds = {};
-            for (auto& s : shadowParameters)
-                compositeBounds = compositeBounds.getUnion (s.blurContextBoundsScaled);
+            for (auto& s : renderedSingleChannelShadows)
+                compositeBounds = compositeBounds.getUnion (s.getScaledBounds());
 
             compositedARGBPositionInContext = compositeBounds.getPosition().toFloat();
 
@@ -184,15 +176,9 @@ namespace melatonin::internal
             // we're already scaled up (if needed) so no .addTransform here
             juce::Graphics g2 (compositedARGB);
 
-            for (auto i = 0; i < shadowParameters.size(); ++i)
+            for (auto& shadow : renderedSingleChannelShadows)
             {
-                auto& s = shadowParameters[i];
-
-                // support 0 radius blurs (for animation, etc)
-                if (s.radius < 1)
-                    continue;
-
-                auto shadowPosition = s.blurContextBoundsScaled.getPosition();
+                auto shadowPosition = shadow.getScaledBounds().getPosition();
 
                 // this particular single channel blur might have a different offset from the overall composite
                 auto shadowOffsetFromComposite = shadowPosition - compositeBounds.getPosition();
@@ -200,10 +186,10 @@ namespace melatonin::internal
                 // lets us temporarily clip the region if needed
                 juce::Graphics::ScopedSaveState saveState (g2);
 
-                g2.setColour (s.color);
+                g2.setColour (shadow.parameters.color);
 
                 // for inner shadows, clip to the path bounds
-                if (s.inner)
+                if (shadow.parameters.inner)
                 {
                     // our path's position in this context depends on shadow and composite
                     auto pathOffsetFromComposite = shadowPosition + shadowOffsetFromComposite;
@@ -219,7 +205,7 @@ namespace melatonin::internal
                 }
 
                 // "true" means "fill the alpha channel with the current brush" — aka s.color
-               g2.drawImageAt (renderedSingleChannelShadows[i], shadowOffsetFromComposite.getX(), shadowOffsetFromComposite.getY(), true);
+                g2.drawImageAt (shadow.getImage(), shadowOffsetFromComposite.getX(), shadowOffsetFromComposite.getY(), true);
             }
             needsRecomposite = false;
         }
