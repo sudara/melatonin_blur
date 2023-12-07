@@ -98,8 +98,31 @@ TEST_CASE ("Melatonin Blur Composite ARGB")
         }
     }
 
+    SECTION ("path position is agnostic")
+    {
+        juce::Image context (juce::Image::PixelFormat::ARGB, 150, 150, true);
+        juce::Graphics g (context);
+        g.addTransform(juce::AffineTransform::scale (2));
+        g.fillAll (juce::Colours::white);
+
+        auto dummyShadow = melatonin::ShadowParameters ({ juce::Colours::black, 2, { 0, 0 }, 0 });
+
+        juce::Path p;
+        p.addRectangle (juce::Rectangle<float> (0, 0, 4, 4));
+
+        juce::Path pTranslated;
+        pTranslated.addRectangle (juce::Rectangle<float> (100, 100, 4, 4));
+
+        auto shadow = melatonin::InnerShadow (dummyShadow);
+        shadow.render (g, p);
+        auto originalPath = shadow.lastOriginAgnosticPath;
+        shadow.render(g, p);
+        auto translatedPath = shadow.lastOriginAgnosticPath;
+
+        CHECK(originalPath == translatedPath);
+    }
+
     SECTION ("sets needsRecomposite to false")
     {
     }
-
 }

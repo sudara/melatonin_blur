@@ -156,7 +156,7 @@ TEST_CASE ("Melatonin Blur Inner Shadow")
 
                     // inner left edge is mostly transparent, "3" is the alpha channel
                     auto leftOpacities = pixelCol (result, 0, 3);
-                    CHECK_THAT(leftOpacities, Catch::Matchers::Approx (std::vector<float>{ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f }));
+                    CHECK_THAT (leftOpacities, Catch::Matchers::Approx (std::vector<float> { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f }));
 
                     // inner right 2px is black
                     CHECK (getPixels (result, { 5, 6 }, { 2, 6 }) == "FF000000, FF000000, FF000000, FF000000, FF000000, FF000000, FF000000, FF000000, FF000000");
@@ -203,6 +203,32 @@ TEST_CASE ("Melatonin Blur Inner Shadow")
                     // CHECK (actualPixel == expectedPixel);
                 }
             }
+        }
+    }
+    SECTION ("clips (to path, not path bounds)")
+    {
+        juce::Path rounded;
+
+        // just show us one rounded corner
+        // corners of 8 get us a very round corner
+        rounded.addRoundedRectangle (-5, -5, 10, 10, 5);
+
+        g.fillAll (juce::Colours::white);
+        melatonin::InnerShadow shadow = { { juce::Colours::white, 2 } };
+        g.setColour (juce::Colours::black);
+        g.fillPath (rounded);
+
+        auto cornerColorWithoutShadow = result.getPixelAt (4, 4).getBrightness();
+        CHECK(cornerColorWithoutShadow == Catch::Approx(1.0f));
+
+        // inner shadow render must come AFTER the path render
+        shadow.render (g, rounded);
+
+        save_test_image (result, "inner_shadow_2px_clipped");
+
+        SECTION ("corner still white")
+        {
+            CHECK(cornerColorWithoutShadow == Catch::Approx(1.0f));
         }
     }
 }

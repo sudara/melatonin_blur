@@ -17,18 +17,23 @@ namespace melatonin::internal
             {
                 auto& shadow = renderedSingleChannelShadows.emplace_back (parameters);
 
-                if(force_inner)
+                if (force_inner)
                     shadow.parameters.inner = true;
             }
         }
 
     public:
+        // store a copy of the path to compare against for caching
+        // public for testability, sorry not sorry
+        // too lazy to break out ARGBComposite into its own class
+        juce::Path lastOriginAgnosticPath = {};
+
         void render (juce::Graphics& g, const juce::Path& newPath, bool lowQuality = false)
         {
             // Before Melatonin Blur, it was all low quality!
             float scale = 1.0;
             if (!lowQuality)
-                lastScale = g.getInternalContext().getPhysicalPixelScaleFactor();
+                scale = g.getInternalContext().getPhysicalPixelScaleFactor();
 
             if (!juce::approximatelyEqual (lastScale, scale))
             {
@@ -53,8 +58,6 @@ namespace melatonin::internal
 
                 // create the single channel shadows
                 recalculateBlurs (scale);
-                needsRecalculate = false;
-                needsRecomposite = true;
             }
 
             // the path is the same, but it's been moved to new coordinates
@@ -79,34 +82,37 @@ namespace melatonin::internal
                 needsRecalculate = renderedSingleChannelShadows[index].updateRadius ((int) radius);
         }
 
+        void setSpread (size_t spread, size_t index = 0)
+        {
+            if (index < renderedSingleChannelShadows.size())
+                needsRecalculate = renderedSingleChannelShadows[index].updateSpread ((int) spread);
+        }
+
         void setOffset (juce::Point<int> offset, size_t index = 0)
         {
             if (index < renderedSingleChannelShadows.size())
-                needsRecomposite = renderedSingleChannelShadows[index].updateOffset(offset, lastScale);
+                needsRecomposite = renderedSingleChannelShadows[index].updateOffset (offset, lastScale);
         }
 
         void setColor (juce::Colour color, size_t index = 0)
         {
             if (index < renderedSingleChannelShadows.size())
-                needsRecomposite = renderedSingleChannelShadows[index].updateColor(color);
+                needsRecomposite = renderedSingleChannelShadows[index].updateColor (color);
         }
 
         void setOpacity (float opacity, size_t index = 0)
         {
             if (index < renderedSingleChannelShadows.size())
-                needsRecomposite = renderedSingleChannelShadows[index].updateOpacity(opacity);
+                needsRecomposite = renderedSingleChannelShadows[index].updateOpacity (opacity);
         }
 
     private:
-        // store a copy of the path to compare against for caching
-        juce::Path lastOriginAgnosticPath = {};
-
         // any float offset from 0,0 the path has is stored here
         juce::Point<float> pathPositionInContext = {};
 
         // this stores the final, end result
         juce::Image compositedARGB;
-        juce::Point<float> compositedARGBPositionInContext;
+        juce::Point<float> scaledCompositePosition;
 
         // each component blur is stored here, their positions are stored in ShadowParameters
         std::vector<RenderedSingleChannelShadow> renderedSingleChannelShadows;
@@ -122,8 +128,9 @@ namespace melatonin::internal
             for (auto& shadow : renderedSingleChannelShadows)
             {
                 shadow.render (lastOriginAgnosticPath, scale);
-                needsRecomposite = true;
             }
+            needsRecalculate = false;
+            needsRecomposite = true;
         }
 
         void drawARGBComposite (juce::Graphics& g, float scale, bool optimizeClipBounds = false)
@@ -132,6 +139,9 @@ namespace melatonin::internal
             if (compositedARGB.isNull())
                 return;
 
+            // resets the Clip Region when this scope ends
+            juce::Graphics::ScopedSaveState saveState (g);
+
             // TODO: requires testing/benchmarking
             if (optimizeClipBounds)
             {
@@ -139,16 +149,16 @@ namespace melatonin::internal
                 g.excludeClipRegion (lastOriginAgnosticPath.getBounds().toNearestIntEdges());
             }
 
-            // TODO: consider setting opacity here, not in the shadow rendering
-            // That would let us cheaply do things like fade shadows in without rerendering!
-            g.setOpacity (1.0);
+            // draw the composite at full strength
+            // (the composite itself has the colors/opacity/etc)
+            g.setOpacity(1.0);
 
             // `s.area` has been scaled by the physical pixel scale factor
             // (unless lowQuality is true)
             // we have to pass a 1/scale transform because the context will otherwise try to scale the image up
             // (which is not what we want, at this point our cached shadow is 1:1 with the context)
-            auto position = (compositedARGBPositionInContext) + pathPositionInContext * scale;
-            g.drawImageTransformed (compositedARGB, juce::AffineTransform::translation (position.getX(), position.getY()).scaled (1.0f / scale));
+            auto position = (scaledCompositePosition) + (pathPositionInContext * scale);
+            g.drawImageTransformed (compositedARGB, juce::AffineTransform::translation(position).scaled (1.0f / scale));
         }
 
         // This is done at the main graphics context scale
@@ -157,11 +167,12 @@ namespace melatonin::internal
         {
             // figure out the largest bounds we need to composite
             // this is the union of all the shadow bounds
+            // they should all align with the path at 0,0
             juce::Rectangle<int> compositeBounds = {};
             for (auto& s : renderedSingleChannelShadows)
                 compositeBounds = compositeBounds.getUnion (s.getScaledBounds());
 
-            compositedARGBPositionInContext = compositeBounds.getPosition().toFloat();
+            scaledCompositePosition = compositeBounds.getPosition().toFloat();
 
             if (compositeBounds.isEmpty())
                 return;
@@ -189,23 +200,32 @@ namespace melatonin::internal
                 g2.setColour (shadow.parameters.color);
 
                 // for inner shadows, clip to the path bounds
+                // we are doing this here instead of in the single channel render
+                // because we want the render to contain the full shadow
+                // so it's cheap to move / recolor / etc
                 if (shadow.parameters.inner)
                 {
                     // our path's position in this context depends on shadow and composite
                     auto pathOffsetFromComposite = shadowPosition + shadowOffsetFromComposite;
 
-                    // get our paths dimensions, scaled appropriately
-                    auto scaledOriginAgnosticPathBounds = (lastOriginAgnosticPath.getBounds() * scale).getSmallestIntegerContainer();
-
                     // where is the path in our composite?
-                    auto clippedPathInComposite = scaledOriginAgnosticPathBounds.withPosition (-pathOffsetFromComposite);
+                    auto scaledAndPlaced = juce::AffineTransform::scale (scale).translated (-pathOffsetFromComposite);
 
-                    // we've already saved the state, now clip to the path's bounds
-                    g2.reduceClipRegion (clippedPathInComposite);
+                    auto pathCopy = lastOriginAgnosticPath;
+                    pathCopy.applyTransform (scaledAndPlaced);
+
+                    // we've already saved the state, now clip to the path
+                    // this needs to be a path, not bounds!
+                    // the point is to not paint shadow outside of these bounds
+                    g2.reduceClipRegion (pathCopy);
                 }
 
                 // "true" means "fill the alpha channel with the current brush" — aka s.color
+                // this is a bit deceptive for the drawImageAt call
+                // it will literally g2.fillAll() with the shadow's color
+                // using the shadow's image as a sort of mask
                 g2.drawImageAt (shadow.getImage(), shadowOffsetFromComposite.getX(), shadowOffsetFromComposite.getY(), true);
+                save_test_image (compositedARGB, "composited");
             }
             needsRecomposite = false;
         }

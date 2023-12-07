@@ -103,26 +103,26 @@ TEST_CASE ("Melatonin Blur Render To Single Channel")
         {
             auto shadow = RenderedSingleChannelShadow (dummyShadow);
             CHECK (shadow.getScaledBounds().isEmpty() == true);
-            shadow.render(p, 1);
+            shadow.render (p, 1);
             CHECK (shadow.getScaledBounds().isEmpty() == false);
         }
 
         SECTION ("scales with incoming scale")
         {
             auto shadow = RenderedSingleChannelShadow (dummyShadow);
-            shadow.render(p, 1);
+            shadow.render (p, 1);
             CHECK (shadow.getScaledBounds().getWidth() == 8);
-            shadow.render(p, 2);
+            shadow.render (p, 2);
             CHECK (shadow.getScaledBounds().getWidth() == 16);
         }
 
         SECTION ("accounts for scaled shadow offset")
         {
             auto shadow = RenderedSingleChannelShadow ({ juce::Colours::black, 2, { 3, 3 }, 0 });
-            shadow.render(p, 1);
+            shadow.render (p, 1);
             CHECK (shadow.getScaledBounds().getX() == 1);
             CHECK (shadow.getScaledBounds().getY() == 1);
-            shadow.render(p, 2);
+            shadow.render (p, 2);
             CHECK (shadow.getScaledBounds().getX() == 2);
             CHECK (shadow.getScaledBounds().getY() == 2);
         }

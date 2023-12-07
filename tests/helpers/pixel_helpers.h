@@ -202,6 +202,21 @@ static juce::Rectangle<int> filledBounds (juce::Image& img)
     return result;
 }
 
+static bool imagesAreIdentical (juce::Image& img1, juce::Image& img2)
+{
+    juce::Image::BitmapData data1 (img1, juce::Image::BitmapData::readOnly);
+    juce::Image::BitmapData data2 (img2, juce::Image::BitmapData::readOnly);
+    for (auto y = 0; y < img1.getHeight(); ++y)
+    {
+        for (auto x = 0; x < img1.getWidth(); ++x)
+        {
+            if (data1.getPixelColour (x, y) != data2.getPixelColour (x, y))
+                return false;
+        }
+    }
+    return true;
+}
+
 static void print_test_image (juce::Image& image)
 {
     // this is meant for testing trivial examples

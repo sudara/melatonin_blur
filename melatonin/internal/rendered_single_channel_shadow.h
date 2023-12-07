@@ -17,7 +17,7 @@ namespace melatonin
 
         // Spread literally just expands or contracts the *path* size
         // Inverted for inner shadows
-        const int spread = 0;
+        int spread = 0;
 
         // an inner shadow is just a modified drop shadow
         bool inner = false;
@@ -53,7 +53,6 @@ namespace melatonin
                 // For example, you can't have a 3x3px path with a -2px spread
                 if (scaledShadowBounds.isEmpty())
                 {
-                    jassertfalse;
                     return singleChannelRender;
                 }
 
@@ -80,7 +79,7 @@ namespace melatonin
                     // reliably cast a blurred shadow into the path's area
                     // TODO: test if edge bleed lets us happily cheat here or if this should be 'radius'
                     // TODO: This has impact on figma/css compatibility
-                    shadowPath.addRectangle (shadowPath.getBounds().expanded (1));
+                    shadowPath.addRectangle (shadowPath.getBounds().expanded (scaledRadius - scaledSpread));
                 }
 
                 // each shadow is its own single channel image associated with a color
@@ -130,6 +129,15 @@ namespace melatonin
                 return true;
             }
 
+            [[nodiscard]] bool updateSpread (int spread)
+            {
+                if (juce::approximatelyEqual (spread, parameters.spread))
+                    return false;
+
+                parameters.spread = spread;
+                return true;
+            }
+
             [[nodiscard]] bool updateOffset (juce::Point<int> offset, float scale)
             {
                 if (offset == parameters.offset)
@@ -164,7 +172,7 @@ namespace melatonin
                 // By default, match the main graphics context's scaling factor.
                 // This lets us render retina / high quality shadows.
                 // We can only use an integer numbers for blurring (hence the rounding)
-                int scaledSpread = juce::roundToInt ((float) parameters.spread * scale);
+                scaledSpread = juce::roundToInt ((float) parameters.spread * scale);
                 scaledRadius = juce::roundToInt ((float) parameters.radius * scale);
                 scaledOffset = (parameters.offset * scale).roundToInt();
 
@@ -199,6 +207,7 @@ namespace melatonin
             juce::Rectangle<int> scaledPathBounds;
 
             int scaledRadius;
+            int scaledSpread;
 
             // Offsets will be used later to translate placement in ARGB compositing.
             juce::Point<int> scaledOffset;
