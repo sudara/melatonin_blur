@@ -29,6 +29,10 @@
     #else
         #include "../implementations/float_vector_stack_blur.h"
     #endif
+#elif JUCE_LINUX
+    #include "../implementations/float_vector_stack_blur.h"
+#else
+  #error "Unsupported platform!"
 #endif
 
 #if JUCE_MAC || JUCE_IOS
