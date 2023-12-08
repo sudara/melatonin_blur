@@ -79,12 +79,12 @@ namespace melatonin::internal
         void renderStroked (juce::Graphics& g, const juce::Path& newPath, const juce::PathStrokeType& newType, bool lowQuality = false)
         {
             stroke = true;
-            if(newType != strokeType)
+            if (newType != strokeType)
             {
                 strokeType = newType;
                 needsRecalculate = true;
             }
-            render(g, newPath, lowQuality);
+            render (g, newPath, lowQuality);
         }
 
         void setRadius (size_t radius, size_t index = 0)
@@ -184,7 +184,12 @@ namespace melatonin::internal
             // they should all align with the path at 0,0
             juce::Rectangle<int> compositeBounds = {};
             for (auto& s : renderedSingleChannelShadows)
-                compositeBounds = compositeBounds.getUnion (s.getScaledBounds());
+            {
+                if (s.parameters.inner)
+                    compositeBounds = compositeBounds.getUnion (s.getScaledPathBounds());
+                else
+                    compositeBounds = compositeBounds.getUnion (s.getScaledBounds());
+            }
 
             scaledCompositePosition = compositeBounds.getPosition().toFloat();
 
@@ -203,6 +208,10 @@ namespace melatonin::internal
 
             for (auto& shadow : renderedSingleChannelShadows)
             {
+                auto scaledAndPlaced = juce::AffineTransform::scale (scale);
+                auto pathCopy = lastOriginAgnosticPath;
+                pathCopy.applyTransform (scaledAndPlaced);
+
                 auto shadowPosition = shadow.getScaledBounds().getPosition();
 
                 // this particular single channel blur might have a different offset from the overall composite
@@ -219,19 +228,56 @@ namespace melatonin::internal
                 // so it's cheap to move / recolor / etc
                 if (shadow.parameters.inner)
                 {
-                    // our path's position in this context depends on shadow and composite
-                    auto pathOffsetFromComposite = shadowPosition + shadowOffsetFromComposite;
-
-                    // where is the path in our composite?
-                    auto scaledAndPlaced = juce::AffineTransform::scale (scale).translated (-pathOffsetFromComposite);
-
-                    auto pathCopy = lastOriginAgnosticPath;
-                    pathCopy.applyTransform (scaledAndPlaced);
-
                     // we've already saved the state, now clip to the path
                     // this needs to be a path, not bounds!
-                    // the point is to not paint shadow outside of these bounds
+                    // the goal is to not paint anything outside of these bounds
                     g2.reduceClipRegion (pathCopy);
+
+                    // Inner shadows often have areas which needed to be filled with pure shadow colors
+                    // For example, when offsets are greater than radius
+                    // This matches figma, css, etc.
+                    // Otherwise the shadow will be clipped (and have a hard edge).
+                    // Since the shadows are square and at integer pixels,
+                    // we fill the edges that lie between our shadow and path bounds
+
+                    // where is our square cached shadow relative to our composite
+                    auto shadowBounds = shadow.getScaledBounds();
+
+                    /* In the case the shadow is smaller (due to spread):
+
+                        ptl┌───────────────┐
+                           │               │
+                           │  stl┌───┐     │
+                           │     │   │     │
+                           │     └───┘sbr  │
+                           │               │
+                           └───────────────┘pbr
+
+                     Or the shadow image doesn't fully cover the path (offset > radius)
+                          stl┌──────────┐
+                             │          │
+                       ptl┌──┼──┐       │
+                          │  │  │       │
+                          │  │  │       │
+                          └──┼──┘pbr    │
+                             │          │
+                             └──────────┘sbr
+
+                     */
+                    auto ptl = shadow.getScaledPathBounds().getTopLeft();
+                    auto pbr = shadow.getScaledPathBounds().getBottomRight();
+                    auto stl = shadowBounds.getTopLeft();
+                    auto sbr = shadowBounds.getBottomRight();
+
+                    auto topEdge = juce::Rectangle<int> (ptl.x, ptl.y, pbr.x, stl.y);
+                    auto leftEdge = juce::Rectangle<int> (ptl.x, ptl.y, stl.x, pbr.y);
+                    auto bottomEdge = juce::Rectangle<int> (ptl.x, sbr.y, pbr.x, pbr.y);
+                    auto rightEdge = juce::Rectangle<int> (sbr.x, ptl.y, pbr.x, pbr.y);
+
+                    g2.fillRect (topEdge);
+                    g2.fillRect (leftEdge);
+                    g2.fillRect (bottomEdge);
+                    g2.fillRect (rightEdge);
                 }
 
                 // "true" means "fill the alpha channel with the current brush" — aka s.color

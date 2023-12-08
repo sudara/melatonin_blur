@@ -96,9 +96,6 @@ TEST_CASE ("Melatonin Blur Render To Single Channel")
 
     SECTION ("scaledShadowBounds")
     {
-        juce::Path p;
-        p.addRectangle (juce::Rectangle<float> (4, 4));
-
         SECTION ("is set after render")
         {
             auto shadow = RenderedSingleChannelShadow (dummyShadow);
@@ -116,6 +113,16 @@ TEST_CASE ("Melatonin Blur Render To Single Channel")
             CHECK (shadow.getScaledBounds().getWidth() == 16);
         }
 
+        SECTION ("scales with spread")
+        {
+            auto shadow = RenderedSingleChannelShadow ({ juce::Colours::black, 2, { 0, 0 }, 0 });
+            shadow.render (p, 1);
+            CHECK (shadow.getScaledBounds().getWidth() == 8);
+            shadow = RenderedSingleChannelShadow ({ juce::Colours::black, 2, { 0, 0 }, 10 });
+            shadow.render (p, 1);
+            CHECK (shadow.getScaledBounds().getWidth() == 28);
+        }
+
         SECTION ("accounts for scaled shadow offset")
         {
             auto shadow = RenderedSingleChannelShadow ({ juce::Colours::black, 2, { 3, 3 }, 0 });
@@ -125,6 +132,29 @@ TEST_CASE ("Melatonin Blur Render To Single Channel")
             shadow.render (p, 2);
             CHECK (shadow.getScaledBounds().getX() == 2);
             CHECK (shadow.getScaledBounds().getY() == 2);
+        }
+
+        SECTION ("inner")
+        {
+            SECTION ("scales with radius")
+            {
+                dummyShadow = melatonin::ShadowParameters ({ juce::Colours::black, 2, { 0, 0 }, 0, true });
+                auto result = RenderedSingleChannelShadow (dummyShadow).render (p, 1);
+                CHECK (result.getWidth() == 8);
+                dummyShadow.radius = 3;
+                result = RenderedSingleChannelShadow (dummyShadow).render (p, 1);
+                CHECK (result.getWidth() == 10);
+            }
+
+            SECTION ("scales negatively with spread")
+            {
+                auto shadow = RenderedSingleChannelShadow ({ juce::Colours::black, 2, { 0, 0 }, 0, true });
+                shadow.render (p, 1);
+                CHECK (shadow.getScaledBounds().getWidth() == 8);
+                shadow = RenderedSingleChannelShadow ({ juce::Colours::black, 2, { 0, 0 }, 2, true });
+                shadow.render (p, 1);
+                CHECK (shadow.getScaledBounds().getWidth() == 4);
+            }
         }
     }
 }

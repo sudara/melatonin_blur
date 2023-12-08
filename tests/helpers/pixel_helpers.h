@@ -62,7 +62,7 @@ static std::vector<float> pixelRow (const juce::Image& image, int row, int chann
             else if (channel == 2)
                 result.push_back ((float) pixel.r / 255.0f);
             else if (channel == 3)
-                result.push_back ((float) pixel.a / 255.0f);
+                result.push_back (data.getPixelColour (x, row).getAlpha());
             else
                 jassertfalse;
         }
@@ -89,7 +89,7 @@ static std::vector<float> pixelCol (const juce::Image& image, int col, int chann
             else if (channel == 2)
                 result.push_back ((float) pixel.r / 255.0f);
             else if (channel == 3)
-                result.push_back ((float) pixel.a / 255.0f);
+                result.push_back (data.getPixelColour (col, y).getAlpha());
             else
                 jassertfalse;
         }

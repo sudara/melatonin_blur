@@ -39,7 +39,7 @@ namespace melatonin
             {
             }
 
-            juce::Image& render (juce::Path& originAgnosticPath, float scale, const juce::PathStrokeType& strokeType)
+            juce::Image& render (juce::Path& originAgnosticPath, float scale, const juce::PathStrokeType& strokeType = juce::PathStrokeType (-1))
             {
                 scaledPathBounds = (originAgnosticPath.getBounds() * scale).getSmallestIntegerContainer();
                 updateScaledShadowBounds (scale);
@@ -79,7 +79,7 @@ namespace melatonin
                     // reliably cast a blurred shadow into the path's area
                     // TODO: test if edge bleed lets us happily cheat here or if this should be 'radius'
                     // TODO: This has impact on figma/css compatibility
-                    shadowPath.addRectangle (shadowPath.getBounds().expanded (scaledRadius - scaledSpread));
+                    shadowPath.addRectangle (shadowPath.getBounds().expanded ((float) scaledRadius));
                 }
 
                 // each shadow is its own single channel image associated with a color
@@ -119,7 +119,15 @@ namespace melatonin
                 return scaledShadowBounds + scaledOffset;
             }
 
-            const juce::Image& getImage()
+            juce::Rectangle<int> getScaledPathBounds()
+            {
+                return scaledPathBounds;
+            }
+
+            [[nodiscard]]
+
+            const juce::Image&
+                getImage()
             {
                 return singleChannelRender;
             }
@@ -185,7 +193,9 @@ namespace melatonin
                 // since they are clipped to path bounds
                 // however, when there's offset, and we are making position-agnostic shadows!
                 if (parameters.inner)
-                    scaledShadowBounds = scaledPathBounds.expanded (scaledRadius - scaledSpread, scaledRadius - scaledSpread);
+                {
+                    scaledShadowBounds = scaledPathBounds.expanded (scaledRadius - scaledSpread, scaledRadius-scaledSpread);
+                }
                 else
                     scaledShadowBounds = scaledPathBounds.expanded (scaledRadius + scaledSpread, scaledRadius + scaledSpread);
 

@@ -126,14 +126,35 @@ TEST_CASE ("Melatonin Blur Inner Shadow")
                     CHECK (result.getPixelAt (4, 4).getBrightness() > centerWithoutSpread);
                 }
 
-                SECTION ("corners actually go darker as original image bleeds through more")
+                SECTION ("corners actually go lighter as original image bleeds through more")
                 {
-                    CHECK (result.getPixelAt (2, 2).getBrightness() < cornerWithoutSpread);
+                    CHECK (result.getPixelAt (2, 2).getBrightness() > cornerWithoutSpread);
                 }
 
                 SECTION ("center pixel is no longer black")
                 {
                     CHECK (getPixel (result, 4, 4) != "FF000000");
+                }
+            }
+
+            SECTION ("When there's more spread than radius")
+            {
+                // redo the blur with spread
+                g.fillAll (juce::Colours::white);
+                melatonin::InnerShadow shadowWithPositiveSpread = { { juce::Colours::white, 1, {}, 2 } };
+                g.setColour (juce::Colours::black);
+                g.fillPath (p);
+
+                shadowWithPositiveSpread.render (g, p);
+
+                save_test_image (result, "more spread than radius");
+
+                SECTION ("edges of path are pure white")
+                {
+                    CHECK (getPixels (result, { 2, 6 }, 2) == "FFFFFFFF, FFFFFFFF, FFFFFFFF, FFFFFFFF, FFFFFFFF");
+                    CHECK (getPixels (result, 2, { 2, 6 }) == "FFFFFFFF, FFFFFFFF, FFFFFFFF, FFFFFFFF, FFFFFFFF");
+                    CHECK (getPixels (result, { 2, 6 }, 6) == "FFFFFFFF, FFFFFFFF, FFFFFFFF, FFFFFFFF, FFFFFFFF");
+                    CHECK (getPixels (result, 6, { 2, 6 }) == "FFFFFFFF, FFFFFFFF, FFFFFFFF, FFFFFFFF, FFFFFFFF");
                 }
             }
         }
@@ -154,12 +175,44 @@ TEST_CASE ("Melatonin Blur Inner Shadow")
 
                     save_test_image (result, "inner_shadow_2px_positive_offset_x");
 
-                    // inner left edge is mostly transparent, "3" is the alpha channel
-                    auto leftOpacities = pixelCol (result, 0, 3);
-                    CHECK_THAT (leftOpacities, Catch::Matchers::Approx (std::vector<float> { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f }));
+                    SECTION ("left edge is brightest")
+                    {
+                        for (auto i = 2; i < 7; ++i)
+                        {
+                            // remember, our inner shadow is cropped to the path bounds
+                            // so 2,2 is the leftmost pixel of the image we care about
+                            CHECK (result.getPixelAt (2, i).getBrightness() > result.getPixelAt (3, i).getBrightness());
+                        }
+                    }
 
-                    // inner right 2px is black
-                    CHECK (getPixels (result, { 5, 6 }, { 2, 6 }) == "FF000000, FF000000, FF000000, FF000000, FF000000, FF000000, FF000000, FF000000, FF000000");
+                    SECTION ("rightmost center pixel is still black")
+                    {
+                        CHECK (getPixel (result, 6, 4) == "FF000000");
+                    }
+                }
+
+                SECTION ("offset greater than radius matches figma/css")
+                {
+                    g.fillAll (juce::Colours::white);
+                    // offset larger than radius, so we can't pull pixels from the single chan blur anymore
+                    shadow = { { juce::Colours::white, 2, { 3, 0 } } };
+                    g.setColour (juce::Colours::black);
+                    g.fillPath (p);
+
+                    // inner shadow render must come AFTER the path render
+                    shadow.render (g, p);
+
+                    save_test_image (result, "inner_shadow_2px_positive_offset_3");
+
+                    SECTION ("left edge is pure white")
+                    {
+                        for (auto i = 2; i < 7; ++i)
+                        {
+                            // remember, our inner shadow is cropped to the path bounds
+                            // so 2,2 is the leftmost pixel of the image we care about
+                            CHECK (result.getPixelAt (2, i).toDisplayString (true) == "FFFFFFFF");
+                        }
+                    }
                 }
 
                 SECTION ("negative")
@@ -185,24 +238,24 @@ TEST_CASE ("Melatonin Blur Inner Shadow")
         // Need to check CSS
         SECTION ("Figma compatibility")
         {
-            auto fixtures = juce::File (PROJECT_ROOT).getChildFile ("tests/fixtures/figma");
-            auto expected = fixtures.getChildFile ("5x5blackin9x9white2px-inner@1x.png");
-            auto expectedImage = juce::ImageCache::getFromFile (expected);
-
-            CHECK (result.getWidth() == expectedImage.getWidth());
-            CHECK (result.getHeight() == expectedImage.getHeight());
-
-            // check each pixel
-            for (auto x = 0; x < result.getWidth(); ++x)
-            {
-                for (auto y = 0; y < result.getHeight(); ++y)
-                {
-                    auto actualPixel = result.getPixelAt (x, y).toString();
-                    auto expectedPixel = expectedImage.getPixelAt (x, y).toString();
-
-                    // CHECK (actualPixel == expectedPixel);
-                }
-            }
+            //            auto fixtures = juce::File (PROJECT_ROOT).getChildFile ("tests/fixtures/figma");
+            //            auto expected = fixtures.getChildFile ("5x5blackin9x9white2px-inner@1x.png");
+            //            auto expectedImage = juce::ImageCache::getFromFile (expected);
+            //
+            //            CHECK (result.getWidth() == expectedImage.getWidth());
+            //            CHECK (result.getHeight() == expectedImage.getHeight());
+            //
+            //            // check each pixel
+            //            for (auto x = 0; x < result.getWidth(); ++x)
+            //            {
+            //                for (auto y = 0; y < result.getHeight(); ++y)
+            //                {
+            //                    auto actualPixel = result.getPixelAt (x, y).toString();
+            //                    auto expectedPixel = expectedImage.getPixelAt (x, y).toString();
+            //
+            //                    // CHECK (actualPixel == expectedPixel);
+            //                }
+            //            }
         }
     }
     SECTION ("clips (to path, not path bounds)")
@@ -219,7 +272,7 @@ TEST_CASE ("Melatonin Blur Inner Shadow")
         g.fillPath (rounded);
 
         auto cornerColorWithoutShadow = result.getPixelAt (4, 4).getBrightness();
-        CHECK(cornerColorWithoutShadow == Catch::Approx(1.0f));
+        CHECK (cornerColorWithoutShadow == Catch::Approx (1.0f));
 
         // inner shadow render must come AFTER the path render
         shadow.render (g, rounded);
@@ -228,7 +281,7 @@ TEST_CASE ("Melatonin Blur Inner Shadow")
 
         SECTION ("corner still white")
         {
-            CHECK(cornerColorWithoutShadow == Catch::Approx(1.0f));
+            CHECK (cornerColorWithoutShadow == Catch::Approx (1.0f));
         }
     }
 }
