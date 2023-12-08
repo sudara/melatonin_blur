@@ -76,6 +76,17 @@ namespace melatonin::internal
             drawARGBComposite (g, scale);
         }
 
+        void renderStroked (juce::Graphics& g, const juce::Path& newPath, const juce::PathStrokeType& newType, bool lowQuality = false)
+        {
+            stroke = true;
+            if(newType != strokeType)
+            {
+                strokeType = newType;
+                needsRecalculate = true;
+            }
+            render(g, newPath, lowQuality);
+        }
+
         void setRadius (size_t radius, size_t index = 0)
         {
             if (index < renderedSingleChannelShadows.size())
@@ -123,11 +134,14 @@ namespace melatonin::internal
 
         float lastScale = 1.0;
 
+        bool stroke = false;
+        juce::PathStrokeType strokeType { -1.0f };
+
         void recalculateBlurs (float scale)
         {
             for (auto& shadow : renderedSingleChannelShadows)
             {
-                shadow.render (lastOriginAgnosticPath, scale);
+                shadow.render (lastOriginAgnosticPath, scale, strokeType);
             }
             needsRecalculate = false;
             needsRecomposite = true;
@@ -151,14 +165,14 @@ namespace melatonin::internal
 
             // draw the composite at full strength
             // (the composite itself has the colors/opacity/etc)
-            g.setOpacity(1.0);
+            g.setOpacity (1.0);
 
             // `s.area` has been scaled by the physical pixel scale factor
             // (unless lowQuality is true)
             // we have to pass a 1/scale transform because the context will otherwise try to scale the image up
             // (which is not what we want, at this point our cached shadow is 1:1 with the context)
             auto position = (scaledCompositePosition) + (pathPositionInContext * scale);
-            g.drawImageTransformed (compositedARGB, juce::AffineTransform::translation(position).scaled (1.0f / scale));
+            g.drawImageTransformed (compositedARGB, juce::AffineTransform::translation (position).scaled (1.0f / scale));
         }
 
         // This is done at the main graphics context scale
@@ -225,7 +239,6 @@ namespace melatonin::internal
                 // it will literally g2.fillAll() with the shadow's color
                 // using the shadow's image as a sort of mask
                 g2.drawImageAt (shadow.getImage(), shadowOffsetFromComposite.getX(), shadowOffsetFromComposite.getY(), true);
-                save_test_image (compositedARGB, "composited");
             }
             needsRecomposite = false;
         }

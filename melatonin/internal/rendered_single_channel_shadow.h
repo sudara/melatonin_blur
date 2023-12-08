@@ -39,7 +39,7 @@ namespace melatonin
             {
             }
 
-            juce::Image& render (juce::Path& originAgnosticPath, float scale)
+            juce::Image& render (juce::Path& originAgnosticPath, float scale, const juce::PathStrokeType& strokeType)
             {
                 scaledPathBounds = (originAgnosticPath.getBounds() * scale).getSmallestIntegerContainer();
                 updateScaledShadowBounds (scale);
@@ -98,12 +98,16 @@ namespace melatonin
                 // blurContextBounds x/y is negative (relative to path @ 0,0) and we must render in positive space
                 // Note that offset isn't used here,
                 auto unscaledPosition = -scaledShadowBounds.getPosition().toFloat() / scale;
-                g2.fillPath (shadowPath, juce::AffineTransform::translation (unscaledPosition));
+
+                // this is really dumb, but PathStrokeType doesn't have a default constructor
+                if (strokeType.getStrokeThickness() > 0)
+                    g2.strokePath (shadowPath, strokeType, juce::AffineTransform::translation (unscaledPosition));
+                else
+                    g2.fillPath (shadowPath, juce::AffineTransform::translation (unscaledPosition));
 
                 // perform the blur with the fastest algorithm available
                 melatonin::blur::singleChannel (renderedSingleChannel, (size_t) scaledRadius);
 
-                save_test_image (renderedSingleChannel, "singleChan");
                 singleChannelRender = renderedSingleChannel;
                 return singleChannelRender;
             }
