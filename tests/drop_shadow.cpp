@@ -46,6 +46,19 @@ TEST_CASE ("Melatonin Blur Drop Shadow")
         REQUIRE (result.getPixelAt (4, 4).toDisplayString (true) == "FF000000");
     }
 
+    SECTION ("default constructor")
+    {
+        g.fillAll (juce::Colours::white);
+        melatonin::DropShadow shadow;
+        shadow.render (g, p);
+        CHECK(filledBounds (result) == juce::Rectangle<int> (3, 3, 3, 3));
+
+        save_test_image(result, "default constructor");
+        shadow.setRadius(5);
+        shadow.render (g, p);
+        CHECK(filledBounds (result) == juce::Rectangle<int> (0, 0, 9, 9));
+    }
+
     SECTION ("single shadow")
     {
         g.fillAll (juce::Colours::white);
@@ -225,9 +238,9 @@ TEST_CASE ("Melatonin Blur Drop Shadow")
         SECTION ("to start, our context is white")
         {
             auto color = result.getPixelAt (4, 4);
-            CHECK (color.getFloatRed() == Catch::Approx(1.0f));
-            CHECK (color.getFloatGreen() == Catch::Approx(1.0f));
-            CHECK (color.getFloatBlue() == Catch::Approx(1.0f));
+            CHECK (color.getFloatRed() == Catch::Approx (1.0f));
+            CHECK (color.getFloatGreen() == Catch::Approx (1.0f));
+            CHECK (color.getFloatBlue() == Catch::Approx (1.0f));
         }
 
         // TODO: figure out red/green discrepancy
@@ -235,9 +248,9 @@ TEST_CASE ("Melatonin Blur Drop Shadow")
         {
             shadow.render (g, p);
             auto color = result.getPixelAt (4, 4);
-            CHECK (color.getFloatRed() == Catch::Approx(0.4f)); // TODO: no idea wtf
-            CHECK (color.getFloatGreen() == Catch::Approx(0.76471f).margin(0.005));
-            CHECK (color.getFloatBlue() == Catch::Approx(0.16078f).margin(0.005));
+            CHECK (color.getFloatRed() == Catch::Approx (0.4f)); // TODO: no idea wtf
+            CHECK (color.getFloatGreen() == Catch::Approx (0.76471f).margin (0.005));
+            CHECK (color.getFloatBlue() == Catch::Approx (0.16078f).margin (0.005));
         }
     }
 

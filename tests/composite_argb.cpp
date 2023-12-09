@@ -93,8 +93,10 @@ TEST_CASE ("Melatonin Blur Composite ARGB")
             auto shadow = melatonin::DropShadow ({ s1 });
             shadow.render (g, p);
 
+            save_test_image(context, "zero_radius");
+
             // check bounds of non-white rectangle
-            CHECK (filledBounds (context).toString() == juce::Rectangle<int> (0, 0, 0, 0).toString());
+            CHECK (filledBounds (context).toString() == juce::Rectangle<int> (2, 2, 4, 4).toString());
         }
     }
 
@@ -120,9 +122,5 @@ TEST_CASE ("Melatonin Blur Composite ARGB")
         auto translatedPath = shadow.lastOriginAgnosticPath;
 
         CHECK(originalPath == translatedPath);
-    }
-
-    SECTION ("sets needsRecomposite to false")
-    {
     }
 }

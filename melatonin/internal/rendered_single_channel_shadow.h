@@ -25,43 +25,30 @@ namespace melatonin
 
     namespace internal
     {
-
-        // wrapper around a single channel image of a single shadow
         // encapsulates logic for rendering a path to inner/drop shadow
         // the image is optimized to be as small as possible
-        // the path is always 0,0 in the image (offset is ignored here)
+        // the path is always 0,0 in the image
         class RenderedSingleChannelShadow
         {
         public:
             ShadowParameters parameters;
 
-            RenderedSingleChannelShadow (ShadowParameters p) : parameters (p)
-            {
-            }
+            explicit RenderedSingleChannelShadow (ShadowParameters p) : parameters (p) {}
 
-            juce::Image& render (juce::Path& originAgnosticPath, float scale, const juce::PathStrokeType& strokeType = juce::PathStrokeType (-1))
+            juce::Image& render (juce::Path& originAgnosticPath, float scale, bool stroked = false)
             {
                 scaledPathBounds = (originAgnosticPath.getBounds() * scale).getSmallestIntegerContainer();
                 updateScaledShadowBounds (scale);
 
-                // explicitly support 0 radius shadows
-                if (parameters.radius < 1)
-                    return singleChannelRender;
+                // explicitly support 0 radius shadows and edge spread cases
+                if (parameters.radius < 1 || scaledShadowBounds.isEmpty())
+                    singleChannelRender = juce::Image();
 
-                // Check your parameters: the blur image ended up with a dimension of 0
-                // Did you set a negative spread? Check that your path still exists after applying the spread.
-                // For example, you can't have a 3x3px path with a -2px spread
-                if (scaledShadowBounds.isEmpty())
-                {
-                    return singleChannelRender;
-                }
-
-                // Spread modifies the scale of the actual path.
                 // We can't modify our original path as it would break cache.
-                // Remember, the origin will be 0,0
+                // Remember, the origin of the path will always be 0,0
                 auto shadowPath = juce::Path (originAgnosticPath);
 
-                if (parameters.spread != 0)
+                if (!stroked && parameters.spread != 0)
                 {
                     // expand the actual path itself
                     // note: this is 1x, it'll be upscaled as needed by fillPath
@@ -74,11 +61,9 @@ namespace melatonin
                 {
                     shadowPath.setUsingNonZeroWinding (false);
 
-                    // add a single pixel of extra padding
-                    // since the outside will be filled, this lets us
-                    // reliably cast a blurred shadow into the path's area
-                    // TODO: test if edge bleed lets us happily cheat here or if this should be 'radius'
-                    // TODO: This has impact on figma/css compatibility
+                    // The outside of our path will be filled with shadow color
+                    // which will then cast a blurred shadow inside the path's area.
+                    // We need a radius amount of pixels for a strong shadow at the path's edge
                     shadowPath.addRectangle (shadowPath.getBounds().expanded ((float) scaledRadius));
                 }
 
@@ -99,11 +84,7 @@ namespace melatonin
                 // Note that offset isn't used here,
                 auto unscaledPosition = -scaledShadowBounds.getPosition().toFloat() / scale;
 
-                // this is really dumb, but PathStrokeType doesn't have a default constructor
-                if (strokeType.getStrokeThickness() > 0)
-                    g2.strokePath (shadowPath, strokeType, juce::AffineTransform::translation (unscaledPosition));
-                else
-                    g2.fillPath (shadowPath, juce::AffineTransform::translation (unscaledPosition));
+                g2.fillPath (shadowPath, juce::AffineTransform::translation (unscaledPosition));
 
                 // perform the blur with the fastest algorithm available
                 melatonin::blur::singleChannel (renderedSingleChannel, (size_t) scaledRadius);
@@ -194,13 +175,14 @@ namespace melatonin
                 // however, when there's offset, and we are making position-agnostic shadows!
                 if (parameters.inner)
                 {
-                    scaledShadowBounds = scaledPathBounds.expanded (scaledRadius - scaledSpread, scaledRadius-scaledSpread);
+                    scaledShadowBounds = scaledPathBounds.expanded (scaledRadius - scaledSpread, scaledRadius - scaledSpread);
                 }
                 else
                     scaledShadowBounds = scaledPathBounds.expanded (scaledRadius + scaledSpread, scaledRadius + scaledSpread);
 
                 // TODO: Investigate/test if this is ever relevant / how to apply to position agnostic
                 // I'm guessing reduces the clip size in the edge case it doesn't overlap the main context?
+                // It comes from JUCE's shadow classes
                 //.getIntersection (g.getClipBounds().expanded (s.radius + s.spread + 1));
 
                 // if the scale isn't an integer, we'll be dealing with subpixel compositing
@@ -220,10 +202,10 @@ namespace melatonin
             juce::Rectangle<int> scaledShadowBounds;
             juce::Rectangle<int> scaledPathBounds;
 
-            int scaledRadius;
-            int scaledSpread;
+            int scaledRadius = 0;
+            int scaledSpread = 0;
 
-            // Offsets will be used later to translate placement in ARGB compositing.
+            // Offsets are separately stored to translate placement in ARGB compositing.
             juce::Point<int> scaledOffset;
         };
     }

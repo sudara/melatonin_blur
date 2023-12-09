@@ -5,7 +5,7 @@ BEGIN_JUCE_MODULE_DECLARATION
 
 ID:               melatonin_blur
 vendor:           Sudara
-version:          1.1.0
+version:          1.2.0
 name:             Optimized CPU vector blurring and JUCE drop shadowing with tests and benchmarks
 description:      Blurry Life
 license:          MIT
@@ -22,6 +22,6 @@ END_JUCE_MODULE_DECLARATION
 
 // These are juce::Component ImageEffects
 // see https://docs.juce.com/master/classImageEffectFilter.html
-#include "melatonin/image_effects/blur_effect.h"
-#include "melatonin/image_effects/drop_shadow_effect.h"
-#include "melatonin/image_effects/reflection_effect.h"
+//#include "melatonin/image_effects/blur_effect.h"
+//#include "melatonin/image_effects/drop_shadow_effect.h"
+//#include "melatonin/image_effects/reflection_effect.h"

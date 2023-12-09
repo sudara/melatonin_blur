@@ -27,6 +27,7 @@ namespace melatonin::internal
         // public for testability, sorry not sorry
         // too lazy to break out ARGBComposite into its own class
         juce::Path lastOriginAgnosticPath = {};
+        juce::Path lastOriginAgnosticPathScaled = {};
 
         void render (juce::Graphics& g, const juce::Path& newPath, bool lowQuality = false)
         {
@@ -35,16 +36,30 @@ namespace melatonin::internal
             if (!lowQuality)
                 scale = g.getInternalContext().getPhysicalPixelScaleFactor();
 
+            // break cache if we're painting on a different monitor, etc
             if (!juce::approximatelyEqual (lastScale, scale))
             {
                 needsRecalculate = true;
                 lastScale = scale;
             }
 
-            // store a copy of the new path, stripping and storing its float x/y offset to 0,0
-            // stripping the origin lets us translate paths without breaking blur cache
-            auto incomingOrigin = newPath.getBounds().getPosition();
-            auto incomingOriginAgnosticPath = newPath;
+            // Store a copy of the path.
+            // We'll strip and store its float x/y offset to 0,0
+            juce::Path incomingOriginAgnosticPath;
+
+            // Stroking the path changes its bounds.
+            // Do this before we strip the origin and compare with cache.
+            if (stroked)
+            {
+                strokeType.createStrokedPath(incomingOriginAgnosticPath, newPath, {}, scale);
+            }
+            else
+            {
+                incomingOriginAgnosticPath = newPath;
+            }
+
+            // stripping the origin lets us animate/translate paths in our UI without breaking blur cache
+            auto incomingOrigin = incomingOriginAgnosticPath.getBounds().getPosition();
             incomingOriginAgnosticPath.applyTransform (juce::AffineTransform::translation (-incomingOrigin));
 
             // has the path actually changed?
@@ -52,6 +67,10 @@ namespace melatonin::internal
             {
                 // we already created a copy above, this is faster than creating another
                 lastOriginAgnosticPath.swapWithPath (incomingOriginAgnosticPath);
+
+                // we'll need this later for compositing
+                lastOriginAgnosticPathScaled = lastOriginAgnosticPath;
+                lastOriginAgnosticPathScaled.applyTransform(juce::AffineTransform::scale (scale));
 
                 // remember the new placement in the context
                 pathPositionInContext = incomingOrigin;
@@ -70,7 +89,7 @@ namespace melatonin::internal
             // have any of the shadows changed color/opacity or been recalculated?
             // if so, recreate the ARGB composite of all the shadows together
             if (needsRecomposite)
-                compositeShadowsToARGB (scale);
+                compositeShadowsToARGB ();
 
             // finally, draw the cached composite into the main graphics context
             drawARGBComposite (g, scale);
@@ -78,7 +97,7 @@ namespace melatonin::internal
 
         void renderStroked (juce::Graphics& g, const juce::Path& newPath, const juce::PathStrokeType& newType, bool lowQuality = false)
         {
-            stroke = true;
+            stroked = true;
             if (newType != strokeType)
             {
                 strokeType = newType;
@@ -134,14 +153,14 @@ namespace melatonin::internal
 
         float lastScale = 1.0;
 
-        bool stroke = false;
+        bool stroked = false;
         juce::PathStrokeType strokeType { -1.0f };
 
         void recalculateBlurs (float scale)
         {
             for (auto& shadow : renderedSingleChannelShadows)
             {
-                shadow.render (lastOriginAgnosticPath, scale, strokeType);
+                shadow.render (lastOriginAgnosticPath, scale, stroked);
             }
             needsRecalculate = false;
             needsRecomposite = true;
@@ -167,17 +186,17 @@ namespace melatonin::internal
             // (the composite itself has the colors/opacity/etc)
             g.setOpacity (1.0);
 
-            // `s.area` has been scaled by the physical pixel scale factor
+            // compositedARGB has been scaled by the physical pixel scale factor
             // (unless lowQuality is true)
             // we have to pass a 1/scale transform because the context will otherwise try to scale the image up
             // (which is not what we want, at this point our cached shadow is 1:1 with the context)
-            auto position = (scaledCompositePosition) + (pathPositionInContext * scale);
+            auto position = scaledCompositePosition + (pathPositionInContext * scale);
             g.drawImageTransformed (compositedARGB, juce::AffineTransform::translation (position).scaled (1.0f / scale));
         }
 
         // This is done at the main graphics context scale
         // The path is at 0,0 and the shadows are placed at their correct relative *integer* positions
-        void compositeShadowsToARGB (float scale)
+        void compositeShadowsToARGB ()
         {
             // figure out the largest bounds we need to composite
             // this is the union of all the shadow bounds
@@ -208,9 +227,8 @@ namespace melatonin::internal
 
             for (auto& shadow : renderedSingleChannelShadows)
             {
-                auto scaledAndPlaced = juce::AffineTransform::scale (scale);
-                auto pathCopy = lastOriginAgnosticPath;
-                pathCopy.applyTransform (scaledAndPlaced);
+                // TODO: no reason for this scaled copy to be in the loop
+                auto pathCopy = lastOriginAgnosticPathScaled;
 
                 auto shadowPosition = shadow.getScaledBounds().getPosition();
 
@@ -231,6 +249,7 @@ namespace melatonin::internal
                     // we've already saved the state, now clip to the path
                     // this needs to be a path, not bounds!
                     // the goal is to not paint anything outside of these bounds
+                    // TODO: This fails for stroked paths!
                     g2.reduceClipRegion (pathCopy);
 
                     // Inner shadows often have areas which needed to be filled with pure shadow colors

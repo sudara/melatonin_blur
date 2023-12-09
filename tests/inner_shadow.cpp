@@ -48,6 +48,17 @@ TEST_CASE ("Melatonin Blur Inner Shadow")
         REQUIRE (getPixel (result, 2, 2) == "FF000000");
     }
 
+    SECTION ("default constructor")
+    {
+        g.fillAll (juce::Colours::white);
+        melatonin::InnerShadow shadow;
+        shadow.render (g, p);
+        CHECK (isImageFilled (result, juce::Colours::white) == true);
+        shadow.setRadius (5);
+        shadow.render (g, p);
+        CHECK (isImageFilled (result, juce::Colours::white) == false);
+    }
+
     SECTION ("InnerShadow 2px")
     {
         g.fillAll (juce::Colours::white);

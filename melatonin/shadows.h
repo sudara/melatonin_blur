@@ -1,7 +1,7 @@
 #pragma once
 #include "implementations/gin.h"
-#include "juce_gui_basics/juce_gui_basics.h"
 #include "internal/cached_shadows.h"
+#include "juce_gui_basics/juce_gui_basics.h"
 
 namespace melatonin
 {
@@ -33,16 +33,18 @@ namespace melatonin
     class DropShadow : public internal::CachedShadows
     {
     public:
-        // multiple shadows
-        DropShadow (std::initializer_list<ShadowParameters> p) : CachedShadows (p) {}
+        DropShadow() : DropShadow (juce::Colours::black, 0, { 0, 0 }, 0) {}
+
+        // individual arguments
+        DropShadow (juce::Colour color, int radius, juce::Point<int> offset = { 0, 0 }, int spread = 0)
+            : CachedShadows ({ { color, radius, offset, spread } }) {}
 
         // single ShadowParameters
         // melatonin::DropShadow ({Colour::fromRGBA (255, 183, 43, 111), pulse (6)}).render (g, button);
         explicit DropShadow (ShadowParameters p) : CachedShadows ({ p }) {}
 
-        // individual arguments
-        DropShadow (juce::Colour color, int radius, juce::Point<int> offset = { 0, 0 }, int spread = 0)
-            : CachedShadows ({ { color, radius, offset, spread } }) {}
+        // multiple ShadowParameters
+        DropShadow (std::initializer_list<ShadowParameters> p) : CachedShadows (p) {}
     };
 
     // An inner shadow is basically the *inverted* filled path, blurred and clipped to the path
@@ -50,6 +52,8 @@ namespace melatonin
     class InnerShadow : public internal::CachedShadows
     {
     public:
+        InnerShadow() : InnerShadow (juce::Colours::black, 0, { 0, 0 }, 0) {}
+
         // multiple shadows
         InnerShadow (std::initializer_list<ShadowParameters> p) : CachedShadows (p, true) {}
 
