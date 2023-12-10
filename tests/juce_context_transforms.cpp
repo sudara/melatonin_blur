@@ -60,6 +60,8 @@ TEST_CASE ("Melatonin Blur JUCE sanity checks")
 
         g.drawImageAt (source, 0, 0, false);
 
+        save_test_image (simulated2xContext, "simulated2xcontext");
+
         // confirm the entire 8x8 is filled
         CHECK (isImageFilled (simulated2xContext, juce::Colours::lime) == true);
     }

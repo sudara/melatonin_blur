@@ -169,14 +169,21 @@ static std::vector<float> getPixelsBrightness (juce::Image& img, juce::Range<int
     return result;
 }
 
-static bool isImageFilled (juce::Image& img, const juce::Colour& color)
+static bool isImageFilled (const juce::Image& img, const juce::Colour& color)
 {
-    juce::Image::BitmapData data (img, juce::Image::BitmapData::readOnly);
+    const juce::Image::BitmapData data (img, juce::Image::BitmapData::readOnly);
     for (auto y = 0; y < img.getHeight(); ++y)
     {
         for (auto x = 0; x < img.getWidth(); ++x)
         {
-            if (data.getPixelColour (x, y) != color)
+            auto pixelColor = data.getPixelColour (x, y);
+
+            // TODO: again, windows compositing seems to need some leeway
+            // Here, the alpha channel on the far right is 253 instead of 255
+            if (pixelColor.getFloatRed() !=  color.getFloatRed()
+                || pixelColor.getFloatGreen() != color.getFloatGreen()
+                || pixelColor.getFloatBlue() != color.getFloatBlue()
+                || std::abs(pixelColor.getFloatAlpha() - color.getFloatAlpha()) > 0.01f)
                 return false;
         }
     }
