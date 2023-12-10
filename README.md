@@ -7,15 +7,17 @@ Melatonin Blur is a batteries-included, cross-platform blur and shadow UI librar
 *Batteries-included* means it aims to give everything you'd want out of the box:
 
 * 👩‍🎨Figma/CSS-accurate drop and inner shadows!
-* 💅🏼Both filled and stroked paths!
+* 💅🏼Filled and stroked paths!
 * 🌇ARGB image blurs!
 * 🚀Fast! (see [benchmarks](#more-benchmarks)).
-* 🔎Retina-friendly (context scale-aware)! (afaik, a first for JUCE)
-* 🍰Trivial to layer shadows!
-* ⚙️Behind the scenes multi-layer caching! 
-* 😎Debug optimized for high quality of dev life!
+* 🔎Retina-friendly (context scale-aware) shadows!
+* 🍰Trivial to layer multiple shadows!
+* ⚙️Behind-the-scenes multi-layer caching! 
+* 😎Debug optimized for high quality of life!
+* 🤖Over 1000 correctness tests running on mac/windows!
+* 🚂Compatible down to macOS 10.13 (progressive speedups on recent versions)
 
-The goal? Entire modern vector interfaces in JUCE can be built without resorting to deprecated solutions with lower quality of life (looking at you, OpenGL on macOS!). 
+The goal? To build modern vector interfaces in JUCE (100s of shadows) without resorting to deprecated solutions with lower quality of life (looking at you, OpenGL on macOS!). 
 
 Melatonin Blur provides a 10-30x speedup over using Stack Blur.
 
@@ -229,7 +231,9 @@ Shadows are rendered in the order they are specified.
 
 ### Updating and Animating Shadows
 
-Starting with version 1.2, caching of the underlying single channel blurs is position, color, offset and opacity agnostic. Translation: you can animate these at 60fps and it's cheap. Only some image compositing, no blur recalculation.
+Starting with version 1.2, caching of the underlying single channel blurs is position, color, offset and opacity agnostic. 
+
+Translation: you can animate these things at 60fps and it's very cheap. Only some image compositing, no blur recalculation.
 
 This is great for `juce::Path`s that look the same each paint but move around (such as slider thumbs).
 
@@ -247,7 +251,9 @@ shadow.setSpread(10);
 
 ### Default Constructors for Inner/DropShadow
 
-Don't know your colors at compile time? That's fine, there's a default constructor, you can update the color in the paint method.
+Don't know your colors at compile time? 
+
+That's fine, there's a default constructor, you can update the color in the paint method.
 
 ### Stroked Paths
 
@@ -481,6 +487,7 @@ In other words, this project humbled me. I love to advocate for clarity, readabi
 
 ## Acknowledgements
 
-* Mars, for the reliable rubber ducking. Inner Shadow wouldn't have happened without her!
-* Roland Rabian for providing a JUCE Stack Blur via [Gin](https://github.com/figbug/gin).
-* Luke M1 for [figuring out the `drawImageAt` optimization](https://forum.juce.com/t/faster-blur-glassmorphism-ui/43086/76). 
+* Mars, for always being a reliable rubber duck! Inner Shadow wouldn't have happened without her!
+* Roland Rabian for JUCE Stack Blur workhorse via [Gin](https://github.com/figbug/gin).
+* LukeM1 on the forums for [figuring out the `drawImageAt` optimization](https://forum.juce.com/t/faster-blur-glassmorphism-ui/43086/76). 
+* Ecstasy on the Discord for the motivation and feedback around stroked paths and default constructors.
