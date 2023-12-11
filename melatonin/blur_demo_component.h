@@ -82,10 +82,32 @@ namespace melatonin
                 strokedInnerShadow.setOpacity ((float) opacitySlider.getValue());
                 repaint();
             };
+#if MELATONIN_VBLANK
+            vBlankCallback = { this,
+                [this] {
+                    this->repaint();
+                } };
+#endif
+        }
+
+        void modulate()
+        {
+            modulator++;
+            auto angle = (float) modulator / 120.0 * 2 * juce::MathConstants<float>::pi;
+            auto spiralFactor = std::sin ((float) modulator / 360.0 * juce::MathConstants<float>::pi) * 0.25 + 0.5;
+            auto modSin = std::sin (angle) * spiralFactor;
+            auto modCos = std::cos (angle) * spiralFactor;
+            auto offsetX = int (modSin * 100 / 2);
+            auto offsetY = int (modCos * 100 / 2);
+            offsetXSlider.setValue (offsetX, juce::sendNotificationSync);
+            offsetYSlider.setValue (offsetY, juce::sendNotificationSync);
         }
 
         void paint (juce::Graphics& g) override
         {
+            auto start = juce::Time::getMillisecondCounterHiRes();
+            // modulate();
+
             g.fillAll (juce::Colours::black);
             g.setColour (contentColor);
 
@@ -102,17 +124,28 @@ namespace melatonin
             g.strokePath (strokedInnerPath, juce::PathStrokeType (6));
             strokedInnerShadow.renderStroked (g, strokedInnerPath, juce::PathStrokeType (6));
 
+            g.setColour (juce::Colours::white);
+            g.setFont (juce::Font (50).boldened());
+            g.drawText ("wow", textBounds, juce::Justification::centred);
+            // shadowedText.render(g, "wow", textBounds, juce::Justification::centred);
+
+            g.setFont (juce::Font (16));
             auto labels = juce::StringArray ("radius", "spread", "offsetX", "offsetY", "opacity");
             for (auto i = 0; i < labels.size(); ++i)
             {
                 g.drawText (labels[i], sliderLabelsBounds.withLeft (sliderLabelsBounds.getX() + 60 * i).withWidth (60), juce::Justification::centred);
             }
+            auto elapsed = juce::Time::getMillisecondCounterHiRes() - start;
+
+            g.setColour (juce::Colours::white);
+            g.setFont (juce::Font (16));
+            g.drawText ("rendered in " + juce::String (elapsed, 3) + "ms", getLocalBounds().removeFromTop (50), juce::Justification::centred);
         }
 
         void resized() override
         {
             auto area = getLocalBounds().reduced (50);
-            contentBounds = area.removeFromTop (200).withSizeKeepingCentre (550, 100);
+            contentBounds = area.removeFromTop (150).withSizeKeepingCentre (550, 100);
             dropShadowedPath.clear();
             dropShadowedPath.addRoundedRectangle (contentBounds.removeFromLeft (100), 10);
 
@@ -130,8 +163,7 @@ namespace melatonin
             strokedInnerPath.clear();
             strokedInnerPath.addArc ((float) strokedPathInnerBounds.getX(), (float) strokedPathInnerBounds.getY(), (float) strokedPathInnerBounds.getWidth(), (float) strokedPathInnerBounds.getHeight(), 4.4f, 7.1f, true);
 
-            // strokedPath.clear();
-            // strokedPath.addArc (contentBounds.getX(), contentBounds.getY(), contentBounds.getWidth(), contentBounds.getHeight(), 4.5, 7.9, true);
+            // textBounds = area.removeFromTop (100).withSizeKeepingCentre (300, 100);
 
             auto sliderGroup = area.removeFromTop (60).withSizeKeepingCentre (300, 50);
             sliderLabelsBounds = area.removeFromTop (20).withSizeKeepingCentre (300, 20);
@@ -153,10 +185,11 @@ namespace melatonin
         {
             if (source == &colorSelector)
             {
-                dropShadow.setColor (colorSelector.getCurrentColour());
-                innerShadow.setColor (colorSelector.getCurrentColour());
-                strokedDropShadow.setColor (colorSelector.getCurrentColour());
-                strokedInnerShadow.setColor (colorSelector.getCurrentColour());
+                auto newColor = colorSelector.getCurrentColour().withAlpha ((float) opacitySlider.getValue());
+                dropShadow.setColor (newColor);
+                innerShadow.setColor (newColor);
+                strokedDropShadow.setColor (newColor);
+                strokedInnerShadow.setColor (newColor);
                 repaint();
             }
         }
@@ -173,7 +206,9 @@ namespace melatonin
         melatonin::InnerShadow innerShadow { { juce::Colours::black, 10 } };
         melatonin::DropShadow strokedDropShadow { { juce::Colours::white, 10 } };
         melatonin::InnerShadow strokedInnerShadow { { juce::Colours::white, 10 } };
+        // melatonin::ShadowedText { { juce::Colours::black, 10 } };
         melatonin::CachedBlur blur { 5 };
+        juce::Rectangle<int> textBounds;
         juce::Rectangle<int> sliderLabelsBounds;
         juce::StringArray sliderLabels;
         juce::Slider radiusSlider { juce::Slider::SliderStyle::LinearBarVertical, juce::Slider::TextEntryBoxPosition::TextBoxBelow };
@@ -183,9 +218,12 @@ namespace melatonin
         juce::Slider opacitySlider { juce::Slider::SliderStyle::LinearBarVertical, juce::Slider::TextEntryBoxPosition::TextBoxBelow };
         juce::ColourSelector colorSelector { juce::ColourSelector::showColourAtTop
                                                  | juce::ColourSelector::editableColour
-                                                 | juce::ColourSelector::showSliders
                                                  | juce::ColourSelector::showColourspace,
             0,
             0 };
+#if MELATONIN_VBLANK
+        juce::VBlankAttachment vBlankCallback;
+#endif
+        size_t modulator = 0;
     };
 }
