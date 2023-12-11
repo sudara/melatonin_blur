@@ -2,24 +2,26 @@
 
 ![](https://github.com/sudara/melatonin_blur/actions/workflows/tests.yml/badge.svg)
 
-Melatonin Blur is a batteries-included, cross-platform blur and shadow UI library for the [JUCE C++ framework](https://juce.com/). 
+Melatonin Blur is a batteries-included, cross-platform CPU blur and shadow compositing library for the [JUCE C++ framework](https://juce.com/). 
 
-*Batteries-included* means it aims to give everything you'd want out of the box:
+*Batteries-included* means it aims to give everything out of the box:
 
-* 👩‍🎨Figma/CSS-accurate drop and inner shadows!
-* 💅🏼Filled and stroked paths!
-* 🌇ARGB image blurs!
-* 🚀Fast! (see [benchmarks](#more-benchmarks)).
-* 🔎Retina-friendly (context scale-aware) shadows!
-* 🍰Trivial to layer multiple shadows!
-* ⚙️Behind-the-scenes multi-layer caching! 
-* 😎Debug optimized for high quality of life!
-* 🤖Over 1000 correctness tests running on mac/windows!
-* 🚂Compatible down to macOS 10.13 (progressive speedups on recent versions)
+* 👩‍🎨 Figma/CSS-accurate drop and inner shadows!
+* 💅🏼 Filled and stroked paths!
+* 🌇 ARGB image blurs!
+* 🚀 Fast! (see [benchmarks](#more-benchmarks)).
+* 🔎 Retina-friendly (context scale-aware)!
+* 🍰 Trivial to layer multiple shadows!
+* ⚙️ Behind-the-scenes multi-layer caching! 
+* 😎 Debug optimized for high quality of life!
+* 🤖 Over 1000 correctness tests running on mac/windows!
+* 🚂 Compatible down to macOS 10.13 (progressive speedups on recent versions)
 
-The goal? To build modern vector interfaces in JUCE (100s of shadows) without resorting to deprecated solutions with lower quality of life (looking at you, OpenGL on macOS!). 
+The goal: modern vector interfaces in JUCE (100s of shadows) without resorting to deprecated solutions with lower quality of life (looking at you, OpenGL on macOS!). 
 
-Melatonin Blur provides a 10-30x speedup over using Stack Blur.
+https://github.com/sudara/melatonin_blur/assets/472/3e1d6c9a-aab9-422f-a262-6b63cbca5b71
+
+Melatonin Blur provides a 10-30x speedup over using Stack Blur alone. 
 
 <img src="https://github.com/sudara/melatonin_blur/assets/472/598115b8-9c9d-42d8-b868-e921978cda17" width="550" />
 
@@ -27,7 +29,7 @@ On macOS, it depends on the built-in Accelerate framework.
 
 On Windows, it optionally depends on the Intel IPP library. If IPP is not present, it will fall back to a JUCE FloatVectorOperations implementation for single channel (shadows, etc) and Gin's Stack Blur for ARGB. 
 
-Interested in how this all work? [I wrote an in-depth article about Stack Blur](https://melatonin.dev/blog/implementing-marios-stack-blur-15-times-in-cpp/).
+Interested in how the blurring works? [I wrote an in-depth article about Stack Blur](https://melatonin.dev/blog/implementing-marios-stack-blur-15-times-in-cpp/).
 
 ## Installation 
 
@@ -420,11 +422,7 @@ Tests were necessary to verify implementations were correct. Horizontal and vert
 
 <img src="https://github.com/sudara/melatonin_blur/assets/472/b1490023-d9c9-440e-a6b0-d814e548b4b8" width="300" />
 
-Tests aren't currently run in CI, there's an issue open for it.
-
 ### How can I run the benchmarks on my machine
-
-The benchmarks are there, but you'll have to feed them to an existing/another Catch2 project at the moment. There's an issue open for this.
 
 It could be fun to codesign and release the benchmark binaries... In general I sort of daydream about JUCE hiring me to release a benchmark plugin utility for JUCE that compares dsp and UI performance across different machines (and reports to the cloud so we can all benefit from results). 
 
@@ -487,7 +485,7 @@ In other words, this project humbled me. I love to advocate for clarity, readabi
 
 ## Acknowledgements
 
-* Mars, for always being a reliable rubber duck! Inner Shadow wouldn't have happened without her!
+* Mars, for being my reliable rubber duck! Inner Shadow caching and compositing geometry broke my brain.
 * Roland Rabian for JUCE Stack Blur workhorse via [Gin](https://github.com/figbug/gin).
 * LukeM1 on the forums for [figuring out the `drawImageAt` optimization](https://forum.juce.com/t/faster-blur-glassmorphism-ui/43086/76). 
 * Ecstasy on the Discord for the motivation and feedback around stroked paths and default constructors.
