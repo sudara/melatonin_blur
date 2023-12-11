@@ -4,7 +4,7 @@
 
 Melatonin Blur is a batteries-included, cross-platform CPU blur and shadow compositing library for the [JUCE C++ framework](https://juce.com/). 
 
-*Batteries-included* means it aims to give everything out of the box:
+*Batteries-included* means it aims to give you everything out of the box:
 
 * 👩‍🎨 Figma/CSS-accurate drop and inner shadows!
 * 💅🏼 Filled and stroked paths!
