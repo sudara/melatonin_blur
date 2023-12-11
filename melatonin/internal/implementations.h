@@ -16,7 +16,7 @@
         #include "../implementations/vImage_macOS14.h"
     #elif (defined(__MAC_OS_X_VERSION_MAX_ALLOWED) && __MAC_OS_X_VERSION_MAX_ALLOWED >= 110000)
     // *Compiling* has to happen on macOS > 11.0 to support vImageSepConvolve_Planar8
-    // Once compiled, we will will check at runtime before relying on the vImage function
+    // Once compiled, we will check at runtime before relying on the vImage function
         #define MELATONIN_BLUR_VIMAGE 1
         #include "../implementations/vImage.h" // Single channel
     #else
@@ -42,9 +42,9 @@
 
 // *Runtime* checks for vImage
 // Even if it compiles, we need to check when running on older devices
-namespace melatonin
+namespace melatonin::internal
 {
-    static bool vImageARGBAvailable()
+    [[nodiscard]] static bool vImageARGBAvailable()
     {
 #if defined(JUCE_MAC)
         if (__builtin_available (macOS 14.0, *))
@@ -56,7 +56,7 @@ namespace melatonin
         return false;
     }
 
-    static bool vImageSingleChannelAvailable()
+    [[nodiscard]] static bool vImageSingleChannelAvailable()
     {
 #if defined(JUCE_MAC)
         if (__builtin_available (macOS 11.0, *))
@@ -75,7 +75,7 @@ namespace melatonin::blur
     static void singleChannel (juce::Image& img, size_t radius)
     {
 #if MELATONIN_BLUR_VIMAGE
-        if (vImageSingleChannelAvailable())
+        if (internal::vImageSingleChannelAvailable())
             melatonin::blur::vImageSingleChannel (img, radius);
         else
             melatonin::stackBlur::ginSingleChannel (img, radius);
@@ -89,7 +89,7 @@ namespace melatonin::blur
     static void argb (juce::Image& srcImage, juce::Image& dstImage, size_t radius)
     {
 #if MELATONIN_BLUR_VIMAGE_MACOS14
-        if (vImageARGBAvailable())
+        if (internal::vImageARGBAvailable())
             melatonin::blur::vImageARGB (srcImage, dstImage, radius);
         else
             melatonin::stackBlur::ginARGB (dstImage, radius);

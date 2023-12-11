@@ -19,7 +19,6 @@ TEST_CASE ("Melatonin Blur Drop Shadow")
     // 0  0  0  0  0  0  0  0  0
     // 0  0  0  0  0  0  0  0  0
 
-
     // create a 3px by 3px square
     auto bounds = juce::Rectangle<float> (3, 3);
     juce::Path p;
@@ -47,6 +46,19 @@ TEST_CASE ("Melatonin Blur Drop Shadow")
         REQUIRE (result.getPixelAt (4, 4).toDisplayString (true) == "FF000000");
     }
 
+    SECTION ("default constructor")
+    {
+        g.fillAll (juce::Colours::white);
+        melatonin::DropShadow shadow;
+        shadow.render (g, p);
+        CHECK(filledBounds (result) == juce::Rectangle<int> (3, 3, 3, 3));
+
+        save_test_image(result, "default constructor");
+        shadow.setRadius(5);
+        shadow.render (g, p);
+        CHECK(filledBounds (result) == juce::Rectangle<int> (0, 0, 9, 9));
+    }
+
     SECTION ("single shadow")
     {
         g.fillAll (juce::Colours::white);
@@ -54,54 +66,54 @@ TEST_CASE ("Melatonin Blur Drop Shadow")
         shadow.render (g, p);
         g.setColour (juce::Colours::black);
         g.fillPath (p);
-
+        save_test_image (result, "single_shadow");
 
         // TODO: I'd like to reduce the margin on these tests
         // Right now they are within 2 hex values of the expected value
         // It seems that windows itself may be compositing slightly differently?
         SECTION ("left edge")
         {
-            CHECK (result.getPixelAt (0, 4).getBrightness() == Catch::Approx(1.0)); // completely white
-            CHECK (result.getPixelAt (1, 4).getBrightness() == Catch::Approx(0.91372549).margin(0.01)); // 1st px blur
-            CHECK (result.getPixelAt (2, 4).getBrightness() == Catch::Approx(0.741176471).margin(0.01)); // 2nd px blur
-            CHECK (result.getPixelAt (3, 4).getBrightness() == Catch::Approx(0.0));
+            CHECK (result.getPixelAt (0, 4).getBrightness() == Catch::Approx (1.0)); // completely white
+            CHECK (result.getPixelAt (1, 4).getBrightness() == Catch::Approx (0.91372549).margin (0.01)); // 1st px blur
+            CHECK (result.getPixelAt (2, 4).getBrightness() == Catch::Approx (0.741176471).margin (0.01)); // 2nd px blur
+            CHECK (result.getPixelAt (3, 4).getBrightness() == Catch::Approx (0.0));
         }
 
         SECTION ("top edge")
         {
-            CHECK (result.getPixelAt (4, 0).getBrightness() == Catch::Approx(1.0));
-            CHECK (result.getPixelAt (4, 1).getBrightness() == Catch::Approx(0.91372549).margin(0.01));
-            CHECK (result.getPixelAt (4, 2).getBrightness() == Catch::Approx(0.741176471).margin(0.01));
-            CHECK (result.getPixelAt (4, 3).getBrightness() == Catch::Approx(0.0));
+            CHECK (result.getPixelAt (4, 0).getBrightness() == Catch::Approx (1.0));
+            CHECK (result.getPixelAt (4, 1).getBrightness() == Catch::Approx (0.91372549).margin (0.01));
+            CHECK (result.getPixelAt (4, 2).getBrightness() == Catch::Approx (0.741176471).margin (0.01));
+            CHECK (result.getPixelAt (4, 3).getBrightness() == Catch::Approx (0.0));
         }
 
         SECTION ("right edge")
         {
-            CHECK (result.getPixelAt (8, 4).getBrightness() == Catch::Approx(1.0));
-            CHECK (result.getPixelAt (7, 4).getBrightness() == Catch::Approx(0.91372549).margin(0.01));
-            CHECK (result.getPixelAt (6, 4).getBrightness() == Catch::Approx (0.741176471).margin(0.01));
-            CHECK (result.getPixelAt (5, 4).getBrightness() == Catch::Approx(0.0));
+            CHECK (result.getPixelAt (8, 4).getBrightness() == Catch::Approx (1.0));
+            CHECK (result.getPixelAt (7, 4).getBrightness() == Catch::Approx (0.91372549).margin (0.01));
+            CHECK (result.getPixelAt (6, 4).getBrightness() == Catch::Approx (0.741176471).margin (0.01));
+            CHECK (result.getPixelAt (5, 4).getBrightness() == Catch::Approx (0.0));
         }
 
         SECTION ("bottom edge")
         {
             // check the bottom edge, 1 pixel into the left
-            CHECK (result.getPixelAt (4, 8).getBrightness() == Catch::Approx(1.0));
-            CHECK (result.getPixelAt (4, 7).getBrightness() == Catch::Approx(0.91372549).margin(0.01));
-            CHECK (result.getPixelAt (4, 6).getBrightness() == Catch::Approx (0.741176471).margin(0.01));
-            CHECK (result.getPixelAt (4, 5).getBrightness() == Catch::Approx(0.0));
+            CHECK (result.getPixelAt (4, 8).getBrightness() == Catch::Approx (1.0));
+            CHECK (result.getPixelAt (4, 7).getBrightness() == Catch::Approx (0.91372549).margin (0.01));
+            CHECK (result.getPixelAt (4, 6).getBrightness() == Catch::Approx (0.741176471).margin (0.01));
+            CHECK (result.getPixelAt (4, 5).getBrightness() == Catch::Approx (0.0));
         }
 
         // the differences between corners have to do with edge bleed of the stack blur algorithm?
         SECTION ("corners")
         {
             // check top left corner for blur
-            CHECK (result.getPixelAt (2, 2).getBrightness() == Catch::Approx(0.890196078).margin(0.01));
+            CHECK (result.getPixelAt (2, 2).getBrightness() == Catch::Approx (0.890196078).margin (0.01));
 
             // rest of corners
-            CHECK (result.getPixelAt (7, 2).getBrightness() == Catch::Approx(0.964705882).margin(0.01)); // right top
-            CHECK (result.getPixelAt (7, 7).getBrightness() == Catch::Approx(0.988235294).margin(0.01)); // right bottom
-            CHECK (result.getPixelAt (2, 7).getBrightness() == Catch::Approx(0.964705882).margin(0.01)); // left bottom
+            CHECK (result.getPixelAt (7, 2).getBrightness() == Catch::Approx (0.964705882).margin (0.01)); // right top
+            CHECK (result.getPixelAt (7, 7).getBrightness() == Catch::Approx (0.988235294).margin (0.01)); // right bottom
+            CHECK (result.getPixelAt (2, 7).getBrightness() == Catch::Approx (0.964705882).margin (0.01)); // left bottom
         }
     }
 
@@ -116,6 +128,8 @@ TEST_CASE ("Melatonin Blur Drop Shadow")
             shadow.render (g, p);
             g.setColour (juce::Colours::black);
             g.fillPath (p);
+
+            save_test_image (result, "positive 1px offset");
 
             SECTION ("left and top edges have an extra white pixel")
             {
@@ -145,7 +159,7 @@ TEST_CASE ("Melatonin Blur Drop Shadow")
                 shadow.render (g, p);
                 g.setColour (juce::Colours::black);
                 g.fillPath (p);
-                CHECK (result.getPixelAt (4, 0).getBrightness() == Catch::Approx(0.91372549).margin(0.01)); // 1st px of blur
+                CHECK (result.getPixelAt (4, 0).getBrightness() == Catch::Approx (0.91372549).margin (0.01)); // 1st px of blur
             }
 
             SECTION ("negative X offset means left pixel is no longer white")
@@ -154,7 +168,7 @@ TEST_CASE ("Melatonin Blur Drop Shadow")
                 shadow.render (g, p);
                 g.setColour (juce::Colours::black);
                 g.fillPath (p);
-                CHECK (result.getPixelAt (0, 4).getBrightness() == Catch::Approx(0.91372549).margin(.01)); // 1st px of blur
+                CHECK (result.getPixelAt (0, 4).getBrightness() == Catch::Approx (0.91372549).margin (.01)); // 1st px of blur
             }
         }
     }
@@ -182,7 +196,6 @@ TEST_CASE ("Melatonin Blur Drop Shadow")
             }
         }
 
-        // This is how inner shadows are made
         SECTION ("negative")
         {
             SECTION ("reduces the size of the blur by 1px")
@@ -202,7 +215,8 @@ TEST_CASE ("Melatonin Blur Drop Shadow")
 
             SECTION ("cancels out the blur when -spread = radius")
             {
-                melatonin::DropShadow shadow = { { juce::Colours::black, 2, {}, -2 } };
+                // spread can't be more than -1 in our example, since our path is 3x3
+                melatonin::DropShadow shadow = { { juce::Colours::black, 1, {}, -1 } };
 
                 shadow.render (g, p);
                 g.setColour (juce::Colours::black);
@@ -214,30 +228,68 @@ TEST_CASE ("Melatonin Blur Drop Shadow")
         }
     }
 
-    SECTION ("multiple shadows")
+    SECTION ("multiple shadow colors")
     {
         g.fillAll (juce::Colours::white);
 
-        melatonin::DropShadow shadow = { { juce::Colours::red, 2 }, { juce::Colours::green, 2 } };
+        // dammit, in JUCE "lime" is actually pure green...
+        melatonin::DropShadow shadow = { { juce::Colours::red, 2 }, { juce::Colours::lime, 2 } };
 
-        SECTION ("to start, our context is empty")
+        SECTION ("to start, our context is white")
         {
-            auto color = result.getPixelAt (2, 4);
-            CHECK (color.toDisplayString (true) == "FFFFFFFF");
+            auto color = result.getPixelAt (4, 4);
+            CHECK (color.getFloatRed() == Catch::Approx (1.0f));
+            CHECK (color.getFloatGreen() == Catch::Approx (1.0f));
+            CHECK (color.getFloatBlue() == Catch::Approx (1.0f));
         }
 
-        // TODO: figure out why there's blue lulz
+        // TODO: figure out red/green discrepancy
         SECTION ("post shadow, red and green are present", "[.]")
         {
             shadow.render (g, p);
-            auto color = result.getPixelAt (2, 4);
-            CHECK (color.toDisplayString (true) != "FFFFFFFF");
+            auto color = result.getPixelAt (4, 4);
+            CHECK (color.getFloatRed() == Catch::Approx (0.4f)); // TODO: no idea wtf
+            CHECK (color.getFloatGreen() == Catch::Approx (0.76471f).margin (0.005));
+            CHECK (color.getFloatBlue() == Catch::Approx (0.16078f).margin (0.005));
+        }
+    }
+
+    SECTION ("Alpha")
+    {
+        g.fillAll (juce::Colours::white);
+
+        SECTION ("alpha of 0 is invisible")
+        {
+            melatonin::DropShadow shadow = { { juce::Colours::black.withAlpha (0.0f), 2 } };
+            shadow.render (g, p);
+
+            // the entire image is still white
+            CHECK (isImageFilled (result, juce::Colours::white) == true);
+        }
+
+        SECTION ("alpha of 1 is opaque")
+        {
+            melatonin::DropShadow shadow = { { juce::Colours::black.withAlpha (1.0f), 2 } };
+            shadow.render (g, p);
+
+            // center pixel of blur is not black (0), but pretty dark still
+            CHECK (result.getPixelAt (4, 4).getLightness() == Catch::Approx (0.39608f).margin (0.01));
+        }
+
+        SECTION ("alpha of 0.5 is translucent")
+        {
+            melatonin::DropShadow shadow = { { juce::Colours::black.withAlpha (0.5f), 2 } };
+            shadow.render (g, p);
+
+            // center pixel of blur is much lighter (remember, we're on white!)
+            CHECK (result.getPixelAt (4, 4).getLightness() == Catch::Approx (0.69804f).margin (0.01));
         }
     }
 }
 
 #if JUCE_MAC
-TEST_CASE ("convertToARGB static function")
+// Verify what macOS and JUCE are doing at the raw pixel level
+TEST_CASE ("Melatonin Blur JUCE premultiplied check")
 {
     // needed for JUCE not to pee its pants (aka leak) when working with graphics
     juce::ScopedJuceInitialiser_GUI juce;

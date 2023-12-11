@@ -2,31 +2,34 @@
 
 ![](https://github.com/sudara/melatonin_blur/actions/workflows/tests.yml/badge.svg)
 
-Melatonin Blur is a batteries-included, cross-platform CPU blur library for the [JUCE C++ framework](https://juce.com/). 
+Melatonin Blur is a batteries-included, cross-platform CPU blur and shadow compositing library for the [JUCE C++ framework](https://juce.com/). 
 
-The goal: Get drop shadows and inner shadows fast enough that entire modern vector interfaces in JUCE can be built without resorting to deprecated solutions with lower quality of life (looking at you, OpenGL on macOS!). 
+*Batteries-included* means it aims to give everything out of the box:
 
-Melatonin Blur provides a 10-30x speedup over using Stack Blur.
+* 👩‍🎨 Figma/CSS-accurate drop and inner shadows!
+* 💅🏼 Filled and stroked paths!
+* 🌇 ARGB image blurs!
+* 🚀 Fast! (see [benchmarks](#more-benchmarks)).
+* 🔎 Retina-friendly (context scale-aware)!
+* 🍰 Trivial to layer multiple shadows!
+* ⚙️ Behind-the-scenes multi-layer caching! 
+* 😎 Debug optimized for high quality of life!
+* 🤖 Over 1000 correctness tests running on mac/windows!
+* 🚂 Compatible down to macOS 10.13 (progressive speedups on recent versions)
+
+The goal: modern vector interfaces in JUCE (100s of shadows) without resorting to deprecated solutions with lower quality of life (looking at you, OpenGL on macOS!). 
+
+https://github.com/sudara/melatonin_blur/assets/472/3e1d6c9a-aab9-422f-a262-6b63cbca5b71
+
+Melatonin Blur provides a 10-30x speedup over using Stack Blur alone. 
 
 <img src="https://github.com/sudara/melatonin_blur/assets/472/598115b8-9c9d-42d8-b868-e921978cda17" width="550" />
 
 On macOS, it depends on the built-in Accelerate framework.
 
-On Windows, it optionally depends on the Intel IPP library.
+On Windows, it optionally depends on the Intel IPP library. If IPP is not present, it will fall back to a JUCE FloatVectorOperations implementation for single channel (shadows, etc) and Gin's Stack Blur for ARGB. 
 
-If IPP is not present, it will fall back to a JUCE FloatVectorOperations implementation for single channel (shadows, etc) and Gin's Stack Blur for ARGB. 
-
-Interested in how this all work? [I wrote a in-depth article about Stack Blur](https://melatonin.dev/blog/implementing-marios-stack-blur-15-times-in-cpp/).
-
-## Features
-
-*Batteries-included* means it aims to do everything you need out of the box:
-
-* Fast! (see [benchmarks](#more-benchmarks)).
-* Tested! Figma/CSS-accurate drop shadows and inner shadows
-* Trivial to stack / layer shadows.
-* Behind the scenes caching of shadows and blurs (they won't re-calculated unless their underlying data changes).
-* Debug optimized!
+Interested in how the blurring works? [I wrote an in-depth article about Stack Blur](https://melatonin.dev/blog/implementing-marios-stack-blur-15-times-in-cpp/).
 
 ## Installation 
 
@@ -101,16 +104,16 @@ Drop shadows work on a `juce::Path`.
 Add a `melatonin::DropShadow` as a member of your `juce::Component`, specifying the blur radius like so:
 
 ```cpp
-melatonin::DropShadow shadow = {{ juce::Colours::black, 8 }};
+melatonin::DropShadow shadow = { juce::Colours::black, 8 };
 ```
 
-In your `paint` call you will then `shadow.render(g, path)`, passing in the graphics context and the path to render. **Remember to render the shadow *before* rendering the path!**
+In `paint` of your component, call `shadow.render(g, path)`, passing in the graphics context and the path to render. **Remember to render drop shadows *before* rendering the path!**
 
 ### Color, Radius, Offset, Spread
 
-Melatonin Blur comes with a test suite that verifies compatibility with design programs like Figma and the CSS standard. 
+Melatonin Blur comes with a test suite that verifies compatibility with design programs like Figma and CSS. It's not pixel-to-pixel accurate (Figma and Adobe XD both seem to use cheaper blurs than CSS), but the feature set should be 1:1.
 
-That also means it's fully featured. You can specify the color, radius, offset and spread of each blur.
+You can specify the color, radius, offset and spread of each blur, passing them in a struct like so:
 
 ```cpp
 struct ShadowParameters
@@ -126,7 +129,13 @@ struct ShadowParameters
 }
 ```
 
-### Drop Shadow Example
+Or just as parameters, like so:
+
+```cpp
+melatonin::DropShadow shadow = { juce::Colours::black, 8, { 4,4 }, 10 };
+```
+
+### Full Drop Shadow Example
 
 ```cpp
 
@@ -136,7 +145,7 @@ public:
     
     void paint (juce::Graphics& g) override
     {
-        // note that drop shadows get painted *before* the path
+        // drop shadows get painted *before* the path
         shadow.render (g, valueTrack);
         
         g.setColour (juce::Colours::red);
@@ -151,11 +160,11 @@ public:
     
 private:
     juce::Path valueTrack;
-    melatonin::DropShadow shadow = {{ juce::Colours::black, 8, { -2, 0 } }};
+    melatonin::DropShadow shadow = { juce::Colours::black, 8, { -2, 0 } };
 }
 ```
 
-The `juce::Path` itself doesn't *have* to be a member variable to take advantage of the caching. The path is passed in on `render` (instead of on construction) which means the path is checked before each render. This frees you up to recalcuate the path in `paint` (i.e. there are times when `resized` won't be called, such as when animating), while still retaining the cached shadow (as long as the path data is identical).
+The `juce::Path` itself doesn't *have* to be a member variable to still take advantage of the caching. The path is passed in on `render` (instead of on construction). This frees you up to recalculate the path in `paint` (i.e. there are times when `resized` won't be called, such as when animating), while still retaining the cached shadow when the data is identical:
 
 
 ```cpp
@@ -205,7 +214,7 @@ public:
         valueTrack.addRoundedRectangle (10, 10, 100, 20, 2);
     }
 private:
-        melatonin::InnerShadow innerShadow = {{ juce::Colours::black, 3, { 0, 0 } }};
+        melatonin::InnerShadow innerShadow = { juce::Colours::black, 3 };
 }
 ```
 
@@ -222,13 +231,41 @@ melatonin::DropShadow thumbShadow {
 
 Shadows are rendered in the order they are specified. 
 
-### Animating Shadows
+### Updating and Animating Shadows
 
-For `juce::Path`s that look the same each paint but move around (such as slider thumbs), the underlying path data *will* change as it moves, invalidating the blur cache. I've optimized single channel blurs to make this trivial, but there's an open issue for improving cache performance here.
+Starting with version 1.2, caching of the underlying single channel blurs is position, color, offset and opacity agnostic. 
+
+Translation: you can animate these things at 60fps and it's very cheap. Only some image compositing, no blur recalculation.
+
+This is great for `juce::Path`s that look the same each paint but move around (such as slider thumbs).
+
+```cpp
+// these are all "free" operations that use cached single channel blurs
+path.translate(10, 0);
+shadow.setColor(juce::Colours::red);
+shadow.setOffset({ 10, 0 });
+shadow.setOpacity(0.5f);
+
+// these are "expensive", requiring a recalculation of the underlying blur
+shadow.setRadius(10);
+shadow.setSpread(10);
+```
+
+### Default Constructors for Inner/DropShadow
+
+Don't know your colors at compile time? 
+
+That's fine, there's a default constructor, you can update the color in the paint method.
+
+### Stroked Paths
+
+Stroked paths are supported for both inner and drop shadows. 
+
+Instead of calling `shadow.render(g, path)`, you'll need to call `shadow.renderStroked (g, path, pathStrokeType)`. 
 
 ### Full Color Blurs
 
-As detailed later in the benchmarks, these are still "expensive" for larger images on first render, but caching makes them trivial to re-render.
+These are still "expensive" (up to a few ms) for larger images on first render, but caching makes them trivial to re-render.
 
 Just add a `melatonin::CachedBlur` member to your component, specifying the radius:
 
@@ -385,11 +422,7 @@ Tests were necessary to verify implementations were correct. Horizontal and vert
 
 <img src="https://github.com/sudara/melatonin_blur/assets/472/b1490023-d9c9-440e-a6b0-d814e548b4b8" width="300" />
 
-Tests aren't currently run in CI, there's an issue open for it.
-
 ### How can I run the benchmarks on my machine
-
-The benchmarks are there, but you'll have to feed them to an existing/another Catch2 project at the moment. There's an issue open for this.
 
 It could be fun to codesign and release the benchmark binaries... In general I sort of daydream about JUCE hiring me to release a benchmark plugin utility for JUCE that compares dsp and UI performance across different machines (and reports to the cloud so we can all benefit from results). 
 
@@ -452,5 +485,7 @@ In other words, this project humbled me. I love to advocate for clarity, readabi
 
 ## Acknowledgements
 
-* Roland Rabian for providing a JUCE Stack Blur via [Gin](https://github.com/figbug/gin).
-* Luke M1 for [figuring out the `drawImageAt` optimization](https://forum.juce.com/t/faster-blur-glassmorphism-ui/43086/76). 
+* Mars, for being my reliable rubber duck! Inner Shadow caching and compositing geometry broke my brain.
+* Roland Rabian for JUCE Stack Blur workhorse via [Gin](https://github.com/figbug/gin).
+* LukeM1 on the forums for [figuring out the `drawImageAt` optimization](https://forum.juce.com/t/faster-blur-glassmorphism-ui/43086/76). 
+* Ecstasy on the Discord for the motivation and feedback around stroked paths and default constructors.

@@ -56,13 +56,14 @@ static std::vector<float> pixelRow (const juce::Image& image, int row, int chann
 
             // assume little endian (aka BGRA)
             if (channel == 0)
-                result.push_back (pixel.b / 255.0f);
+                result.push_back ((float) pixel.b / 255.0f);
             else if (channel == 1)
-                result.push_back (pixel.g / 255.0f);
+                result.push_back ((float) pixel.g / 255.0f);
             else if (channel == 2)
-                result.push_back (pixel.r / 255.0f);
+                result.push_back ((float) pixel.r / 255.0f);
+            else if (channel == 3)
+                result.push_back (data.getPixelColour (x, row).getAlpha());
             else
-                // wat?
                 jassertfalse;
         }
     }
@@ -70,7 +71,6 @@ static std::vector<float> pixelRow (const juce::Image& image, int row, int chann
 }
 static std::vector<float> pixelCol (const juce::Image& image, int col, int channel = -1)
 {
-    auto singleChannel = image.getFormat() == juce::Image::PixelFormat::SingleChannel;
     std::vector<float> result;
     juce::Image::BitmapData data (image, juce::Image::BitmapData::readOnly);
     for (auto y = 0; y < image.getHeight(); ++y)
@@ -83,13 +83,14 @@ static std::vector<float> pixelCol (const juce::Image& image, int col, int chann
 
             // assume little endian (aka BGRA)
             if (channel == 0)
-                result.push_back (pixel.b / 255.0f);
+                result.push_back ((float) pixel.b / 255.0f);
             else if (channel == 1)
-                result.push_back (pixel.g / 255.0f);
+                result.push_back ((float) pixel.g / 255.0f);
             else if (channel == 2)
-                result.push_back (pixel.r / 255.0f);
+                result.push_back ((float) pixel.r / 255.0f);
+            else if (channel == 3)
+                result.push_back (data.getPixelColour (col, y).getAlpha());
             else
-                // wat?
                 jassertfalse;
         }
     }
@@ -99,6 +100,13 @@ static std::vector<float> pixelCol (const juce::Image& image, int col, int chann
 static juce::String getPixel (juce::Image& img, int x, int y)
 {
     return img.getPixelAt (x, y).toDisplayString (true);
+}
+
+static float getScaledBrightness (juce::Image& img, int x, int y, float scale)
+{
+    x = juce::roundToInt ((float) x * scale);
+    y = juce::roundToInt ((float) y * scale);
+    return img.getPixelAt (x, y).getBrightness();
 }
 
 // get pixels in a range, *includes* the start/end of range
@@ -126,6 +134,96 @@ static juce::String getPixels (juce::Image& img, juce::Range<int> xRange, int y)
     return result;
 }
 
+static juce::String getPixels (juce::Image& img, juce::Range<int> xRange, juce::Range<int> yRange)
+{
+    juce::String result;
+    for (auto y = yRange.getStart(); y <= yRange.getEnd(); ++y)
+    {
+        for (auto x = xRange.getStart(); x <= xRange.getEnd(); ++x)
+        {
+            result << getPixel (img, x, y);
+            if (!(x == xRange.getEnd() && y == yRange.getEnd()))
+                result << ", ";
+        }
+    }
+    return result;
+}
+
+static std::vector<float> getPixelsBrightness (juce::Image& img, int x, juce::Range<int> yRange)
+{
+    std::vector<float> result;
+    for (auto y = yRange.getStart(); y <= yRange.getEnd(); ++y)
+    {
+        result.push_back (img.getPixelAt (x, y).getBrightness());
+    }
+    return result;
+}
+
+static std::vector<float> getPixelsBrightness (juce::Image& img, juce::Range<int> xRange, int y)
+{
+    std::vector<float> result;
+    for (auto x = xRange.getStart(); x <= xRange.getEnd(); ++x)
+    {
+        result.push_back (img.getPixelAt (x, y).getBrightness());
+    }
+    return result;
+}
+
+static bool isImageFilled (const juce::Image& img, const juce::Colour& color)
+{
+    const juce::Image::BitmapData data (img, juce::Image::BitmapData::readOnly);
+    for (auto y = 0; y < img.getHeight(); ++y)
+    {
+        for (auto x = 0; x < img.getWidth(); ++x)
+        {
+            auto pixelColor = data.getPixelColour (x, y);
+
+            // TODO: again, windows compositing seems to need some leeway
+            // Here, the alpha channel on the far right is 253 instead of 255
+            if (pixelColor.getFloatRed() !=  color.getFloatRed()
+                || pixelColor.getFloatGreen() != color.getFloatGreen()
+                || pixelColor.getFloatBlue() != color.getFloatBlue()
+                || std::abs(pixelColor.getFloatAlpha() - color.getFloatAlpha()) > 0.01f)
+                return false;
+        }
+    }
+    return true;
+}
+
+// tests all are on WHITE
+// so filled bounds have any other color than pure white
+static juce::Rectangle<int> filledBounds (juce::Image& img)
+{
+    juce::Rectangle<int> result;
+    juce::Image::BitmapData data (img, juce::Image::BitmapData::readOnly);
+    for (auto y = 0; y < img.getHeight(); ++y)
+    {
+        for (auto x = 0; x < img.getWidth(); ++x)
+        {
+            if (data.getPixelColour (x, y) != juce::Colours::white)
+            {
+                result = result.getUnion (juce::Rectangle<int> (x, y, 1, 1));
+            }
+        }
+    }
+    return result;
+}
+
+static bool imagesAreIdentical (juce::Image& img1, juce::Image& img2)
+{
+    juce::Image::BitmapData data1 (img1, juce::Image::BitmapData::readOnly);
+    juce::Image::BitmapData data2 (img2, juce::Image::BitmapData::readOnly);
+    for (auto y = 0; y < img1.getHeight(); ++y)
+    {
+        for (auto x = 0; x < img1.getWidth(); ++x)
+        {
+            if (data1.getPixelColour (x, y) != data2.getPixelColour (x, y))
+                return false;
+        }
+    }
+    return true;
+}
+
 static void print_test_image (juce::Image& image)
 {
     // this is meant for testing trivial examples
@@ -145,4 +243,21 @@ static void print_test_image (juce::Image& image)
         std::cout << std::endl;
     }
     std::cout << std::endl;
+}
+
+static void save_test_image (juce::Image& image, juce::String name = "test")
+{
+    juce::Image imageToSave = image;
+    if (imageToSave.isSingleChannel())
+        imageToSave = imageToSave.convertedToFormat (juce::Image::ARGB);
+#if JUCE_MAC
+    auto file = juce::File::getSpecialLocation (juce::File::SpecialLocationType::userHomeDirectory).getChildFile ("Downloads").getChildFile (name + ".png");
+#else
+    auto file = juce::File::getSpecialLocation (juce::File::SpecialLocationType::userDesktopDirectory).getChildFile (name + ".png");
+#endif
+    juce::FileOutputStream stream (file);
+    stream.setPosition (0);
+    stream.truncate();
+    juce::PNGImageFormat png;
+    png.writeImageToStream (imageToSave, stream);
 }
