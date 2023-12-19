@@ -1,3 +1,5 @@
+#include "melatonin/implementations/vImage.cpp"
+
 #if RUN_MELATONIN_TESTS
     #include "benchmarks/benchmarks.cpp"
     #include "tests/blur_implementations.cpp"
