@@ -48,6 +48,8 @@ namespace melatonin
                 innerShadow.setRadius ((size_t) radiusSlider.getValue());
                 strokedDropShadow.setRadius ((size_t) radiusSlider.getValue());
                 strokedInnerShadow.setRadius ((size_t) radiusSlider.getValue());
+                textDropShadow.setRadius ((size_t) radiusSlider.getValue());
+                textInnerShadow.setRadius ((size_t) radiusSlider.getValue());
                 repaint();
             };
 
@@ -56,6 +58,8 @@ namespace melatonin
                 innerShadow.setSpread ((size_t) spreadSlider.getValue());
                 strokedDropShadow.setSpread ((size_t) spreadSlider.getValue());
                 strokedInnerShadow.setSpread ((size_t) spreadSlider.getValue());
+                textDropShadow.setSpread ((size_t) spreadSlider.getValue());
+                textInnerShadow.setSpread ((size_t) spreadSlider.getValue());
                 repaint();
             };
 
@@ -64,6 +68,8 @@ namespace melatonin
                 innerShadow.setOffset ({ (int) offsetXSlider.getValue(), (int) offsetYSlider.getValue() });
                 strokedDropShadow.setOffset ({ (int) offsetXSlider.getValue(), (int) offsetYSlider.getValue() });
                 strokedInnerShadow.setOffset ({ (int) offsetXSlider.getValue(), (int) offsetYSlider.getValue() });
+                textDropShadow.setOffset ({ (int) offsetXSlider.getValue(), (int) offsetYSlider.getValue() });
+                textInnerShadow.setOffset ({ (int) offsetXSlider.getValue(), (int) offsetYSlider.getValue() });
                 repaint();
             };
 
@@ -72,6 +78,8 @@ namespace melatonin
                 innerShadow.setOffset ({ (int) offsetXSlider.getValue(), (int) offsetYSlider.getValue() });
                 strokedDropShadow.setOffset ({ (int) offsetXSlider.getValue(), (int) offsetYSlider.getValue() });
                 strokedInnerShadow.setOffset ({ (int) offsetXSlider.getValue(), (int) offsetYSlider.getValue() });
+                textDropShadow.setOffset ({ (int) offsetXSlider.getValue(), (int) offsetYSlider.getValue() });
+                textInnerShadow.setOffset ({ (int) offsetXSlider.getValue(), (int) offsetYSlider.getValue() });
                 repaint();
             };
 
@@ -80,6 +88,8 @@ namespace melatonin
                 innerShadow.setOpacity ((float) opacitySlider.getValue());
                 strokedDropShadow.setOpacity ((float) opacitySlider.getValue());
                 strokedInnerShadow.setOpacity ((float) opacitySlider.getValue());
+                textDropShadow.setOpacity ((float) opacitySlider.getValue());
+                textInnerShadow.setOpacity ((float) opacitySlider.getValue());
                 repaint();
             };
 #if MELATONIN_VBLANK
@@ -126,8 +136,11 @@ namespace melatonin
 
             g.setColour (juce::Colours::white);
             g.setFont (juce::Font (50).boldened());
-            g.drawText ("wow", textBounds, juce::Justification::centred);
-            // shadowedText.render(g, "wow", textBounds, juce::Justification::centred);
+            textDropShadow.renderText (g, "drop", textBounds.toFloat(), juce::Justification::left);
+            g.drawText ("drop", textBounds, juce::Justification::left);
+
+            g.drawText ("inner", textBounds, juce::Justification::centredRight);
+            textInnerShadow.renderText (g, "inner", textBounds.toFloat(), juce::Justification::centredRight);
 
             g.setFont (juce::Font (16));
             auto labels = juce::StringArray ("radius", "spread", "offsetX", "offsetY", "opacity");
@@ -163,7 +176,7 @@ namespace melatonin
             strokedInnerPath.clear();
             strokedInnerPath.addArc ((float) strokedPathInnerBounds.getX(), (float) strokedPathInnerBounds.getY(), (float) strokedPathInnerBounds.getWidth(), (float) strokedPathInnerBounds.getHeight(), 4.4f, 7.1f, true);
 
-            // textBounds = area.removeFromTop (100).withSizeKeepingCentre (300, 100);
+            textBounds = area.removeFromTop (100).withSizeKeepingCentre (300, 100);
 
             auto sliderGroup = area.removeFromTop (60).withSizeKeepingCentre (300, 50);
             sliderLabelsBounds = area.removeFromTop (20).withSizeKeepingCentre (300, 20);
@@ -190,6 +203,8 @@ namespace melatonin
                 innerShadow.setColor (newColor);
                 strokedDropShadow.setColor (newColor);
                 strokedInnerShadow.setColor (newColor);
+                textDropShadow.setColor (newColor);
+                textInnerShadow.setColor (newColor);
                 repaint();
             }
         }
@@ -206,7 +221,8 @@ namespace melatonin
         melatonin::InnerShadow innerShadow { { juce::Colours::black, 10 } };
         melatonin::DropShadow strokedDropShadow { { juce::Colours::white, 10 } };
         melatonin::InnerShadow strokedInnerShadow { { juce::Colours::white, 10 } };
-        // melatonin::ShadowedText { { juce::Colours::black, 10 } };
+        melatonin::DropShadow textDropShadow { { juce::Colours::black, 10 } };
+        melatonin::InnerShadow textInnerShadow { { juce::Colours::white, 2 } };
         melatonin::CachedBlur blur { 5 };
         juce::Rectangle<int> textBounds;
         juce::Rectangle<int> sliderLabelsBounds;

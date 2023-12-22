@@ -37,6 +37,7 @@ namespace melatonin
 
             juce::Image& render (juce::Path& originAgnosticPath, float scale, bool stroked = false)
             {
+                jassert(scale > 0);
                 scaledPathBounds = (originAgnosticPath.getBounds() * scale).getSmallestIntegerContainer();
                 updateScaledShadowBounds (scale);
 
