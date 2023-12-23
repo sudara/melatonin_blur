@@ -3,6 +3,12 @@
 #include "juce_gui_basics/juce_gui_basics.h"
 #include "juce_gui_extra/juce_gui_extra.h"
 
+#if (JUCE_MAJOR_VERSION >= 7) && (JUCE_MINOR_VERSION >= 1 || JUCE_BUILDNUMBER >= 3)
+    #define MELATONIN_VBLANK 1
+#else
+    #define MELATONIN_VBLANK 0
+#endif
+
 namespace melatonin
 {
     // TODO: Maybe someone else can make this nicer?
@@ -13,6 +19,7 @@ namespace melatonin
     public:
         BlurDemoComponent()
         {
+            setOpaque (true);
             colorSelector.addChangeListener (this);
 
             addAndMakeVisible (radiusSlider);
@@ -21,6 +28,7 @@ namespace melatonin
             addAndMakeVisible (spreadSlider);
             addAndMakeVisible (opacitySlider);
             addAndMakeVisible (colorSelector);
+            addAndMakeVisible (animateButton);
 
             radiusSlider.setColour (juce::Slider::ColourIds::trackColourId, juce::Colours::grey);
             spreadSlider.setColour (juce::Slider::ColourIds::trackColourId, juce::Colours::grey);
@@ -98,6 +106,10 @@ namespace melatonin
                     this->repaint();
                 } };
 #endif
+            animateButton.onClick = [this] {
+                animating = !animating;
+                animateButton.setButtonText (animating ? "Stop!" : "Animate!");
+            };
         }
 
         void modulate()
@@ -116,7 +128,8 @@ namespace melatonin
         void paint (juce::Graphics& g) override
         {
             auto start = juce::Time::getMillisecondCounterHiRes();
-            // modulate();
+            if (animating)
+                modulate();
 
             g.fillAll (juce::Colours::black);
             g.setColour (contentColor);
@@ -192,6 +205,7 @@ namespace melatonin
             area.removeFromTop (10);
 
             colorSelector.setBounds (area.removeFromTop (200).withSizeKeepingCentre (200, 200));
+            animateButton.setBounds (area.removeFromTop (50).withSizeKeepingCentre (100, 30));
         }
 
         void changeListenerCallback (juce::ChangeBroadcaster* source) override
@@ -210,6 +224,7 @@ namespace melatonin
         }
 
     private:
+        bool animating = false;
         juce::Rectangle<int> contentBounds { 0, 0, 100, 100 };
         juce::Path dropShadowedPath;
         juce::Path innerShadowedPath;
@@ -237,9 +252,34 @@ namespace melatonin
                                                  | juce::ColourSelector::showColourspace,
             0,
             0 };
+        juce::TextButton animateButton { "Animate!" };
 #if MELATONIN_VBLANK
         juce::VBlankAttachment vBlankCallback;
 #endif
         size_t modulator = 0;
+    };
+
+    class TextShadowDemo : public juce::Component
+    {
+    public:
+        void paint (juce::Graphics& g) override
+        {
+            // https://codepen.io/namho/pen/jEaXra
+            juce::String text = "TEXTSHADOW";
+            g.fillAll (juce::Colour::fromRGB (236, 229, 218));
+            g.setFont (font.withExtraKerningFactor(JUCE_LIVE_CONSTANT(-0.1f)));
+
+            // drop shadow renders under the text!
+            dropShadow.render (g, text, getLocalBounds(), juce::Justification::centred);
+            g.setColour (juce::Colour::fromRGB (241, 235, 229));
+            g.drawText (text, getLocalBounds(), juce::Justification::centred);
+        }
+
+    private:
+        juce::Font font { "Arial Black", 110.f, 0 };
+        melatonin::DropShadow dropShadow {
+            { juce::Colour::fromRGB (196, 181, 157), 12, { 0, 13 } },
+            { juce::Colours::white, 1, { 0, -2 } }
+        };
     };
 }
