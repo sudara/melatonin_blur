@@ -3,6 +3,12 @@
 #include "juce_gui_basics/juce_gui_basics.h"
 #include "juce_gui_extra/juce_gui_extra.h"
 
+#if (JUCE_MAJOR_VERSION >= 7) && (JUCE_MINOR_VERSION >= 1 || JUCE_BUILDNUMBER >= 3)
+    #define MELATONIN_VBLANK 1
+#else
+    #define MELATONIN_VBLANK 0
+#endif
+
 namespace melatonin
 {
     // TODO: Maybe someone else can make this nicer?
@@ -13,6 +19,7 @@ namespace melatonin
     public:
         BlurDemoComponent()
         {
+            setOpaque (true);
             colorSelector.addChangeListener (this);
 
             addAndMakeVisible (radiusSlider);
@@ -21,6 +28,7 @@ namespace melatonin
             addAndMakeVisible (spreadSlider);
             addAndMakeVisible (opacitySlider);
             addAndMakeVisible (colorSelector);
+            addAndMakeVisible (animateButton);
 
             radiusSlider.setColour (juce::Slider::ColourIds::trackColourId, juce::Colours::grey);
             spreadSlider.setColour (juce::Slider::ColourIds::trackColourId, juce::Colours::grey);
@@ -48,6 +56,8 @@ namespace melatonin
                 innerShadow.setRadius ((size_t) radiusSlider.getValue());
                 strokedDropShadow.setRadius ((size_t) radiusSlider.getValue());
                 strokedInnerShadow.setRadius ((size_t) radiusSlider.getValue());
+                textDropShadow.setRadius ((size_t) radiusSlider.getValue());
+                textInnerShadow.setRadius ((size_t) radiusSlider.getValue());
                 repaint();
             };
 
@@ -56,6 +66,8 @@ namespace melatonin
                 innerShadow.setSpread ((size_t) spreadSlider.getValue());
                 strokedDropShadow.setSpread ((size_t) spreadSlider.getValue());
                 strokedInnerShadow.setSpread ((size_t) spreadSlider.getValue());
+                textDropShadow.setSpread ((size_t) spreadSlider.getValue());
+                textInnerShadow.setSpread ((size_t) spreadSlider.getValue());
                 repaint();
             };
 
@@ -64,6 +76,8 @@ namespace melatonin
                 innerShadow.setOffset ({ (int) offsetXSlider.getValue(), (int) offsetYSlider.getValue() });
                 strokedDropShadow.setOffset ({ (int) offsetXSlider.getValue(), (int) offsetYSlider.getValue() });
                 strokedInnerShadow.setOffset ({ (int) offsetXSlider.getValue(), (int) offsetYSlider.getValue() });
+                textDropShadow.setOffset ({ (int) offsetXSlider.getValue(), (int) offsetYSlider.getValue() });
+                textInnerShadow.setOffset ({ (int) offsetXSlider.getValue(), (int) offsetYSlider.getValue() });
                 repaint();
             };
 
@@ -72,6 +86,8 @@ namespace melatonin
                 innerShadow.setOffset ({ (int) offsetXSlider.getValue(), (int) offsetYSlider.getValue() });
                 strokedDropShadow.setOffset ({ (int) offsetXSlider.getValue(), (int) offsetYSlider.getValue() });
                 strokedInnerShadow.setOffset ({ (int) offsetXSlider.getValue(), (int) offsetYSlider.getValue() });
+                textDropShadow.setOffset ({ (int) offsetXSlider.getValue(), (int) offsetYSlider.getValue() });
+                textInnerShadow.setOffset ({ (int) offsetXSlider.getValue(), (int) offsetYSlider.getValue() });
                 repaint();
             };
 
@@ -80,6 +96,8 @@ namespace melatonin
                 innerShadow.setOpacity ((float) opacitySlider.getValue());
                 strokedDropShadow.setOpacity ((float) opacitySlider.getValue());
                 strokedInnerShadow.setOpacity ((float) opacitySlider.getValue());
+                textDropShadow.setOpacity ((float) opacitySlider.getValue());
+                textInnerShadow.setOpacity ((float) opacitySlider.getValue());
                 repaint();
             };
 #if MELATONIN_VBLANK
@@ -88,6 +106,10 @@ namespace melatonin
                     this->repaint();
                 } };
 #endif
+            animateButton.onClick = [this] {
+                animating = !animating;
+                animateButton.setButtonText (animating ? "Stop!" : "Animate!");
+            };
         }
 
         void modulate()
@@ -106,7 +128,8 @@ namespace melatonin
         void paint (juce::Graphics& g) override
         {
             auto start = juce::Time::getMillisecondCounterHiRes();
-            // modulate();
+            if (animating)
+                modulate();
 
             g.fillAll (juce::Colours::black);
             g.setColour (contentColor);
@@ -118,16 +141,19 @@ namespace melatonin
             g.fillPath (innerShadowedPath);
             innerShadow.render (g, innerShadowedPath);
 
-            strokedDropShadow.renderStroked (g, strokedDropPath, juce::PathStrokeType (6));
+            strokedDropShadow.render (g, strokedDropPath, juce::PathStrokeType (6));
             g.strokePath (strokedDropPath, juce::PathStrokeType (6));
 
             g.strokePath (strokedInnerPath, juce::PathStrokeType (6));
-            strokedInnerShadow.renderStroked (g, strokedInnerPath, juce::PathStrokeType (6));
+            strokedInnerShadow.render (g, strokedInnerPath, juce::PathStrokeType (6));
 
             g.setColour (juce::Colours::white);
             g.setFont (juce::Font (50).boldened());
-            g.drawText ("wow", textBounds, juce::Justification::centred);
-            // shadowedText.render(g, "wow", textBounds, juce::Justification::centred);
+            textDropShadow.render (g, "drop", textBounds, juce::Justification::left);
+            g.drawText ("drop", textBounds, juce::Justification::left);
+
+            g.drawText ("inner", textBounds, juce::Justification::centredRight);
+            textInnerShadow.render (g, "inner", textBounds.toFloat(), juce::Justification::centredRight);
 
             g.setFont (juce::Font (16));
             auto labels = juce::StringArray ("radius", "spread", "offsetX", "offsetY", "opacity");
@@ -163,7 +189,7 @@ namespace melatonin
             strokedInnerPath.clear();
             strokedInnerPath.addArc ((float) strokedPathInnerBounds.getX(), (float) strokedPathInnerBounds.getY(), (float) strokedPathInnerBounds.getWidth(), (float) strokedPathInnerBounds.getHeight(), 4.4f, 7.1f, true);
 
-            // textBounds = area.removeFromTop (100).withSizeKeepingCentre (300, 100);
+            textBounds = area.removeFromTop (100).withSizeKeepingCentre (300, 100);
 
             auto sliderGroup = area.removeFromTop (60).withSizeKeepingCentre (300, 50);
             sliderLabelsBounds = area.removeFromTop (20).withSizeKeepingCentre (300, 20);
@@ -179,6 +205,7 @@ namespace melatonin
             area.removeFromTop (10);
 
             colorSelector.setBounds (area.removeFromTop (200).withSizeKeepingCentre (200, 200));
+            animateButton.setBounds (area.removeFromTop (50).withSizeKeepingCentre (100, 30));
         }
 
         void changeListenerCallback (juce::ChangeBroadcaster* source) override
@@ -190,11 +217,14 @@ namespace melatonin
                 innerShadow.setColor (newColor);
                 strokedDropShadow.setColor (newColor);
                 strokedInnerShadow.setColor (newColor);
+                textDropShadow.setColor (newColor);
+                textInnerShadow.setColor (newColor);
                 repaint();
             }
         }
 
     private:
+        bool animating = false;
         juce::Rectangle<int> contentBounds { 0, 0, 100, 100 };
         juce::Path dropShadowedPath;
         juce::Path innerShadowedPath;
@@ -206,7 +236,8 @@ namespace melatonin
         melatonin::InnerShadow innerShadow { { juce::Colours::black, 10 } };
         melatonin::DropShadow strokedDropShadow { { juce::Colours::white, 10 } };
         melatonin::InnerShadow strokedInnerShadow { { juce::Colours::white, 10 } };
-        // melatonin::ShadowedText { { juce::Colours::black, 10 } };
+        melatonin::DropShadow textDropShadow { { juce::Colours::black, 10 } };
+        melatonin::InnerShadow textInnerShadow { { juce::Colours::white, 2 } };
         melatonin::CachedBlur blur { 5 };
         juce::Rectangle<int> textBounds;
         juce::Rectangle<int> sliderLabelsBounds;
@@ -221,9 +252,34 @@ namespace melatonin
                                                  | juce::ColourSelector::showColourspace,
             0,
             0 };
+        juce::TextButton animateButton { "Animate!" };
 #if MELATONIN_VBLANK
         juce::VBlankAttachment vBlankCallback;
 #endif
         size_t modulator = 0;
+    };
+
+    class TextShadowDemo : public juce::Component
+    {
+    public:
+        void paint (juce::Graphics& g) override
+        {
+            // https://codepen.io/namho/pen/jEaXra
+            juce::String text = "TEXTSHADOW";
+            g.fillAll (juce::Colour::fromRGB (236, 229, 218));
+            g.setFont (font.withExtraKerningFactor (-0.1f));
+
+            // drop shadow renders under the text!
+            dropShadow.render (g, text, getLocalBounds(), juce::Justification::centred);
+            g.setColour (juce::Colour::fromRGB (241, 235, 229));
+            g.drawText (text, getLocalBounds(), juce::Justification::centred);
+        }
+
+    private:
+        juce::Font font { "Arial Black", 110.f, 0 };
+        melatonin::DropShadow dropShadow {
+            { juce::Colour::fromRGB (196, 181, 157), 12, { 0, 13 } },
+            { juce::Colours::white, 1, { 0, -2 } }
+        };
     };
 }
