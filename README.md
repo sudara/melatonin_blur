@@ -271,7 +271,7 @@ Instead of calling `shadow.render(g, path)`, you'll need to call `shadow.render(
 
 ![AudioPluginHost - 2023-12-23 45@2x](https://github.com/sudara/melatonin_blur/assets/472/858e305f-f223-4df7-ad72-ace7e69865aa)
 
-Text shadows use the same `melatonin::DropShadow` and `melatonin::InnerShadow` classes as paths. You'll just need to call `renderText` instead of `render`.
+Text shadows use the same `melatonin::DropShadow` and `melatonin::InnerShadow` classes as paths:
 
 ```cpp
 class MySlider : public juce::Component
