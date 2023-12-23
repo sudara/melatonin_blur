@@ -52,7 +52,7 @@ TEST_CASE ("Melatonin Blur Stroked Path")
         g.fillAll (juce::Colours::white);
         melatonin::DropShadow shadow (juce::Colours::black, 2);
         auto strokeType = juce::PathStrokeType (3.0f);
-        shadow.renderStroked (g, p, strokeType);
+        shadow.render (g, p, strokeType);
         g.strokePath (p, strokeType);
 
         save_test_image (result, "stroked_path.png");
@@ -69,12 +69,12 @@ TEST_CASE ("Melatonin Blur Stroked Path")
         g.fillAll (juce::Colours::white);
         melatonin::DropShadow shadow (juce::Colours::black, 2);
         auto strokeType = juce::PathStrokeType (3.0f);
-        shadow.renderStroked (g, p, strokeType);
+        shadow.render (g, p, strokeType);
 
         // erase the image, render the shadow again
         g.fillAll (juce::Colours::white);
         strokeType = juce::PathStrokeType (0.0f);
-        shadow.renderStroked (g, p, strokeType);
+        shadow.render (g, p, strokeType);
 
         // there should be no more shadow (and we didn't render the path, so pure white)
         CHECK (filledBounds (result).isEmpty());
@@ -82,7 +82,7 @@ TEST_CASE ("Melatonin Blur Stroked Path")
         // erase the image, render the shadow again
         g.fillAll (juce::Colours::white);
         strokeType = juce::PathStrokeType (1.0f);
-        shadow.renderStroked (g, p, strokeType);
+        shadow.render (g, p, strokeType);
 
         CHECK (!filledBounds (result).isEmpty());
     }
@@ -96,7 +96,7 @@ TEST_CASE ("Melatonin Blur Stroked Path")
         CHECK (getPixel (result, 2, 6) == "FF000000");
         CHECK (getPixel (result, 3, 5) == "FF000000");
         CHECK (getPixel (result, 4, 4) == "FF000000");
-        shadow.renderStroked (g, p, strokeType);
+        shadow.render (g, p, strokeType);
         CHECK (getPixel (result, 2, 6) != "FF000000");
         CHECK (getPixel (result, 3, 5) != "FF000000");
         CHECK (getPixel (result, 4, 4) != "FF000000");

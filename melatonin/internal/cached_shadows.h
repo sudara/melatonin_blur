@@ -42,7 +42,7 @@ namespace melatonin::internal
             renderInternal (g);
         }
 
-        void renderStroked (juce::Graphics& g, const juce::Path& newPath, const juce::PathStrokeType& newType, bool lowQuality = false)
+        void render (juce::Graphics& g, const juce::Path& newPath, const juce::PathStrokeType& newType, bool lowQuality = false)
         {
             stroked = true;
             setScale (g, lowQuality);
@@ -62,7 +62,7 @@ namespace melatonin::internal
             renderInternal (g);
         }
 
-        void renderText (juce::Graphics& g, const juce::String& text, const juce::Rectangle<float>& area, juce::Justification justification)
+        void render (juce::Graphics& g, const juce::String& text, const juce::Rectangle<float>& area, juce::Justification justification)
         {
             setScale (g, false);
 
@@ -83,6 +83,16 @@ namespace melatonin::internal
 
             renderInternal (g);
             // need to still render a path here, which path?
+        }
+
+        void render (juce::Graphics& g, const juce::String& text, const juce::Rectangle<int>& area, juce::Justification justification)
+        {
+            render (g, text, area.toFloat(), justification);
+        }
+
+        void render (juce::Graphics& g, const juce::String& text, int x, int y, int width, int height, juce::Justification justification)
+        {
+            render (g, text, juce::Rectangle<int> (x, y, width, height).toFloat(), justification);
         }
 
         void setRadius (size_t radius, size_t index = 0)

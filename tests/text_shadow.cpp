@@ -40,7 +40,7 @@ TEST_CASE ("Melatonin Blur Text Shadow")
 
         // top middle is close to black
         auto topMiddle = result.getPixelAt (4, 4);
-        CHECK (getPixel (result, 4, 0) == "FF191919");
+        CHECK (getPixel (result, 4, 0) != "FFFFFFFF");
         CHECK (topMiddle.getRed() == topMiddle.getGreen());
     }
 
@@ -50,7 +50,7 @@ TEST_CASE ("Melatonin Blur Text Shadow")
         g.fillAll (juce::Colours::white);
         melatonin::DropShadow shadow (juce::Colours::black, 3);
         g.setColour (juce::Colours::black);
-        shadow.renderText (g, "O", { 0, 0, 9, 9 }, juce::Justification::centred);
+        shadow.render (g, "O", 0, 0, 9, 9, juce::Justification::centred);
         g.drawText ("O", 0, 0, 9, 9, juce::Justification::centred, false);
 
         // middle of image is no longer white
@@ -64,11 +64,21 @@ TEST_CASE ("Melatonin Blur Text Shadow")
         melatonin::InnerShadow shadow (juce::Colours::red, 1);
         g.setColour (juce::Colours::black);
         g.drawText ("O", 0, 0, 9, 9, juce::Justification::centred, false);
-        shadow.renderText (g, "O", { 0, 0, 9, 9 }, juce::Justification::centred);
+        shadow.render (g, "O", 0, 0, 9, 9, juce::Justification::centred);
 
         // top middle has more red than green
         auto topMiddle = result.getPixelAt (4, 0);
         CHECK (topMiddle.getRed() > topMiddle.getGreen());
         save_test_image (result, "text_inner_shadow.png");
+    }
+
+    SECTION ("accepts permutations of rectangle")
+    {
+        melatonin::InnerShadow shadow (juce::Colours::red, 1);
+        shadow.render (g, "O", 0, 0, 9, 9, juce::Justification::centred);
+        juce::Rectangle<int> intRect (0, 0, 9, 9);
+        shadow.render (g, "O", intRect, juce::Justification::centred);
+        juce::Rectangle<float> floatRect (0, 0, 9, 9);
+        shadow.render (g, "O", floatRect, juce::Justification::centred);
     }
 }

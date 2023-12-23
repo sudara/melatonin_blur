@@ -128,19 +128,19 @@ namespace melatonin
             g.fillPath (innerShadowedPath);
             innerShadow.render (g, innerShadowedPath);
 
-            strokedDropShadow.renderStroked (g, strokedDropPath, juce::PathStrokeType (6));
+            strokedDropShadow.render (g, strokedDropPath, juce::PathStrokeType (6));
             g.strokePath (strokedDropPath, juce::PathStrokeType (6));
 
             g.strokePath (strokedInnerPath, juce::PathStrokeType (6));
-            strokedInnerShadow.renderStroked (g, strokedInnerPath, juce::PathStrokeType (6));
+            strokedInnerShadow.render (g, strokedInnerPath, juce::PathStrokeType (6));
 
             g.setColour (juce::Colours::white);
             g.setFont (juce::Font (50).boldened());
-            textDropShadow.renderText (g, "drop", textBounds.toFloat(), juce::Justification::left);
+            textDropShadow.render (g, "drop", textBounds, juce::Justification::left);
             g.drawText ("drop", textBounds, juce::Justification::left);
 
             g.drawText ("inner", textBounds, juce::Justification::centredRight);
-            textInnerShadow.renderText (g, "inner", textBounds.toFloat(), juce::Justification::centredRight);
+            textInnerShadow.render (g, "inner", textBounds.toFloat(), juce::Justification::centredRight);
 
             g.setFont (juce::Font (16));
             auto labels = juce::StringArray ("radius", "spread", "offsetX", "offsetY", "opacity");
