@@ -267,7 +267,7 @@ namespace melatonin
             // https://codepen.io/namho/pen/jEaXra
             juce::String text = "TEXTSHADOW";
             g.fillAll (juce::Colour::fromRGB (236, 229, 218));
-            g.setFont (font.withExtraKerningFactor(JUCE_LIVE_CONSTANT(-0.1f)));
+            g.setFont (font.withExtraKerningFactor (-0.1f));
 
             // drop shadow renders under the text!
             dropShadow.render (g, text, getLocalBounds(), juce::Justification::centred);
