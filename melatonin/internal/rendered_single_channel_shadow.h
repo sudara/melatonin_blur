@@ -2,7 +2,6 @@
 
 #include "implementations.h"
 #include "juce_gui_basics/juce_gui_basics.h"
-#include <melatonin_blur/tests/helpers/pixel_helpers.h>
 
 namespace melatonin
 {
