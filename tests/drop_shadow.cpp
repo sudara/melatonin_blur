@@ -288,6 +288,7 @@ TEST_CASE ("Melatonin Blur Drop Shadow")
 }
 
 #if JUCE_MAC
+#include "Accelerate/Accelerate.h"
 // Verify what macOS and JUCE are doing at the raw pixel level
 TEST_CASE ("Melatonin Blur JUCE premultiplied check")
 {
