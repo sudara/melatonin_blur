@@ -45,7 +45,7 @@ namespace melatonin::blur
     }
 
     // currently unused, may be benchmarked vs. drawImageAt
-    static juce::Image convertToARGB (juce::Image& src, juce::Colour color)
+    [[maybe_unused]] static juce::Image convertToARGB (juce::Image& src, juce::Colour color)
     {
         jassert (src.getFormat() == juce::Image::SingleChannel);
         juce::Image dst (juce::Image::ARGB, src.getWidth(), src.getHeight(), true);
@@ -66,7 +66,7 @@ namespace melatonin::blur
         return dst;
     }
 
-    static void tentBlurSingleChannel (juce::Image& img, unsigned int radius)
+    [[maybe_unused]] static void tentBlurSingleChannel (juce::Image& img, unsigned int radius)
     {
         const unsigned int w = (unsigned int) img.getWidth();
         const unsigned int h = (unsigned int) img.getHeight();
