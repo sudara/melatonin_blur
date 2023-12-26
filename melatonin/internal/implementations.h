@@ -78,7 +78,7 @@ namespace melatonin::blur
         if (internal::vImageSingleChannelAvailable())
             melatonin::blur::vImageSingleChannel (img, radius);
         else
-            melatonin::stackBlur::ginSingleChannel (img, radius);
+            melatonin::stackBlur::ginSingleChannel (img, static_cast<unsigned int> (radius));
 #elif defined(MELATONIN_BLUR_IPP)
         ippVectorSingleChannel (img, radius);
 #else
@@ -92,7 +92,7 @@ namespace melatonin::blur
         if (internal::vImageARGBAvailable())
             melatonin::blur::vImageARGB (srcImage, dstImage, radius);
         else
-            melatonin::stackBlur::ginARGB (dstImage, radius);
+            melatonin::stackBlur::ginARGB (dstImage, static_cast<unsigned int> (radius));
 #else
         stackBlur::ginARGB (dstImage, radius);
 #endif
