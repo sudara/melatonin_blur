@@ -5,6 +5,7 @@ namespace melatonin::internal
 
 juce::Image& RenderedSingleChannelShadow::render (juce::Path& originAgnosticPath, float scale, bool stroked)
 {
+    jassert (scale > 0);
     scaledPathBounds = (originAgnosticPath.getBounds() * scale).getSmallestIntegerContainer();
     updateScaledShadowBounds (scale);
 

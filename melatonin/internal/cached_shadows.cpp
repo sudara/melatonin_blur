@@ -326,8 +326,8 @@ void CachedShadows::compositeShadowsToARGB()
         // it will literally g2.fillAll() with the shadow's color
         // using the shadow's image as a sort of mask
         g2.drawImageAt (shadow.getImage(), shadowOffsetFromComposite.getX(), shadowOffsetFromComposite.getY(), true);
+        }
+        needsRecomposite = false;
     }
-    needsRecomposite = false;
-}
 
 } // namespace melatonin::internal
