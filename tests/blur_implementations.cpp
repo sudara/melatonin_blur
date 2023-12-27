@@ -7,6 +7,7 @@
 #include "../melatonin/implementations/naive_class.h"
 #include "../melatonin/implementations/naive_with_martin_optimization.h"
 #include "../melatonin/implementations/templated_function.h"
+#include "../melatonin/internal/implementations.h"
 
 // These require melatonin::vector, not in this repo
 // #include "../melatonin/implementations/templated_function_float.h"

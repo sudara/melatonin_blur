@@ -6,6 +6,7 @@
 #include "melatonin_blur/melatonin_blur.h"
 #include "../melatonin/implementations/naive.h"
 #include "../melatonin/implementations/float_vector_stack_blur.h"
+#include "../melatonin/internal/implementations.h"
 
 // other benchmarks
 #include "single_channel.cpp"
