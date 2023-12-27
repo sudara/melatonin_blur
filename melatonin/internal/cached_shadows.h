@@ -18,7 +18,10 @@ namespace melatonin::internal
         juce::Path lastOriginAgnosticPathScaled = {};
 
         void render (juce::Graphics& g, const juce::Path& newPath, bool lowQuality = false);
-        void renderStroked (juce::Graphics& g, const juce::Path& newPath, const juce::PathStrokeType& newType, bool lowQuality = false);
+        void render (juce::Graphics& g, const juce::Path& newPath, const juce::PathStrokeType& newType, bool lowQuality = false);
+        void render (juce::Graphics& g, const juce::String& text, const juce::Rectangle<float>& area, juce::Justification justification);
+        void render (juce::Graphics& g, const juce::String& text, const juce::Rectangle<int>& area, juce::Justification justification);
+        void render (juce::Graphics& g, const juce::String& text, int x, int y, int width, int height, juce::Justification justification);
 
         void setRadius (size_t radius, size_t index = 0);
         void setSpread (size_t spread, size_t index = 0);
@@ -41,14 +44,30 @@ namespace melatonin::internal
         bool needsRecomposite = true;
         bool needsRecalculate = true;
 
-        float lastScale = 1.0;
+        float scale = 1.0;
 
         bool stroked = false;
         juce::PathStrokeType strokeType { -1.0f };
 
-        void recalculateBlurs (float scale);
+        struct TextArrangement
+        {
+            juce::String text = {};
+            juce::Font font = {};
+            juce::Rectangle<float> area = {};
+            juce::Justification justification = juce::Justification::left;
 
-        void drawARGBComposite (juce::Graphics& g, float scale, bool optimizeClipBounds = false);
+            bool operator== (const TextArrangement& other) const;
+
+            bool operator!= (const TextArrangement& other) const;
+        };
+
+        TextArrangement lastTextArrangement = {};
+
+        void setScale (juce::Graphics& g, bool lowQuality);
+        void updatePathIfNeeded (juce::Path& pathToBlur);
+        void recalculateBlurs();
+        void renderInternal (juce::Graphics& g);
+        void drawARGBComposite (juce::Graphics& g, bool optimizeClipBounds = false);
 
         // This is done at the main graphics context scale
         // The path is at 0,0 and the shadows are placed at their correct relative *integer* positions

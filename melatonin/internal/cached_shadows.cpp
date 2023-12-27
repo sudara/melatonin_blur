@@ -17,79 +17,68 @@ CachedShadows::CachedShadows (std::initializer_list<ShadowParameters> shadowPara
 
 void CachedShadows::render (juce::Graphics& g, const juce::Path& newPath, bool lowQuality)
 {
-    // Before Melatonin Blur, it was all low quality!
-    float scale = 1.0;
-    if (!lowQuality)
-        scale = g.getInternalContext().getPhysicalPixelScaleFactor();
-
-    // break cache if we're painting on a different monitor, etc
-    if (!juce::approximatelyEqual (lastScale, scale))
-    {
-        needsRecalculate = true;
-        lastScale = scale;
-    }
+    setScale (g, lowQuality);
 
     // Store a copy of the path.
-    // We'll strip and store its float x/y offset to 0,0
-    juce::Path incomingOriginAgnosticPath;
+    juce::Path pathCopy (newPath);
 
-    // Stroking the path changes its bounds.
-    // Do this before we strip the origin and compare with cache.
-    if (stroked)
-    {
-        strokeType.createStrokedPath (incomingOriginAgnosticPath, newPath, {}, scale);
-    }
-    else
-    {
-        incomingOriginAgnosticPath = newPath;
-    }
+    // If it's new to us, strip its location and store its float x/y offset to 0,0
+    updatePathIfNeeded (pathCopy);
 
-    // stripping the origin lets us animate/translate paths in our UI without breaking blur cache
-    auto incomingOrigin = incomingOriginAgnosticPath.getBounds().getPosition();
-    incomingOriginAgnosticPath.applyTransform (juce::AffineTransform::translation (-incomingOrigin));
-
-    // has the path actually changed?
-    if (needsRecalculate || (incomingOriginAgnosticPath != lastOriginAgnosticPath))
-    {
-        // we already created a copy above, this is faster than creating another
-        lastOriginAgnosticPath.swapWithPath (incomingOriginAgnosticPath);
-
-        // we'll need this later for compositing
-        lastOriginAgnosticPathScaled = lastOriginAgnosticPath;
-        lastOriginAgnosticPathScaled.applyTransform (juce::AffineTransform::scale (scale));
-
-        // remember the new placement in the context
-        pathPositionInContext = incomingOrigin;
-
-        // create the single channel shadows
-        recalculateBlurs (scale);
-    }
-
-    // the path is the same, but it's been moved to new coordinates
-    else if (incomingOrigin != pathPositionInContext)
-    {
-        // reposition the cached single channel shadows
-        pathPositionInContext = incomingOrigin;
-    }
-
-    // have any of the shadows changed color/opacity or been recalculated?
-    // if so, recreate the ARGB composite of all the shadows together
-    if (needsRecomposite)
-        compositeShadowsToARGB();
-
-    // finally, draw the cached composite into the main graphics context
-    drawARGBComposite (g, scale);
+    renderInternal (g);
 }
 
-void CachedShadows::renderStroked (juce::Graphics& g, const juce::Path& newPath, const juce::PathStrokeType& newType, bool lowQuality)
+void CachedShadows::render (juce::Graphics& g, const juce::Path& newPath, const juce::PathStrokeType& newType, bool lowQuality)
 {
     stroked = true;
+    setScale (g, lowQuality);
     if (newType != strokeType)
     {
         strokeType = newType;
         needsRecalculate = true;
     }
-    render (g, newPath, lowQuality);
+
+    // Stroking the path changes its bounds.
+    // Do this before we strip the origin and compare with cache.
+    juce::Path strokedPath;
+    strokeType.createStrokedPath (strokedPath, newPath, {}, scale);
+
+    updatePathIfNeeded (strokedPath);
+
+    renderInternal (g);
+}
+
+void CachedShadows::render (juce::Graphics& g, const juce::String& text, const juce::Rectangle<float>& area, juce::Justification justification)
+{
+    setScale (g, false);
+
+    // TODO: right now if text is repositioned it *will* break blur cache
+    // This seems favorable than calling arrangement.createPath on each call?
+    // But if you are animating text shadows and grumpy at performance, please open an issue :)
+    TextArrangement newTextArrangement { text, g.getCurrentFont(), area, justification };
+    if (newTextArrangement != lastTextArrangement)
+    {
+        lastTextArrangement = newTextArrangement;
+        juce::GlyphArrangement arr;
+        arr.addLineOfText (g.getCurrentFont(), text, area.getX(), area.getY());
+        arr.justifyGlyphs (0, arr.getNumGlyphs(), area.getX(), area.getY(), area.getWidth(), area.getHeight(), justification);
+        juce::Path path;
+        arr.createPath (path);
+        updatePathIfNeeded (path);
+    }
+
+    renderInternal (g);
+    // need to still render a path here, which path?
+}
+
+void CachedShadows::render (juce::Graphics& g, const juce::String& text, const juce::Rectangle<int>& area, juce::Justification justification)
+{
+    render (g, text, area.toFloat(), justification);
+}
+
+void CachedShadows::render (juce::Graphics& g, const juce::String& text, int x, int y, int width, int height, juce::Justification justification)
+{
+    render (g, text, juce::Rectangle<int> (x, y, width, height).toFloat(), justification);
 }
 
 void CachedShadows::setRadius (size_t radius, size_t index)
@@ -107,7 +96,7 @@ void CachedShadows::setSpread (size_t spread, size_t index)
 void CachedShadows::setOffset (juce::Point<int> offset, size_t index)
 {
     if (index < renderedSingleChannelShadows.size())
-        needsRecomposite = renderedSingleChannelShadows[index].updateOffset (offset, lastScale);
+        needsRecomposite = renderedSingleChannelShadows[index].updateOffset (offset, scale);
 }
 
 void CachedShadows::setColor (juce::Colour color, size_t index)
@@ -122,7 +111,61 @@ void CachedShadows::setOpacity (float opacity, size_t index)
         needsRecomposite = renderedSingleChannelShadows[index].updateOpacity (opacity);
 }
 
-void CachedShadows::recalculateBlurs (float scale)
+bool CachedShadows::TextArrangement::operator== (const TextArrangement& other) const
+{
+    return text == other.text && font == other.font && area == other.area && justification == other.justification;
+}
+
+bool CachedShadows::TextArrangement::operator!= (const TextArrangement& other) const
+{
+    return !(*this == other);
+}
+
+void CachedShadows::setScale (juce::Graphics& g, bool lowQuality)
+{
+    // Before Melatonin Blur, it was all low quality!
+    float newScale = 1.0;
+    if (!lowQuality)
+        newScale = g.getInternalContext().getPhysicalPixelScaleFactor();
+
+    // break cache if we're painting on a different monitor, etc
+    if (!juce::approximatelyEqual (scale, newScale))
+    {
+        needsRecalculate = true;
+        scale = newScale;
+    }
+}
+
+void CachedShadows::updatePathIfNeeded (juce::Path& pathToBlur)
+{
+    // stripping the origin lets us animate/translate paths in our UI without breaking blur cache
+    auto incomingOrigin = pathToBlur.getBounds().getPosition();
+    pathToBlur.applyTransform (juce::AffineTransform::translation (-incomingOrigin));
+
+    // has the path actually changed?
+    if (needsRecalculate || (pathToBlur != lastOriginAgnosticPath))
+    {
+        // we already created a copy (that is passed in here), this is faster than creating another
+        lastOriginAgnosticPath.swapWithPath (pathToBlur);
+
+        // we'll need this later for compositing
+        // TODO: Do we really need to store two copies?
+        lastOriginAgnosticPathScaled = lastOriginAgnosticPath;
+        lastOriginAgnosticPathScaled.applyTransform (juce::AffineTransform::scale (scale));
+
+        // remember the new placement in the context
+        pathPositionInContext = incomingOrigin;
+
+        needsRecalculate = true;
+    }
+    else if (incomingOrigin != pathPositionInContext)
+    {
+        // reposition the cached single channel shadows
+        pathPositionInContext = incomingOrigin;
+    }
+}
+
+void CachedShadows::recalculateBlurs()
 {
     for (auto& shadow : renderedSingleChannelShadows)
     {
@@ -132,7 +175,22 @@ void CachedShadows::recalculateBlurs (float scale)
     needsRecomposite = true;
 }
 
-void CachedShadows::drawARGBComposite (juce::Graphics& g, float scale, bool optimizeClipBounds)
+void CachedShadows::renderInternal (juce::Graphics& g)
+{
+    // if it's a new path or the path actually changed, redo the single channel blurs
+    if (needsRecalculate)
+        recalculateBlurs();
+
+    // have any of the shadows changed position/color/opacity OR been recalculated?
+    // if so, recreate the ARGB composite of all the shadows together
+    if (needsRecomposite)
+        compositeShadowsToARGB();
+
+    // draw the cached composite into the main graphics context
+    drawARGBComposite (g);
+}
+
+void CachedShadows::drawARGBComposite (juce::Graphics& g, bool optimizeClipBounds)
 {
     // support default constructors, 0 radius blurs, etc
     if (compositedARGB.isNull())
@@ -268,8 +326,8 @@ void CachedShadows::compositeShadowsToARGB()
         // it will literally g2.fillAll() with the shadow's color
         // using the shadow's image as a sort of mask
         g2.drawImageAt (shadow.getImage(), shadowOffsetFromComposite.getX(), shadowOffsetFromComposite.getY(), true);
+        }
+        needsRecomposite = false;
     }
-    needsRecomposite = false;
-}
 
 } // namespace melatonin::internal

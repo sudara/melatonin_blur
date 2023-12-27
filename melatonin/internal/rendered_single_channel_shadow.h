@@ -150,6 +150,5 @@ namespace melatonin
             // Offsets are separately stored to translate placement in ARGB compositing.
             juce::Point<int> scaledOffset;
         };
-
     }
 }
