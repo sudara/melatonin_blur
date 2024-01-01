@@ -5,7 +5,7 @@ BEGIN_JUCE_MODULE_DECLARATION
 
 ID:               melatonin_blur
 vendor:           Sudara
-version:          1.2.0
+version:          1.3.0
 name:             Optimized CPU vector blurring and JUCE drop shadowing with tests and benchmarks
 description:      Blurry Life
 license:          MIT

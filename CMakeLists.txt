@@ -90,5 +90,9 @@ if (MelatoninBlur_IS_TOP_LEVEL)
     endif ()
 
 else ()
-    message(WARNING "This CMake config is just for CI tests.\nSubmit an Issue / PR if you want more CMake support: https://github.com/sudara/melatonin_blur ")
+    if (NOT COMMAND juce_add_module)
+        message(FATAL_ERROR "JUCE must be added to your project before melatonin_blur!")
+    endif ()
+
+    juce_add_module("${CMAKE_CURRENT_SOURCE_DIR}")
 endif ()

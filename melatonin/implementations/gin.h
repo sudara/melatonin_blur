@@ -34,7 +34,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Excerpted for testing, benchmarking, and use of rgba algo on windows
 
 ==============================================================================*/
+
 #pragma once
+
 #include "juce_graphics/juce_graphics.h"
 
 namespace melatonin::stackBlur
@@ -494,14 +496,14 @@ namespace melatonin::stackBlur
         juce::Graphics g2 (renderedPath);
         g2.setColour (juce::Colours::white);
         g2.fillPath ((spread != 0) ? spreadPath : path, juce::AffineTransform::translation ((float) (offset.x - area.getX()), (float) (offset.y - area.getY())));
-        ginSingleChannel (renderedPath, radius);
+        ginSingleChannel (renderedPath, static_cast<unsigned int> (radius));
 
         g.setColour (color);
         g.drawImageAt (renderedPath, area.getX(), area.getY(), true);
     }
 
     // sudara's old inner helper
-    static void renderInnerShadow (juce::Graphics& g, juce::Path target, juce::Colour shadowColor, int radius = 1, juce::Point<int> offset = { 0, 0 }, int spread = 0)
+    [[maybe_unused]] static void renderInnerShadow (juce::Graphics& g, juce::Path target, juce::Colour shadowColor, int radius = 1, juce::Point<int> offset = { 0, 0 }, int spread = 0)
     {
         // resets the Clip Region when this scope ends
         juce::Graphics::ScopedSaveState saveState (g);

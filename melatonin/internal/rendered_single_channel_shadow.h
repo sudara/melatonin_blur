@@ -2,7 +2,6 @@
 
 #include "implementations.h"
 #include "juce_gui_basics/juce_gui_basics.h"
-#include <melatonin_blur/tests/helpers/pixel_helpers.h>
 
 namespace melatonin
 {
@@ -37,6 +36,7 @@ namespace melatonin
 
             juce::Image& render (juce::Path& originAgnosticPath, float scale, bool stroked = false)
             {
+                jassert(scale > 0);
                 scaledPathBounds = (originAgnosticPath.getBounds() * scale).getSmallestIntegerContainer();
                 updateScaledShadowBounds (scale);
 
