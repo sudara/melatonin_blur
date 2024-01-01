@@ -1,8 +1,8 @@
 #pragma once
 
 #define LIBDIVIDE_NEON 1
-#include "../support/libdivide.h"
-#include "../support/rotation.h"
+#include "../internal/libdivide.h"
+#include "../internal/rotation.h"
 #include "juce_gui_basics/juce_gui_basics.h"
 #include <Accelerate/Accelerate.h>
 #include <arm_neon.h>

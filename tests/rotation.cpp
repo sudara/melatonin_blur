@@ -1,4 +1,4 @@
-#include "../melatonin/support/rotation.h"
+#include "../melatonin/internal/rotation.h"
 #include "catch2/matchers/catch_matchers.hpp"
 #include "helpers/pixel_helpers.h"
 #include <catch2/catch_approx.hpp>
