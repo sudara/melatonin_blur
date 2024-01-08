@@ -487,7 +487,7 @@ namespace melatonin::stackBlur
         if (spread != 0)
         {
             area.expand (spread, spread);
-            auto bounds = path.getBounds().expanded (spread);
+            auto bounds = path.getBounds().expanded (static_cast<float>(spread));
             spreadPath.scaleToFit (bounds.getX(), bounds.getY(), bounds.getWidth(), bounds.getHeight(), true);
         }
 
@@ -516,7 +516,7 @@ namespace melatonin::stackBlur
         if (spread != 0)
         {
             // A positive spread radius means a smaller projected image (more inner shadow)
-            auto bounds = shadowPath.getBounds().expanded (-spread);
+            auto bounds = shadowPath.getBounds().expanded (static_cast<float>(-spread));
             shadowPath.scaleToFit (bounds.getX(), bounds.getY(), bounds.getWidth(), bounds.getHeight(), true);
         }
 

@@ -53,9 +53,10 @@ namespace melatonin::blur
          *     We need to convert all the pixels in the queue to floats anyway
          */
         std::vector<std::vector<float>> queue;
-        for (auto i = 0u; i < radius * 2 + 1; ++i)
+        // SYL: fix signed / unsigned mismatch
+        for (auto i = 0; i < radius * 2 + 1; ++i)
         {
-            queue.emplace_back (vectorSize, 0);
+            queue.emplace_back (vectorSize, 0.0f);
         }
 
         // one sum for each column
@@ -81,7 +82,8 @@ namespace melatonin::blur
             tempPixelVector[(uint8_t) i] = (float) data.getLinePointer (i)[0];
 
         // Now pre-fill the left half of the queue with this leftmost pixel value
-        for (auto i = 0u; i <= radius; ++i)
+        // SYL: unsigned / signed mismatch
+        for (size_t i = 0; i <= radius; ++i)
         {
             // these initialize the left side AND middle of the stack
             juce::FloatVectorOperations::copy (queue[i].data(), tempPixelVector.data(), h);
@@ -111,7 +113,8 @@ namespace melatonin::blur
             juce::FloatVectorOperations::addWithMultiply (stackSumVector.data(), tempPixelVector.data(), (float) (radius + 1 - i), h);
         }
 
-        for (auto x = 0u; x < w; ++x)
+// SYL: Signed unsigned mismatch 
+        for (int x = 0; x < w; ++x)
         {
             // calculate the blurred value from the stack
             // it first goes in a temporary location...
@@ -166,18 +169,20 @@ namespace melatonin::blur
         // VERTICAL PASS: this does all columns at once, progressing from top to bottom
         // This pass is VERY nicely optimized for vectors, since it uses data.pixelStride
         // clear our reusable vectors first
-        std::fill (stackSumVector.begin(), stackSumVector.end(), 0);
-        std::fill (sumInVector.begin(), sumInVector.end(), 0);
-        std::fill (sumOutVector.begin(), sumOutVector.end(), 0);
+        std::fill (stackSumVector.begin(), stackSumVector.end(), 0.0f);
+        std::fill (sumInVector.begin(), sumInVector.end(), 0.0f);
+        std::fill (sumOutVector.begin(), sumOutVector.end(), 0.0f);
         queueIndex = 0;
 
         // populate our temp vector with float values of the topmost pixels
-        for (auto i = 0u; i < w; ++i)
+        // SYL: Signed / Unsigned mismatch
+        for (size_t i = 0; i < static_cast<size_t>(w); ++i)
             tempPixelVector[i] = (float) data.getLinePointer (0)[i];
 
         // Now pre-fill the left half of the queue with the topmost pixel values
         // (queue is already initialized from the horizontal pass)
-        for (auto i = 0u; i <= radius; ++i)
+        // SYL: signed / unsigned mismatch
+        for (size_t i = 0; i <= static_cast<size_t>(radius); ++i)
         {
             // these init left side AND middle of the stack
             juce::FloatVectorOperations::copy (queue[i].data(), tempPixelVector.data(), w);
@@ -206,7 +211,8 @@ namespace melatonin::blur
             juce::FloatVectorOperations::addWithMultiply (stackSumVector.data(), tempPixelVector.data(), (float) (radius + 1 - i), w);
         }
 
-        for (auto y = 0u; y < h; ++y)
+        // SYL: signed / unsigned mismatch
+        for (auto y = 0; y < h; ++y)
         {
             // calculate the blurred value vector from the stack
             // it first goes in a temporary location...
@@ -214,7 +220,8 @@ namespace melatonin::blur
             juce::FloatVectorOperations::multiply (tempPixelVector.data(), divisor, w);
 
             // ...before being placed back in our image data as uint8
-            for (auto i = 0u; i < w; ++i)
+            // SYL: signed / unsigned mismatch
+            for (size_t i = 0; i < static_cast<size_t>(w); ++i)
                 data.getLinePointer (y)[i] = (uint8_t) tempPixelVector[i];
 
             // remove the outgoing sum from the stack
@@ -260,7 +267,7 @@ namespace melatonin::blur
 
     // The ARGB channel is byte order agnostic
     // it just performs stack blur on 4 channels without caring what they are
-    static void juceFloatVectorARGB (juce::Image& img, int radius)
+    [[maybe_unused]] static void juceFloatVectorARGB (juce::Image& img, int radius)
     {
         const int w = static_cast<int> (img.getWidth());
         const int h = static_cast<int> (img.getHeight());
@@ -307,12 +314,12 @@ namespace melatonin::blur
         std::vector<std::vector<float>> queue2;
         std::vector<std::vector<float>> queue3;
 
-        for (auto i = 0u; i < radius * 2 + 1; ++i)
+        for (auto i = 0; i < radius * 2 + 1; ++i)
         {
-            queue0.emplace_back (vectorSize, 0);
-            queue1.emplace_back (vectorSize, 0);
-            queue2.emplace_back (vectorSize, 0);
-            queue3.emplace_back (vectorSize, 0);
+            queue0.emplace_back (vectorSize, 0.0f);
+            queue1.emplace_back (vectorSize, 0.0f);
+            queue2.emplace_back (vectorSize, 0.0f);
+            queue3.emplace_back (vectorSize, 0.0f);
         }
 
         // one sum for each column for each channel
@@ -355,7 +362,7 @@ namespace melatonin::blur
         }
 
         // Now pre-fill the left half of the queue with this leftmost pixel value
-        for (auto i = 0u; i <= radius; ++i)
+        for (size_t i = 0u; i <= static_cast<size_t>(radius); ++i)
         {
             // these initialize the left side AND middle of the stack
             juce::FloatVectorOperations::copy (queue0[i].data(), tempPixelVector0.data(), h);
@@ -414,7 +421,7 @@ namespace melatonin::blur
         }
 
         // horizontal pass main loop
-        for (auto x = 0u; x < w; ++x)
+        for (auto x = 0; x < w; ++x)
         {
             // calculate the blurred value from the stack
             // it first goes in a temporary location...
@@ -524,7 +531,7 @@ namespace melatonin::blur
 
         // populate our temp vector with float values of the topmost pixels
         // this *could* be vectorized easily, but we'd need to do a conversion step somehow
-        for (auto i = 0u; i < w; ++i)
+        for (size_t i = 0; i < static_cast<size_t>(w); ++i)
         {
             tempPixelVector0[i] = (float) data.getLinePointer (0)[i * data.pixelStride];
             tempPixelVector1[i] = (float) data.getLinePointer (0)[i * data.pixelStride + 1];
@@ -534,7 +541,7 @@ namespace melatonin::blur
 
         // Now pre-fill the left half of the queue with the topmost pixel values
         // (queue is already initialized from the horizontal pass)
-        for (auto i = 0u; i <= radius; ++i)
+        for (size_t i = 0; i <= static_cast<size_t>(radius); ++i)
         {
             // these init left side AND middle of the stack
             juce::FloatVectorOperations::copy (queue0[i].data(), tempPixelVector0.data(), w);
@@ -591,7 +598,7 @@ namespace melatonin::blur
             juce::FloatVectorOperations::addWithMultiply (stackSumVector3.data(), tempPixelVector3.data(), (float) (radius + 1 - i), w);
         }
 
-        for (auto y = 0u; y < h; ++y)
+        for (auto y = 0; y < h; ++y)
         {
             // calculate the blurred value vector from the stack
             // it first goes in a temporary location...
@@ -606,7 +613,7 @@ namespace melatonin::blur
 
             // ...before being placed back in our image data as uint8
             // manually iterate across the row here, no easy way to do this in juce
-            for (auto i = 0u; i < w; ++i)
+            for (size_t i = 0; i < static_cast<size_t>(w); ++i)
             {
                 data.getLinePointer (y)[i * data.pixelStride] = (unsigned char) tempPixelVector0[i];
                 data.getLinePointer (y)[i * data.pixelStride + 1] = (unsigned char) tempPixelVector1[i];

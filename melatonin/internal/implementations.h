@@ -44,7 +44,7 @@
 // Even if it compiles, we need to check when running on older devices
 namespace melatonin::internal
 {
-    [[nodiscard]] static bool vImageARGBAvailable()
+    [[maybe_unused]] [[nodiscard]] static bool vImageARGBAvailable()
     {
 #if defined(JUCE_MAC)
         if (__builtin_available (macOS 14.0, *))
@@ -56,7 +56,7 @@ namespace melatonin::internal
         return false;
     }
 
-    [[nodiscard]] static bool vImageSingleChannelAvailable()
+    [[maybe_unused]] [[nodiscard]] static bool vImageSingleChannelAvailable()
     {
 #if defined(JUCE_MAC)
         if (__builtin_available (macOS 11.0, *))
@@ -82,11 +82,11 @@ namespace melatonin::blur
 #elif defined(MELATONIN_BLUR_IPP)
         ippVectorSingleChannel (img, radius);
 #else
-        melatonin::blur::juceFloatVectorSingleChannel (img, radius);
+        melatonin::blur::juceFloatVectorSingleChannel (img, static_cast<int>(radius));
 #endif
     }
 
-    static void argb (juce::Image& srcImage, juce::Image& dstImage, size_t radius)
+    static void argb ([[maybe_unused]] juce::Image& srcImage, juce::Image& dstImage, size_t radius)
     {
 #if MELATONIN_BLUR_VIMAGE_MACOS14
         if (internal::vImageARGBAvailable())
@@ -94,7 +94,7 @@ namespace melatonin::blur
         else
             melatonin::stackBlur::ginARGB (dstImage, static_cast<unsigned int> (radius));
 #else
-        stackBlur::ginARGB (dstImage, radius);
+        stackBlur::ginARGB (dstImage, static_cast<unsigned int>(radius));
 #endif
     }
 }
