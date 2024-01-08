@@ -53,7 +53,6 @@ namespace melatonin::blur
          *     We need to convert all the pixels in the queue to floats anyway
          */
         std::vector<std::vector<float>> queue;
-        // SYL: fix signed / unsigned mismatch
         for (auto i = 0; i < radius * 2 + 1; ++i)
         {
             queue.emplace_back (vectorSize, 0.0f);
@@ -82,7 +81,6 @@ namespace melatonin::blur
             tempPixelVector[(uint8_t) i] = (float) data.getLinePointer (i)[0];
 
         // Now pre-fill the left half of the queue with this leftmost pixel value
-        // SYL: unsigned / signed mismatch
         for (size_t i = 0; i <= radius; ++i)
         {
             // these initialize the left side AND middle of the stack
@@ -113,7 +111,6 @@ namespace melatonin::blur
             juce::FloatVectorOperations::addWithMultiply (stackSumVector.data(), tempPixelVector.data(), (float) (radius + 1 - i), h);
         }
 
-// SYL: Signed unsigned mismatch 
         for (int x = 0; x < w; ++x)
         {
             // calculate the blurred value from the stack
@@ -175,13 +172,11 @@ namespace melatonin::blur
         queueIndex = 0;
 
         // populate our temp vector with float values of the topmost pixels
-        // SYL: Signed / Unsigned mismatch
         for (size_t i = 0; i < static_cast<size_t>(w); ++i)
             tempPixelVector[i] = (float) data.getLinePointer (0)[i];
 
         // Now pre-fill the left half of the queue with the topmost pixel values
         // (queue is already initialized from the horizontal pass)
-        // SYL: signed / unsigned mismatch
         for (size_t i = 0; i <= static_cast<size_t>(radius); ++i)
         {
             // these init left side AND middle of the stack
@@ -211,7 +206,6 @@ namespace melatonin::blur
             juce::FloatVectorOperations::addWithMultiply (stackSumVector.data(), tempPixelVector.data(), (float) (radius + 1 - i), w);
         }
 
-        // SYL: signed / unsigned mismatch
         for (auto y = 0; y < h; ++y)
         {
             // calculate the blurred value vector from the stack
@@ -220,7 +214,6 @@ namespace melatonin::blur
             juce::FloatVectorOperations::multiply (tempPixelVector.data(), divisor, w);
 
             // ...before being placed back in our image data as uint8
-            // SYL: signed / unsigned mismatch
             for (size_t i = 0; i < static_cast<size_t>(w); ++i)
                 data.getLinePointer (y)[i] = (uint8_t) tempPixelVector[i];
 
