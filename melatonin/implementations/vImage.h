@@ -41,7 +41,11 @@ namespace melatonin::blur
         vImage_Buffer src = { copyData.getLinePointer (0), h, w, (size_t) data.lineStride };
 
         vImage_Buffer dst = { data.getLinePointer (0), h, w, (size_t) data.lineStride };
-        vImageSepConvolve_Planar8 (&src, &dst, nullptr, 0, 0, kernel.data(), (unsigned int) kernel.size(), kernel.data(), (unsigned int) kernel.size(), 0, Pixel_16U(), kvImageEdgeExtend);
+        if (__builtin_available(macOS 11.0, *)) {
+            vImageSepConvolve_Planar8 (&src, &dst, nullptr, 0, 0, kernel.data(), (unsigned int) kernel.size(), kernel.data(), (unsigned int) kernel.size(), 0, Pixel_16U(), kvImageEdgeExtend);
+        } else {
+            jassertfalse; // todo
+        }
     }
 
     // currently unused, may be benchmarked vs. drawImageAt

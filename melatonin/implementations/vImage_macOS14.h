@@ -19,6 +19,10 @@ namespace melatonin::blur
         // vImageSepConvolve isn't happy operating in-place
         vImage_Buffer src = { srcData.getLinePointer (0), h, w, (size_t) srcData.lineStride };
         vImage_Buffer dst = { dstData.getLinePointer (0), h, w, (size_t) dstData.lineStride };
-        vImageSepConvolve_ARGB8888 (&src, &dst, nullptr, 0, 0, kernel.data(), (unsigned int) kernel.size(), kernel.data(), (unsigned int) kernel.size(), 0, Pixel_8888 { 0, 0, 0, 0 }, kvImageEdgeExtend);
+        if (__builtin_available(macOS 14.0, *)) {
+            vImageSepConvolve_ARGB8888 (&src, &dst, nullptr, 0, 0, kernel.data(), (unsigned int) kernel.size(), kernel.data(), (unsigned int) kernel.size(), 0, Pixel_8888 { 0, 0, 0, 0 }, kvImageEdgeExtend);
+        } else {
+            jassertfalse; // todo
+        }
     }
 }
