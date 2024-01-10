@@ -22,7 +22,7 @@ struct ActualPixel
 #endif
 }
 
-inline void setActualPixel (uint8_t* jucePixel, ActualPixel actualPixel)
+[[maybe_unused]] inline void setActualPixel (uint8_t* jucePixel, ActualPixel actualPixel)
 {
 #if JUCE_BIG_ENDIAN
     jucePixel[0] = actualPixel.a;
@@ -38,7 +38,7 @@ inline void setActualPixel (uint8_t* jucePixel, ActualPixel actualPixel)
 }
 
 // ugly, but makes testing more readable via float arrays
-static std::vector<float> pixelRow (const juce::Image& image, int row, int channel = -1)
+[[maybe_unused]] static std::vector<float> pixelRow (const juce::Image& image, int row, int channel = -1)
 {
     auto singleChannel = image.getFormat() == juce::Image::PixelFormat::SingleChannel;
     std::vector<float> result;
@@ -69,7 +69,8 @@ static std::vector<float> pixelRow (const juce::Image& image, int row, int chann
     }
     return result;
 }
-static std::vector<float> pixelCol (const juce::Image& image, int col, int channel = -1)
+
+[[maybe_unused]] static std::vector<float> pixelCol (const juce::Image& image, int col, int channel = -1)
 {
     std::vector<float> result;
     juce::Image::BitmapData data (image, juce::Image::BitmapData::readOnly);
@@ -97,12 +98,12 @@ static std::vector<float> pixelCol (const juce::Image& image, int col, int chann
     return result;
 }
 
-static juce::String getPixel (juce::Image& img, int x, int y)
+[[maybe_unused]] static juce::String getPixel (juce::Image& img, int x, int y)
 {
     return img.getPixelAt (x, y).toDisplayString (true);
 }
 
-static float getScaledBrightness (juce::Image& img, int x, int y, float scale)
+[[maybe_unused]] static float getScaledBrightness (juce::Image& img, int x, int y, float scale)
 {
     x = juce::roundToInt ((float) x * scale);
     y = juce::roundToInt ((float) y * scale);
@@ -110,7 +111,7 @@ static float getScaledBrightness (juce::Image& img, int x, int y, float scale)
 }
 
 // get pixels in a range, *includes* the start/end of range
-static juce::String getPixels (juce::Image& img, int x, juce::Range<int> yRange)
+[[maybe_unused]] static juce::String getPixels (juce::Image& img, int x, juce::Range<int> yRange)
 {
     juce::String result;
     for (auto y = yRange.getStart(); y <= yRange.getEnd(); ++y)
@@ -122,7 +123,7 @@ static juce::String getPixels (juce::Image& img, int x, juce::Range<int> yRange)
     return result;
 }
 
-static juce::String getPixels (juce::Image& img, juce::Range<int> xRange, int y)
+[[maybe_unused]] static juce::String getPixels (juce::Image& img, juce::Range<int> xRange, int y)
 {
     juce::String result;
     for (auto x = xRange.getStart(); x <= xRange.getEnd(); ++x)
@@ -134,7 +135,7 @@ static juce::String getPixels (juce::Image& img, juce::Range<int> xRange, int y)
     return result;
 }
 
-static juce::String getPixels (juce::Image& img, juce::Range<int> xRange, juce::Range<int> yRange)
+[[maybe_unused]] static juce::String getPixels (juce::Image& img, juce::Range<int> xRange, juce::Range<int> yRange)
 {
     juce::String result;
     for (auto y = yRange.getStart(); y <= yRange.getEnd(); ++y)
@@ -149,7 +150,7 @@ static juce::String getPixels (juce::Image& img, juce::Range<int> xRange, juce::
     return result;
 }
 
-static std::vector<float> getPixelsBrightness (juce::Image& img, int x, juce::Range<int> yRange)
+[[maybe_unused]] static std::vector<float> getPixelsBrightness (juce::Image& img, int x, juce::Range<int> yRange)
 {
     std::vector<float> result;
     for (auto y = yRange.getStart(); y <= yRange.getEnd(); ++y)
@@ -159,7 +160,7 @@ static std::vector<float> getPixelsBrightness (juce::Image& img, int x, juce::Ra
     return result;
 }
 
-static std::vector<float> getPixelsBrightness (juce::Image& img, juce::Range<int> xRange, int y)
+[[maybe_unused]] static std::vector<float> getPixelsBrightness (juce::Image& img, juce::Range<int> xRange, int y)
 {
     std::vector<float> result;
     for (auto x = xRange.getStart(); x <= xRange.getEnd(); ++x)
@@ -169,7 +170,7 @@ static std::vector<float> getPixelsBrightness (juce::Image& img, juce::Range<int
     return result;
 }
 
-static bool isImageFilled (const juce::Image& img, const juce::Colour& color)
+[[maybe_unused]] static bool isImageFilled (const juce::Image& img, const juce::Colour& color)
 {
     const juce::Image::BitmapData data (img, juce::Image::BitmapData::readOnly);
     for (auto y = 0; y < img.getHeight(); ++y)
@@ -192,7 +193,7 @@ static bool isImageFilled (const juce::Image& img, const juce::Colour& color)
 
 // tests all are on WHITE
 // so filled bounds have any other color than pure white
-static juce::Rectangle<int> filledBounds (juce::Image& img)
+[[maybe_unused]] static juce::Rectangle<int> filledBounds (juce::Image& img)
 {
     juce::Rectangle<int> result;
     juce::Image::BitmapData data (img, juce::Image::BitmapData::readOnly);
@@ -209,7 +210,7 @@ static juce::Rectangle<int> filledBounds (juce::Image& img)
     return result;
 }
 
-static bool imagesAreIdentical (juce::Image& img1, juce::Image& img2)
+[[maybe_unused]] static bool imagesAreIdentical (juce::Image& img1, juce::Image& img2)
 {
     juce::Image::BitmapData data1 (img1, juce::Image::BitmapData::readOnly);
     juce::Image::BitmapData data2 (img2, juce::Image::BitmapData::readOnly);
@@ -224,7 +225,7 @@ static bool imagesAreIdentical (juce::Image& img1, juce::Image& img2)
     return true;
 }
 
-static void print_test_image (juce::Image& image)
+[[maybe_unused]] static void print_test_image (juce::Image& image)
 {
     // this is meant for testing trivial examples
     jassert (image.getWidth() < 20 && image.getHeight() < 20);
@@ -245,7 +246,7 @@ static void print_test_image (juce::Image& image)
     std::cout << std::endl;
 }
 
-static void save_test_image (juce::Image& image, juce::String name = "test")
+[[maybe_unused]] static void save_test_image (juce::Image& image, juce::String name = "test")
 {
     juce::Image imageToSave = image;
     if (imageToSave.isSingleChannel())
