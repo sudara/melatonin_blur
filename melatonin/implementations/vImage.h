@@ -41,7 +41,10 @@ namespace melatonin::blur
         vImage_Buffer src = { copyData.getLinePointer (0), h, w, (size_t) data.lineStride };
 
         vImage_Buffer dst = { data.getLinePointer (0), h, w, (size_t) data.lineStride };
+
+        JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wunguarded-availability-new")
         vImageSepConvolve_Planar8 (&src, &dst, nullptr, 0, 0, kernel.data(), (unsigned int) kernel.size(), kernel.data(), (unsigned int) kernel.size(), 0, Pixel_16U(), kvImageEdgeExtend);
+        JUCE_END_IGNORE_WARNINGS_GCC_LIKE
     }
 
     // currently unused, may be benchmarked vs. drawImageAt
