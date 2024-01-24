@@ -29,7 +29,7 @@
     #else
         #include "../implementations/float_vector_stack_blur.h"
     #endif
-#elif JUCE_LINUX
+#elif JUCE_LINUX || JUCE_BSD
     #include "../implementations/float_vector_stack_blur.h"
 #else
   #error "Unsupported platform!"
