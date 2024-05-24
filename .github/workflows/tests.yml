@@ -37,7 +37,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
@@ -47,14 +47,11 @@ jobs:
         run: choco install ninja
 
       - name: Install macOS Deps
-        if: ${{ matrix.os != 'windows-latest' }}
+        if: ${{ runner.os == 'macOS' }}
         run: brew install ninja osxutils
 
-      - name: Checkout code
-        uses: actions/checkout@v3
-
       - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.3
+        uses: mozilla-actions/sccache-action@v0.0.4
 
       - name: Configure
         shell: bash
