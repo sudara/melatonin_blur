@@ -8,11 +8,21 @@ namespace melatonin::internal
     class CachedShadows
     {
     protected:
-        CachedShadows (std::initializer_list<ShadowParameters> shadowParameters, bool force_inner = false)
-        {
-            // gotta feed some shadows!
-            jassert (shadowParameters.size() > 0);
+        CachedShadows() = default;
 
+        explicit CachedShadows (std::initializer_list<ShadowParameters> shadowParameters, bool force_inner = false)
+        {
+            for (auto& parameters : shadowParameters)
+            {
+                auto& shadow = renderedSingleChannelShadows.emplace_back (parameters);
+
+                if (force_inner)
+                    shadow.parameters.inner = true;
+            }
+        }
+
+        explicit CachedShadows (const std::vector<ShadowParameters>& shadowParameters, bool force_inner = false)
+        {
             for (auto& parameters : shadowParameters)
             {
                 auto& shadow = renderedSingleChannelShadows.emplace_back (parameters);
@@ -31,6 +41,11 @@ namespace melatonin::internal
 
         void render (juce::Graphics& g, const juce::Path& newPath, bool lowQuality = false)
         {
+            // on render, there might not be a shadow yet (we can add one later)
+            // and the path might be empty (usually due to messy resize/paint logic)
+            if (renderedSingleChannelShadows.empty() || newPath.getBounds().isEmpty())
+                return;
+
             setScale (g, lowQuality);
 
             // Store a copy of the path.
@@ -44,6 +59,9 @@ namespace melatonin::internal
 
         void render (juce::Graphics& g, const juce::Path& newPath, const juce::PathStrokeType& newType, bool lowQuality = false)
         {
+            if (renderedSingleChannelShadows.empty())
+                return;
+
             stroked = true;
             setScale (g, lowQuality);
             if (newType != strokeType)
@@ -64,6 +82,9 @@ namespace melatonin::internal
 
         void render (juce::Graphics& g, const juce::String& text, const juce::Rectangle<float>& area, juce::Justification justification)
         {
+            if (renderedSingleChannelShadows.empty())
+                return;
+
             setScale (g, false);
 
             // TODO: right now if text is repositioned it *will* break blur cache
@@ -92,37 +113,47 @@ namespace melatonin::internal
 
         void render (juce::Graphics& g, const juce::String& text, int x, int y, int width, int height, juce::Justification justification)
         {
-            render (g, text, juce::Rectangle<int> (x, y, width, height).toFloat(), justification);
+            render (g, text, juce::Rectangle (x, y, width, height).toFloat(), justification);
         }
 
-        void setRadius (size_t radius, size_t index = 0)
+        CachedShadows&  setRadius (size_t radius, size_t index = 0)
         {
-            if (index < renderedSingleChannelShadows.size())
+            if (canUpdateShadow (index))
                 needsRecalculate = renderedSingleChannelShadows[index].updateRadius ((int) radius);
+
+            return *this;
         }
 
-        void setSpread (size_t spread, size_t index = 0)
+        CachedShadows&  setSpread (size_t spread, size_t index = 0)
         {
-            if (index < renderedSingleChannelShadows.size())
+            if (canUpdateShadow (index))
                 needsRecalculate = renderedSingleChannelShadows[index].updateSpread ((int) spread);
+
+            return *this;
         }
 
-        void setOffset (juce::Point<int> offset, size_t index = 0)
+        CachedShadows&  setOffset (juce::Point<int> offset, size_t index = 0)
         {
-            if (index < renderedSingleChannelShadows.size())
+            if (canUpdateShadow (index))
                 needsRecomposite = renderedSingleChannelShadows[index].updateOffset (offset, scale);
+
+            return *this;
         }
 
-        void setColor (juce::Colour color, size_t index = 0)
+        CachedShadows& setColor (juce::Colour color, size_t index = 0)
         {
-            if (index < renderedSingleChannelShadows.size())
+            if (canUpdateShadow (index))
                 needsRecomposite = renderedSingleChannelShadows[index].updateColor (color);
+
+            return *this;
         }
 
-        void setOpacity (float opacity, size_t index = 0)
+        CachedShadows&  setOpacity (float opacity, size_t index = 0)
         {
-            if (index < renderedSingleChannelShadows.size())
+            if (canUpdateShadow (index))
                 needsRecomposite = renderedSingleChannelShadows[index].updateOpacity (opacity);
+
+            return *this;
         }
 
     private:
@@ -165,6 +196,27 @@ namespace melatonin::internal
 
         TextArrangement lastTextArrangement = {};
 
+        bool canUpdateShadow (size_t index)
+        {
+            // this is a nice-to-have
+            // it means we can short circuit rendering, but still have a default shadow
+            // when we use the setters
+            if (index == 0 && renderedSingleChannelShadows.empty())
+                renderedSingleChannelShadows.emplace_back (emptyShadow());
+
+            return index < renderedSingleChannelShadows.size();
+        }
+
+    protected:
+        // TODO: Is there a better pattern here?
+        // InnerShadow must set inner=true
+        // Maybe "inner" is better as a member of CachedShadows vs. ShadowParameters?
+        virtual ShadowParameters emptyShadow()
+        {
+            return ShadowParameters {};
+        }
+
+    private:
         void setScale (juce::Graphics& g, bool lowQuality)
         {
             // Before Melatonin Blur, it was all low quality!

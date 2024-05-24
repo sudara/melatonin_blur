@@ -50,13 +50,21 @@ TEST_CASE ("Melatonin Blur Drop Shadow")
     {
         g.fillAll (juce::Colours::white);
         melatonin::DropShadow shadow;
-        shadow.render (g, p);
-        CHECK(filledBounds (result) == juce::Rectangle<int> (3, 3, 3, 3));
 
-        save_test_image(result, "default constructor");
-        shadow.setRadius(5);
-        shadow.render (g, p);
-        CHECK(filledBounds (result) == juce::Rectangle<int> (0, 0, 9, 9));
+        SECTION ("doesn't setup a shadow, renders nothing")
+        {
+            shadow.render (g, p);
+            CHECK (filledBounds (result).toString() == juce::Rectangle<int> (0, 0, 0, 0).toString());
+        }
+
+        // the point of this is to allow everything to be efficient
+        SECTION ("modify the shadow, it renders a default black shadow")
+        {
+            save_test_image (result, "default constructor");
+            shadow.setRadius (5);
+            shadow.render (g, p);
+            CHECK (filledBounds (result) == juce::Rectangle<int> (0, 0, 9, 9));
+        }
     }
 
     SECTION ("single shadow")
@@ -224,6 +232,29 @@ TEST_CASE ("Melatonin Blur Drop Shadow")
 
                 CHECK (result.getPixelAt (2, 2).toDisplayString (true) == "FFFFFFFF");
                 CHECK (result.getPixelAt (2, 3).toDisplayString (true) == "FFFFFFFF");
+            }
+        }
+
+        SECTION ("non square")
+        {
+            // create a 6px by 2px square
+            auto rectangle = juce::Rectangle<float> (6, 2);
+            juce::Path rectanglePath;
+
+            // stick the 6x2 rectangle centered inside a 10x6
+            rectanglePath.addRectangle (rectangle.translated (2, 2));
+
+            juce::Image rectangleResult (juce::Image::ARGB, 10, 6, true);
+            juce::Graphics g2 (rectangleResult);
+            g2.fillAll (juce::Colours::white);
+
+            SECTION ("2 pixels of spread, 0px shadow")
+            {
+                melatonin::DropShadow shadow = { { juce::Colours::red, 0, {}, 2 } };
+                shadow.render (g2, rectanglePath);
+                g2.setColour (juce::Colours::black);
+                g2.fillPath (rectanglePath);
+                CHECK (filledBounds (rectangleResult).toString() == juce::Rectangle<int> (0, 0, 10, 6).toString());
             }
         }
     }

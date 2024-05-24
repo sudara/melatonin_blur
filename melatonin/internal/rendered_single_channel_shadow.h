@@ -10,7 +10,7 @@ namespace melatonin
     struct ShadowParameters
     {
         // one single color per shadow
-        juce::Colour color = {};
+        juce::Colour color = juce::Colours::black;
         int radius = 1;
         juce::Point<int> offset = { 0, 0 };
 
@@ -53,7 +53,7 @@ namespace melatonin
                     // expand the actual path itself
                     // note: this is 1x, it'll be upscaled as needed by fillPath
                     auto bounds = originAgnosticPath.getBounds().expanded (parameters.inner ? (float) -parameters.spread : (float) parameters.spread);
-                    shadowPath.scaleToFit (bounds.getX(), bounds.getY(), bounds.getWidth(), bounds.getHeight(), true);
+                    shadowPath.scaleToFit (bounds.getX(), bounds.getY(), bounds.getWidth(), bounds.getHeight(), false);
                 }
 
                 // inner shadows are rendered by inverting the path, drop shadowing and clipping to the original path
