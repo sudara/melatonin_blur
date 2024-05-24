@@ -535,7 +535,7 @@ In other words, this project humbled me. I love to advocate for clarity, readabi
 ## Acknowledgements
 
 * Mars, for being my reliable rubber duck! Inner Shadow caching and compositing geometry broke my brain.
-* Roland Rabian for JUCE Stack Blur workhorse via [Gin](https://github.com/figbug/gin).
+* Roland Rabien for JUCE Stack Blur workhorse via [Gin](https://github.com/figbug/gin).
 * LukeM1 on the forums
   for [figuring out the `drawImageAt` optimization](https://forum.juce.com/t/faster-blur-glassmorphism-ui/43086/76).
 * Ecstasy on the Discord for the motivation and feedback around stroked paths and default constructors.

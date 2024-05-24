@@ -1,4 +1,5 @@
 #include "../melatonin/shadows.h"
+#include "../melatonin/internal/implementations.h"
 #include "helpers/pixel_helpers.h"
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>

@@ -81,7 +81,7 @@ namespace melatonin::blur
             tempPixelVector[(uint8_t) i] = (float) data.getLinePointer (i)[0];
 
         // Now pre-fill the left half of the queue with this leftmost pixel value
-        for (size_t i = 0; i <= radius; ++i)
+        for (size_t i = 0; i <= size_t (radius); ++i)
         {
             // these initialize the left side AND middle of the stack
             juce::FloatVectorOperations::copy (queue[i].data(), tempPixelVector.data(), h);
@@ -190,14 +190,14 @@ namespace melatonin::blur
         {
             if (i <= h - 1)
             {
-                for (size_t col = 0; col < (int) w; ++col)
+                for (size_t col = 0; col < (size_t) w; ++col)
                     tempPixelVector[col] = (float) data.getLinePointer (i)[col];
             }
             // edge case where queue is bigger than image width!
             // for example vertical test where width = 1
             else
             {
-                for (size_t col = 0; col < (int) w; ++col)
+                for (size_t col = 0; col < (size_t) w; ++col)
                     tempPixelVector[col] = (float) data.getLinePointer (h - 1)[col];
             }
 
@@ -556,7 +556,7 @@ namespace melatonin::blur
         {
             if (i <= h - 1)
             {
-                for (size_t col = 0; col < (int) w; ++col)
+                for (size_t col = 0; col < (size_t) w; ++col)
                 {
                     tempPixelVector0[col] = (float) data.getLinePointer (i)[col * data.pixelStride];
                     tempPixelVector1[col] = (float) data.getLinePointer (i)[col * data.pixelStride + 1];
@@ -568,7 +568,7 @@ namespace melatonin::blur
             // for example vertical test where width = 1
             else
             {
-                for (size_t col = 0; col < (int) w; ++col)
+                for (size_t col = 0; col < (size_t) w; ++col)
                 {
                     tempPixelVector0[col] = (float) data.getLinePointer (h - 1)[col * data.pixelStride];
                     tempPixelVector1[col] = (float) data.getLinePointer (h - 1)[col * data.pixelStride + 1];
