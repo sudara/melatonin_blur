@@ -8,7 +8,7 @@ namespace melatonin
     struct ShadowParameters
     {
         // one single color per shadow
-        juce::Colour color = {};
+        juce::Colour color = juce::Colours::black;
         int radius = 1;
         juce::Point<int> offset = { 0, 0 };
 
@@ -63,4 +63,3 @@ namespace melatonin
         };
     }
 }
-

@@ -8,7 +8,9 @@ namespace melatonin::internal
     class CachedShadows
     {
     protected:
+        CachedShadows() = default;
         CachedShadows (std::initializer_list<ShadowParameters> shadowParameters, bool force_inner = false);
+        explicit CachedShadows (const std::vector<ShadowParameters>& shadowParameters, bool force_inner = false);
 
     public:
         // store a copy of the path to compare against for caching
@@ -23,11 +25,20 @@ namespace melatonin::internal
         void render (juce::Graphics& g, const juce::String& text, const juce::Rectangle<int>& area, juce::Justification justification);
         void render (juce::Graphics& g, const juce::String& text, int x, int y, int width, int height, juce::Justification justification);
 
-        void setRadius (size_t radius, size_t index = 0);
-        void setSpread (size_t spread, size_t index = 0);
-        void setOffset (juce::Point<int> offset, size_t index = 0);
-        void setColor (juce::Colour color, size_t index = 0);
-        void setOpacity (float opacity, size_t index = 0);
+        CachedShadows& setRadius (size_t radius, size_t index = 0);
+        CachedShadows& setSpread (size_t spread, size_t index = 0);
+        CachedShadows& setOffset (juce::Point<int> offset, size_t index = 0);
+        CachedShadows& setColor (juce::Colour color, size_t index = 0);
+        CachedShadows& setOpacity (float opacity, size_t index = 0);
+
+    protected:
+        // TODO: Is there a better pattern here?
+        // InnerShadow must set inner=true
+        // Maybe "inner" is better as a member of CachedShadows vs. ShadowParameters?
+        virtual ShadowParameters emptyShadow()
+        {
+            return ShadowParameters {};
+        }
 
     private:
         // any float offset from 0,0 the path has is stored here
@@ -62,6 +73,7 @@ namespace melatonin::internal
 
         TextArrangement lastTextArrangement = {};
 
+        bool canUpdateShadow (size_t index);
         void setScale (juce::Graphics& g, bool lowQuality);
         void updatePathIfNeeded (juce::Path& pathToBlur);
         void recalculateBlurs();

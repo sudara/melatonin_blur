@@ -7,19 +7,19 @@ the [JUCE C++ framework](https://juce.com/).
 
 *Batteries-included* means it aims to give you everything out of the box:
 
-* 👩‍🎨 Figma/CSS-accurate drop and inner shadows on paths!
-* 🔠 Drop and Inner Text shadows!
-* 💅🏼 Supports both filled and stroked paths!
-* 🌇 ARGB image blurs!
-* 🚀 Fast! (see [benchmarks](#more-benchmarks)).
-* 🔎 Retina-friendly (context scale-aware)!
-* 🍰 Trivial to layer multiple shadows!
-* ⚙️ Behind-the-scenes multi-layer caching!
-* 😎 Debug optimized for high quality of life!
-* 🤖 Over 1000 correctness tests passing on mac/windows!
+* 👩‍🎨 Figma/CSS-accurate drop and inner shadows on paths
+* 🔠 Drop and Inner Text shadows
+* 💅🏼 Supports both filled and stroked paths
+* 🌇 ARGB image blurs
+* 🚀 Fast! (see [benchmarks](#more-benchmarks))
+* 🔎 Retina-friendly (context scale-aware)
+* 🍰 Trivial to layer multiple shadows
+* ⚙️ Behind-the-scenes multi-layer caching
+* 😎 Debug optimized for high quality of life
+* 🤖 Over 1000 correctness tests passing on macOS/windows
 * 🚂 Compatible down to macOS 10.13 (progressive speedups on recent versions)
 
-The goal: modern vector interfaces in JUCE (100s of shadows) without resorting to deprecated solutions with lower quality of life (looking at you, OpenGL on macOS!).
+The goal: modern vector interfaces in JUCE (100s of shadows) without having to resort to deprecated solutions with lower quality of life (looking at you, OpenGL on macOS!).
 
 https://github.com/sudara/melatonin_blur/assets/472/3e1d6c9a-aab9-422f-a262-6b63cbca5b71
 
@@ -121,17 +121,18 @@ Melatonin Blur comes with a test suite that verifies compatibility with design p
 You can specify the color, radius, offset and spread of each blur, passing them in a struct like so:
 
 ```cpp
+
 struct ShadowParameters
 {
     // one single color per shadow
-    const juce::Colour color = {};
-    const int radius = 1;
-    const juce::Point<int> offset = { 0, 0 };
+    juce::Colour color = juce::Colours::black;
+    int radius = 1;
+    juce::Point<int> offset = { 0, 0 };
 
-    // Spread literally just expands or contracts the path size
+    // Spread literally just expands or contracts the *path* size
     // Inverted for inner shadows
-    const int spread = 0;
-}
+    int spread = 0;
+};
 ```
 
 Or just as parameters, like so:
@@ -257,9 +258,9 @@ shadow.setSpread(10);
 
 ### Default Constructors for Inner/DropShadow
 
-Don't know your colors at compile time?
+Don't know your shadow's colors, sizes, etc at compile time?
 
-That's fine, there's a default constructor, you can update the color in the paint method.
+That's fine, there's a default constructor. You can have a class member such as `melatonin::DropShadow shadow` and call `.setColor` whenever it works for you.
 
 ### Stroked Paths
 
@@ -296,6 +297,13 @@ Right now, the API just mirrors `g.drawText`, so it's not particularly DRY. I'm 
 Just like `g.drawText`, you can pass in a `juce::Rectangle<int>`, `juce::Rectangle<float>`, or the `x, y, w, h` as bounds arguments.
 
 Text shadows are cached. As with path shadows, repainting is cheap and changing their color, offset, opacity is free. However, changing the font, text, justification or bounds will require re-rendering (both the glyphs and underlying blur).
+
+### pathWithShadow
+
+You can use `pathWithShadow` to combine a path and inner/drop shadows into a single object for rendering convenience. 
+
+```cpp
+
 
 ### Full Color Blurs
 

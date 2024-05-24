@@ -33,11 +33,11 @@ jobs:
     strategy:
       fail-fast: false # show errors for each platform vs. cancel build
       matrix:
-        os: [ macos-11, macos-12, macos-latest, windows-latest ]
+        os: [ macos-11, macos-12, macos-13, macos-14, windows-latest, ubuntu-latest ]
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
@@ -47,14 +47,21 @@ jobs:
         run: choco install ninja
 
       - name: Install macOS Deps
-        if: ${{ matrix.os != 'windows-latest' }}
+        if: ${{ runner.os == 'macOS' }}
         run: brew install ninja osxutils
 
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Install Linux Deps
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update && sudo apt install libasound2-dev libx11-dev libxinerama-dev libxext-dev libfreetype6-dev libwebkit2gtk-4.0-dev libglu1-mesa-dev ninja-build
+          # downgrade gcc to workaround 22.04 and C++20 issue
+          # see: https://github.com/actions/runner-images/issues/8659
+          sudo rm -f /etc/apt/sources.list.d/ubuntu-toolchain-r-ubuntu-test-jammy.list
+          sudo apt-get update
+          sudo apt-get install -y --allow-downgrades libc6=2.35-0ubuntu3.7 libc6-dev=2.35-0ubuntu3.7 libstdc++6=12.3.0-1ubuntu1~22.04 libgcc-s1=12.3.0-1ubuntu1~22.04
 
       - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.3
+        uses: mozilla-actions/sccache-action@v0.0.4
 
       - name: Configure
         shell: bash
