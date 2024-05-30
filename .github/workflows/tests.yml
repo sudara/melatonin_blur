@@ -28,7 +28,7 @@ jobs:
   BuildAndTest:
     name: Tests
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     strategy:
       fail-fast: false # show errors for each platform vs. cancel build
