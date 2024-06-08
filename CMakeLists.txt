@@ -13,7 +13,7 @@ if (MelatoninBlur_IS_TOP_LEVEL)
 
     FetchContent_Declare(JUCE
         GIT_REPOSITORY https://github.com/juce-framework/JUCE.git
-        GIT_TAG 7.0.8
+        GIT_TAG juce8
         GIT_PROGRESS TRUE
     )
     FetchContent_MakeAvailable(JUCE)
@@ -22,7 +22,7 @@ if (MelatoninBlur_IS_TOP_LEVEL)
         GIT_REPOSITORY https://github.com/catchorg/Catch2.git
         GIT_PROGRESS TRUE
         GIT_SHALLOW TRUE
-        GIT_TAG v3.4.0)
+        GIT_TAG v3.6.0)
     FetchContent_MakeAvailable(Catch2) # find_package equivalent
 
     enable_testing()
