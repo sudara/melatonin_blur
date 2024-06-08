@@ -36,6 +36,9 @@ jobs:
         os: [ macos-11, macos-12, macos-13, macos-14, windows-2022, windows-2019, ubuntu-latest ]
 
     steps:
+      # Setup MSVC toolchain and developer command prompt (Windows)
+      - uses: ilammy/msvc-dev-cmd@v1
+      
       - name: Checkout
         uses: actions/checkout@v4
         with:
