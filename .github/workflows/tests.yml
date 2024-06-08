@@ -8,7 +8,6 @@ on:
 env:
   BUILD_TYPE: Release
   BUILD_DIR: Builds
-  CMAKE_BUILD_PARALLEL_LEVEL: 3 # Use up to 3 cpus to build juceaide, etc
   HOMEBREW_NO_INSTALL_CLEANUP: 1
   SCCACHE_GHA_ENABLED: "true"
 
@@ -26,6 +25,7 @@ permissions:
 jobs:
 
   BuildAndTest:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
     name: Tests
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
