@@ -32,15 +32,15 @@ inline auto singleColorBlurImplementation()
     return GENERATE (
         std::make_pair ("gin", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::ginSingleChannel (img, radius); } }),
         // std::make_pair ("prefix sum naive", BlurFunction { [] (juce::Image& img, int radius) { melatonin::blur::prefixSumSingleChannel (img, radius); } }),
-        std::make_pair ("dequeue", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::dequeueSingleChannel (img, radius); } }),
-        std::make_pair ("circularBuffer", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::circularBufferSingleChannel (img, radius); } }),
-        std::make_pair ("martin optimization", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::martinOptimizationSingleChannel (img, radius); } }),
+        //std::make_pair ("dequeue", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::dequeueSingleChannel (img, radius); } }),
+        //std::make_pair ("circularBuffer", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::circularBufferSingleChannel (img, radius); } }),
+        //std::make_pair ("martin optimization", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::martinOptimizationSingleChannel (img, radius); } }),
         //    std::make_pair ("vector", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::vectorSingleChannel (img, radius); } }),
         //    std::make_pair ("vector optimized", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::vectorOptimizedSingleChannel (img, radius); } }),
         //    std::make_pair ("vector class", BlurFunction { [&] (juce::Image& img, int radius) { melatonin::VectorStackBlur stackBlur (img, radius); } }),
         std::make_pair ("juce's FloatVectorOperations", BlurFunction { [&] (juce::Image& img, int radius) { melatonin::blur::juceFloatVectorSingleChannel (img, radius); } }),
-        std::make_pair ("naive class", BlurFunction { [&] (juce::Image& img, int radius) { melatonin::NaiveStackBlur stackBlur (img, radius); } }),
-        std::make_pair ("templated function", BlurFunction { [&] (juce::Image& img, int radius) { melatonin::stackBlur::singleChannelTemplated (img, radius); } }),
+        //std::make_pair ("naive class", BlurFunction { [&] (juce::Image& img, int radius) { melatonin::NaiveStackBlur stackBlur (img, radius); } }),
+        //std::make_pair ("templated function", BlurFunction { [&] (juce::Image& img, int radius) { melatonin::stackBlur::singleChannelTemplated (img, radius); } }),
         //        std::make_pair ("templated function float", BlurFunction { [&] (juce::Image& img, int radius) { melatonin::stackBlur::templatedFloatSingleChannel (img, radius); } }),
         std::make_pair ("Melatonin", BlurFunction { [&] (juce::Image& img, int radius) { melatonin::blur::singleChannel (img, radius); } }));
 }
@@ -72,17 +72,20 @@ TEST_CASE ("Melatonin Blur")
     SECTION ("single channel horizontal pass radius 1")
     {
         juce::Image image (juce::Image::PixelFormat::SingleChannel, 10, 1, true);
-        juce::Image::BitmapData data (image, juce::Image::BitmapData::readWrite);
 
         SECTION ("all bright")
         {
             // These calls actually have to be in the section for GENERATE to work
             const auto& [name, blur] = singleColorBlurImplementation();
 
-            // fill image with 1.0
-            for (auto x = 0; x < image.getWidth(); ++x)
             {
-                data.setPixelColour (x, 0, juce::Colours::black);
+                juce::Image::BitmapData data (image, juce::Image::BitmapData::readWrite);
+
+                // fill image with 1.0
+                for (auto x = 0; x < image.getWidth(); ++x)
+                {
+                    data.setPixelColour (x, 0, juce::Colours::black);
+                }
             }
             std::vector<float> expected = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f };
 
@@ -97,8 +100,12 @@ TEST_CASE ("Melatonin Blur")
         {
             const auto& [name, blur] = singleColorBlurImplementation();
 
-            data.setPixelColour (4, 0, juce::Colours::black);
-            data.setPixelColour (5, 0, juce::Colours::black);
+            {
+                juce::Image::BitmapData data (image, juce::Image::BitmapData::readWrite);
+
+                data.setPixelColour (4, 0, juce::Colours::black);
+                data.setPixelColour (5, 0, juce::Colours::black);
+            }
 
             std::vector<float> expected = { 0.0f, 0.0f, 0.0f, 0.24706f, 0.74902f, 0.74902f, 0.24706f, 0.0f, 0.0f, 0.0f };
 
@@ -113,8 +120,12 @@ TEST_CASE ("Melatonin Blur")
         {
             const auto& [name, blur] = singleColorBlurImplementation();
 
-            data.setPixelColour (0, 0, juce::Colours::black);
-            data.setPixelColour (9, 0, juce::Colours::black);
+            {
+                juce::Image::BitmapData data (image, juce::Image::BitmapData::readWrite);
+
+                data.setPixelColour (0, 0, juce::Colours::black);
+                data.setPixelColour (9, 0, juce::Colours::black);
+            }
 
             std::vector<float> expected = { 0.74902f, 0.24706f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.24706f, 0.74902f };
 
@@ -129,16 +140,19 @@ TEST_CASE ("Melatonin Blur")
     SECTION ("single channel horizontal pass radius 2")
     {
         juce::Image image (juce::Image::PixelFormat::SingleChannel, 10, 1, true);
-        juce::Image::BitmapData data (image, juce::Image::BitmapData::readWrite);
 
         SECTION ("all bright")
         {
             const auto& [name, blur] = singleColorBlurImplementation();
 
-            // fill image with 1.0
-            for (auto x = 0; x < image.getWidth(); ++x)
             {
-                data.setPixelColour (x, 0, juce::Colours::black);
+                juce::Image::BitmapData data (image, juce::Image::BitmapData::readWrite);
+
+                // fill image with 1.0
+                for (auto x = 0; x < image.getWidth(); ++x)
+                {
+                    data.setPixelColour (x, 0, juce::Colours::black);
+                }
             }
 
             std::vector<float> expected = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f };
@@ -151,10 +165,15 @@ TEST_CASE ("Melatonin Blur")
 
         SECTION ("center 2 bright has symmetrical result")
         {
+
             const auto& [name, blur] = singleColorBlurImplementation();
 
-            data.setPixelColour (4, 0, juce::Colours::black);
-            data.setPixelColour (5, 0, juce::Colours::black);
+            {
+                juce::Image::BitmapData data (image, juce::Image::BitmapData::readWrite);
+
+                data.setPixelColour (4, 0, juce::Colours::black);
+                data.setPixelColour (5, 0, juce::Colours::black);
+            }
 
             std::vector<float> expected = { 0.0f, 0.0f, 0.1098f, 0.33333f, 0.55294f, 0.55294f, 0.33333f, 0.1098f, 0.0f, 0.0f };
 
@@ -169,8 +188,12 @@ TEST_CASE ("Melatonin Blur")
         {
             const auto& [name, blur] = singleColorBlurImplementation();
 
-            data.setPixelColour (0, 0, juce::Colours::black);
-            data.setPixelColour (9, 0, juce::Colours::black);
+            {
+                juce::Image::BitmapData data (image, juce::Image::BitmapData::readWrite);
+
+                data.setPixelColour (0, 0, juce::Colours::black);
+                data.setPixelColour (9, 0, juce::Colours::black);
+            }
 
             std::vector<float> expected = { 0.66667f, 0.33333f, 0.1098f, 0.0f, 0.0f, 0.0f, 0.0f, 0.1098f, 0.33333f, 0.66667f };
 
@@ -184,9 +207,13 @@ TEST_CASE ("Melatonin Blur")
         SECTION ("every other bright")
         {
             const auto& [name, blur] = singleColorBlurImplementation();
-            for (auto x = 0; x < image.getWidth(); x += 2)
             {
-                data.setPixelColour (x, 0, juce::Colours::black);
+                juce::Image::BitmapData data (image, juce::Image::BitmapData::readWrite);
+
+                for (auto x = 0; x < image.getWidth(); x += 2)
+                {
+                    data.setPixelColour (x, 0, juce::Colours::black);
+                }
             }
 
             std::vector<float> expected = { 0.77647f, 0.55294f, 0.55294f, 0.44314f, 0.55294f, 0.44314f, 0.55294f, 0.44314f, 0.44314f, 0.21961f };
@@ -202,9 +229,13 @@ TEST_CASE ("Melatonin Blur")
         {
             const auto& [name, blur] = singleColorBlurImplementation();
 
-            for (auto x = 0; x < image.getWidth(); x += 3)
             {
-                data.setPixelColour (x, 0, juce::Colours::black);
+                juce::Image::BitmapData data (image, juce::Image::BitmapData::readWrite);
+
+                for (auto x = 0; x < image.getWidth(); x += 3)
+                {
+                    data.setPixelColour (x, 0, juce::Colours::black);
+                }
             }
 
             std::vector<float> expected = { 0.66667f, 0.44314f, 0.33333f, 0.33333f, 0.33333f, 0.33333f, 0.33333f, 0.33333f, 0.44314f, 0.66667f };
@@ -220,16 +251,19 @@ TEST_CASE ("Melatonin Blur")
     SECTION ("single channel vertical pass")
     {
         juce::Image image (juce::Image::PixelFormat::SingleChannel, 1, 10, true);
-        juce::Image::BitmapData data (image, juce::Image::BitmapData::readWrite);
 
         SECTION ("all bright radius 2")
         {
             const auto& [name, blur] = singleColorBlurImplementation();
 
-            // fill image with 1.0
-            for (auto y = 0; y < image.getHeight(); ++y)
             {
-                data.setPixelColour (0, y, juce::Colours::black);
+                juce::Image::BitmapData data (image, juce::Image::BitmapData::readWrite);
+
+                // fill image with 1.0
+                for (auto y = 0; y < image.getHeight(); ++y)
+                {
+                    data.setPixelColour (0, y, juce::Colours::black);
+                }
             }
 
             std::vector<float> expected = { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f };
@@ -244,8 +278,13 @@ TEST_CASE ("Melatonin Blur")
         SECTION ("center 2 bright has symmetrical result radius 1")
         {
             const auto& [name, blur] = singleColorBlurImplementation();
-            data.setPixelColour (0, 4, juce::Colours::black);
-            data.setPixelColour (0, 5, juce::Colours::black);
+
+            {
+                juce::Image::BitmapData data (image, juce::Image::BitmapData::readWrite);
+
+                data.setPixelColour (0, 4, juce::Colours::black);
+                data.setPixelColour (0, 5, juce::Colours::black);
+            }
 
             // the vertical pass compounds on the horizontal, so this looks different from the horizontal pass result of
             //  { 0.0f, 0.0f, 0.1098f, 0.33333f, 0.55294f, 0.55294f, 0.33333f, 0.1098f, 0.0f, 0.0f }
@@ -262,7 +301,6 @@ TEST_CASE ("Melatonin Blur")
     SECTION ("Happy in 2D")
     {
         juce::Image image (juce::Image::PixelFormat::SingleChannel, 10, 10, true);
-        juce::Image::BitmapData data (image, juce::Image::BitmapData::readWrite);
 
         std::vector<float> edge = { 0.74902f, 0.74902f, 0.74902f, 0.74902f, 0.74902f, 0.74902f, 0.74902f, 0.74902f, 0.74902f, 0.74902f };
         std::vector<float> nextToEdge = { 0.24706f, 0.24706f, 0.24706f, 0.24706f, 0.24706f, 0.24706f, 0.24706f, 0.24706f, 0.24706f, 0.24706f };
@@ -272,10 +310,14 @@ TEST_CASE ("Melatonin Blur")
         {
             const auto& [name, blur] = singleColorBlurImplementation();
 
-            // fill image with 1.0
-            for (auto x = 0; x < image.getHeight(); ++x)
             {
-                data.setPixelColour (x, 0, juce::Colours::black);
+                juce::Image::BitmapData data (image, juce::Image::BitmapData::readWrite);
+
+                // fill image with 1.0
+                for (auto x = 0; x < image.getHeight(); ++x)
+                {
+                    data.setPixelColour (x, 0, juce::Colours::black);
+                }
             }
 
             DYNAMIC_SECTION (name)
@@ -294,10 +336,14 @@ TEST_CASE ("Melatonin Blur")
         {
             const auto& [name, blur] = singleColorBlurImplementation();
 
-            // left edge at 1.0
-            for (auto y = 0; y < image.getHeight(); ++y)
             {
-                data.setPixelColour (0, y, juce::Colours::black);
+                juce::Image::BitmapData data (image, juce::Image::BitmapData::readWrite);
+
+                // left edge at 1.0
+                for (auto y = 0; y < image.getHeight(); ++y)
+                {
+                    data.setPixelColour (0, y, juce::Colours::black);
+                }
             }
 
             DYNAMIC_SECTION (name)
@@ -316,10 +362,14 @@ TEST_CASE ("Melatonin Blur")
         {
             const auto& [name, blur] = singleColorBlurImplementation();
 
-            // right edge at 1.0
-            for (auto y = 0; y < image.getHeight(); ++y)
             {
-                data.setPixelColour (image.getWidth() - 1, y, juce::Colours::black);
+                juce::Image::BitmapData data (image, juce::Image::BitmapData::readWrite);
+
+                // right edge at 1.0
+                for (auto y = 0; y < image.getHeight(); ++y)
+                {
+                    data.setPixelColour (image.getWidth() - 1, y, juce::Colours::black);
+                }
             }
 
             DYNAMIC_SECTION (name)
@@ -338,10 +388,14 @@ TEST_CASE ("Melatonin Blur")
         {
             const auto& [name, blur] = singleColorBlurImplementation();
 
-            // bottom edge at 1.0
-            for (auto x = 0; x < image.getWidth(); ++x)
             {
-                data.setPixelColour (x, image.getHeight() - 1, juce::Colours::black);
+                juce::Image::BitmapData data (image, juce::Image::BitmapData::readWrite);
+
+                // bottom edge at 1.0
+                for (auto x = 0; x < image.getWidth(); ++x)
+                {
+                    data.setPixelColour (x, image.getHeight() - 1, juce::Colours::black);
+                }
             }
 
             DYNAMIC_SECTION (name)
@@ -360,17 +414,21 @@ TEST_CASE ("Melatonin Blur")
         {
             const auto& [name, blur] = singleColorBlurImplementation();
 
-            // outline with 1.0
-            for (auto y = 0; y < image.getHeight(); ++y)
             {
-                data.setPixelColour (0, y, juce::Colours::black);
-                data.setPixelColour (image.getWidth() - 1, y, juce::Colours::black);
-            }
+                juce::Image::BitmapData data (image, juce::Image::BitmapData::readWrite);
 
-            for (auto x = 0; x < image.getWidth(); ++x)
-            {
-                data.setPixelColour (x, 0, juce::Colours::black);
-                data.setPixelColour (x, image.getHeight() - 1, juce::Colours::black);
+                // outline with 1.0
+                for (auto y = 0; y < image.getHeight(); ++y)
+                {
+                    data.setPixelColour (0, y, juce::Colours::black);
+                    data.setPixelColour (image.getWidth() - 1, y, juce::Colours::black);
+                }
+
+                for (auto x = 0; x < image.getWidth(); ++x)
+                {
+                    data.setPixelColour (x, 0, juce::Colours::black);
+                    data.setPixelColour (x, image.getHeight() - 1, juce::Colours::black);
+                }
             }
 
             std::vector<float> corners = { 0.93725f, 0.81176f, 0.74902f, 0.74902f, 0.74902f, 0.74902f, 0.74902f, 0.74902f, 0.81176f, 0.93725f };
@@ -419,16 +477,19 @@ TEST_CASE ("Melatonin Blur")
         SECTION ("Horizontal Pass (10x1 image size)")
         {
             juce::Image image (juce::Image::PixelFormat::ARGB, 10, 1, true);
-            juce::Image::BitmapData data (image, juce::Image::BitmapData::readWrite);
 
             SECTION ("red 1.0, green 1.0, blue 1.0")
             {
                 const auto& [name, blur] = rgbaBlurImplementation();
 
-                // fill image with 1.0
-                for (auto x = 0; x < image.getWidth(); ++x)
                 {
-                    data.setPixelColour (x, 0, juce::Colour::fromFloatRGBA (1.0f, 1.0f, 1.0f, 1.0f));
+                    juce::Image::BitmapData data (image, juce::Image::BitmapData::readWrite);
+
+                    // fill image with 1.0
+                    for (auto x = 0; x < image.getWidth(); ++x)
+                    {
+                        data.setPixelColour (x, 0, juce::Colour::fromFloatRGBA (1.0f, 1.0f, 1.0f, 1.0f));
+                    }
                 }
 
                 //  underlying colors are 8-bit (0-255) so translation back to float is messy
@@ -469,13 +530,17 @@ TEST_CASE ("Melatonin Blur")
 
                         std::vector<float> expected (image.getWidth());
 
-                        // add copies of this pixel to the image and expected
-                        for (auto x = 0; x < image.getWidth(); ++x)
                         {
-                            // yeah, this is sort of a mindfuck, going from BGRA -> RGBA
-                            auto pixelColor = juce::Colour::fromFloatRGBA (pixel[2], pixel[1], pixel[0], pixel[3]);
-                            data.setPixelColour (x, 0, pixelColor);
-                            expected[x] = pixel[i];
+                            juce::Image::BitmapData data (image, juce::Image::BitmapData::readWrite);
+
+                            // add copies of this pixel to the image and expected
+                            for (auto x = 0; x < image.getWidth(); ++x)
+                            {
+                                // yeah, this is sort of a mindfuck, going from BGRA -> RGBA
+                                auto pixelColor = juce::Colour::fromFloatRGBA (pixel[2], pixel[1], pixel[0], pixel[3]);
+                                data.setPixelColour (x, 0, pixelColor);
+                                expected[x] = pixel[i];
+                            }
                         }
 
                         // make sure we set the pixels correctly to begin with
@@ -493,8 +558,12 @@ TEST_CASE ("Melatonin Blur")
             {
                 const auto& [name, blur] = rgbaBlurImplementation();
 
-                data.setPixelColour (4, 0, juce::Colours::white);
-                data.setPixelColour (5, 0, juce::Colours::white);
+                {
+                    juce::Image::BitmapData data (image, juce::Image::BitmapData::readWrite);
+
+                    data.setPixelColour (4, 0, juce::Colours::white);
+                    data.setPixelColour (5, 0, juce::Colours::white);
+                }
 
                 // initial state
                 std::vector<float> initial = { 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f };
@@ -520,15 +589,16 @@ TEST_CASE ("Melatonin Blur")
         SECTION ("Vertical Pass (1x10 image size)")
         {
             juce::Image image (juce::Image::PixelFormat::ARGB, 1, 10, true);
-            juce::Image::BitmapData data (image, juce::Image::BitmapData::readWrite);
 
             SECTION ("center 2 bright is symmetrical in each channel")
             {
                 const auto& [name, blur] = rgbaBlurImplementation();
 
-                data.setPixelColour (0, 4, juce::Colours::white);
-                data.setPixelColour (0, 5, juce::Colours::white);
-
+                {
+                    juce::Image::BitmapData data (image, juce::Image::BitmapData::readWrite);
+                    data.setPixelColour (0, 4, juce::Colours::white);
+                    data.setPixelColour (0, 5, juce::Colours::white);
+                }
                 // initial state
                 std::vector<float> initial = { 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f };
 

@@ -276,7 +276,7 @@ namespace melatonin
         }
 
     private:
-        juce::Font font { "Arial Black", 110.f, 0 };
+        juce::Font font { "Arial", 110.f, juce::Font::bold };
         melatonin::DropShadow dropShadow {
             { juce::Colour::fromRGB (196, 181, 157), 12, { 0, 13 } },
             { juce::Colours::white, 1, { 0, -2 } }

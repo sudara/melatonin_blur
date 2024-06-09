@@ -26,8 +26,6 @@ TEST_CASE ("Melatonin Blur PathWithShadows")
     juce::ScopedJuceInitialiser_GUI juce;
 
     juce::Image result (juce::Image::ARGB, 9, 9, true);
-    juce::Graphics g (result);
-    g.fillAll (juce::Colours::white);
 
     melatonin::PathWithShadows p;
 
@@ -36,21 +34,33 @@ TEST_CASE ("Melatonin Blur PathWithShadows")
 
     SECTION ("renders the path")
     {
-        p.render (g);
+        {
+            juce::Graphics g (result);
+            g.fillAll (juce::Colours::white);
+            p.render (g);
+        }
         CHECK (filledBounds (result).toString() == juce::Rectangle<int> (3, 3, 3, 3).toString());
     }
 
     SECTION ("renders a 1px drop shadow")
     {
         p.dropShadow.setColor (juce::Colours::red).setRadius (1);
-        p.render (g);
+        {
+            juce::Graphics g (result);
+            g.fillAll (juce::Colours::white);
+            p.render (g);
+        }
         CHECK (filledBounds (result).toString() == juce::Rectangle<int> (2, 2, 5, 5).toString());
     }
 
     SECTION ("path renders in front of drop shadow")
     {
         p.dropShadow.setColor (juce::Colours::red).setRadius (1);
-        p.render (g);
+        {
+            juce::Graphics g (result);
+            g.fillAll (juce::Colours::white);
+            p.render (g);
+        }
 
         // check for the black square
         CHECK (getPixels (result, 3, { 3, 5 }) == "FF000000, FF000000, FF000000");
@@ -60,7 +70,11 @@ TEST_CASE ("Melatonin Blur PathWithShadows")
     SECTION ("1px inner shadow")
     {
         p.innerShadow.setColor (juce::Colours::red).setRadius (1);
-        p.render (g);
+        {
+            juce::Graphics g (result);
+            g.fillAll (juce::Colours::white);
+            p.render (g);
+        }
 
         // still is 3x3
         CHECK (filledBounds (result).toString() == juce::Rectangle<int> (3, 3, 3, 3).toString());

@@ -29,18 +29,19 @@ TEST_CASE ("Melatonin Blur Inner Shadow")
     p.addRectangle (bounds.translated (2, 2));
 
     // needed for JUCE not to pee its pants (aka leak) when working with graphics
-    juce::ScopedJuceInitialiser_GUI juce;
+    juce::ScopedJuceInitialiser_GUI gui;
 
     juce::Image result (juce::Image::ARGB, 9, 9, true);
-    juce::Graphics g (result);
 
     SECTION ("no shadow (sanity check)")
     {
-        g.fillAll (juce::Colours::white);
+        {
+            juce::Graphics g (result);
+            g.fillAll (juce::Colours::white);
 
-        g.setColour (juce::Colours::black);
-        g.fillPath (p);
-
+            g.setColour (juce::Colours::black);
+            g.fillPath (p);
+        }
         // nothing should be outside the top left corner
         REQUIRE (getPixel (result, 1, 1) == "FFFFFFFF"); // ARGB
 
@@ -50,24 +51,37 @@ TEST_CASE ("Melatonin Blur Inner Shadow")
 
     SECTION ("default constructor")
     {
-        g.fillAll (juce::Colours::white);
         melatonin::InnerShadow shadow;
-        shadow.render (g, p);
+        {
+            juce::Graphics g (result);
+
+            g.fillAll (juce::Colours::white);
+            shadow.render (g, p);
+        }
         CHECK (isImageFilled (result, juce::Colours::white) == true);
-        shadow.setRadius (5);
-        shadow.render (g, p);
+        {
+            juce::Graphics g (result);
+            shadow.setRadius (5);
+            shadow.render (g, p);
+        }
         CHECK (isImageFilled (result, juce::Colours::white) == false);
     }
 
     SECTION ("InnerShadow 2px")
     {
-        g.fillAll (juce::Colours::white);
         melatonin::InnerShadow shadow = { { juce::Colours::white, 2 } };
-        g.setColour (juce::Colours::black);
-        g.fillPath (p);
 
-        // inner shadow render must come AFTER the path render
-        shadow.render (g, p);
+        {
+            juce::Graphics g (result);
+            g.fillAll (juce::Colours::white);
+
+            g.fillAll (juce::Colours::white);
+            g.setColour (juce::Colours::black);
+            g.fillPath (p);
+
+            // inner shadow render must come AFTER the path render
+            shadow.render (g, p);
+        }
 
         save_test_image (result, "inner_shadow_2px");
 
@@ -121,15 +135,18 @@ TEST_CASE ("Melatonin Blur Inner Shadow")
                 auto centerWithoutSpread = result.getPixelAt (4, 4).getBrightness();
                 auto cornerWithoutSpread = result.getPixelAt (2, 2).getBrightness();
 
-                // redo the blur with spread
-                g.fillAll (juce::Colours::white);
-                melatonin::InnerShadow shadowWithPositiveSpread = { { juce::Colours::white, 2, {}, 1 } };
-                g.setColour (juce::Colours::black);
-                g.fillPath (p);
+                {
+                    juce::Graphics g (result);
+                    g.fillAll (juce::Colours::white);
 
-                // inner shadow render must come AFTER the path render
-                shadowWithPositiveSpread.render (g, p);
+                    // redo the blur with spread
+                    melatonin::InnerShadow shadowWithPositiveSpread = { { juce::Colours::white, 2, {}, 1 } };
+                    g.setColour (juce::Colours::black);
+                    g.fillPath (p);
 
+                    // inner shadow render must come AFTER the path render
+                    shadowWithPositiveSpread.render (g, p);
+                }
                 save_test_image (result, "inner_shadow_2px_positive_spread");
 
                 SECTION ("increases brightness at center")
@@ -151,13 +168,17 @@ TEST_CASE ("Melatonin Blur Inner Shadow")
             SECTION ("When there's more spread than radius")
             {
                 // redo the blur with spread
-                g.fillAll (juce::Colours::white);
-                melatonin::InnerShadow shadowWithPositiveSpread = { { juce::Colours::white, 1, {}, 2 } };
-                g.setColour (juce::Colours::black);
-                g.fillPath (p);
+                {
+                    juce::Graphics g (result);
+                    g.fillAll (juce::Colours::white);
 
-                shadowWithPositiveSpread.render (g, p);
+                    g.fillAll (juce::Colours::white);
+                    melatonin::InnerShadow shadowWithPositiveSpread = { { juce::Colours::white, 1, {}, 2 } };
+                    g.setColour (juce::Colours::black);
+                    g.fillPath (p);
 
+                    shadowWithPositiveSpread.render (g, p);
+                }
                 save_test_image (result, "more spread than radius");
 
                 SECTION ("edges of path are pure white")
@@ -178,13 +199,17 @@ TEST_CASE ("Melatonin Blur Inner Shadow")
             {
                 SECTION ("positive 2")
                 {
-                    g.fillAll (juce::Colours::white);
-                    shadow = { { juce::Colours::white, 2, { 2, 0 } } };
-                    g.setColour (juce::Colours::black);
-                    g.fillPath (p);
+                    {
+                        juce::Graphics g (result);
+                        g.fillAll (juce::Colours::white);
+                        g.fillAll (juce::Colours::white);
+                        shadow = { { juce::Colours::white, 2, { 2, 0 } } };
+                        g.setColour (juce::Colours::black);
+                        g.fillPath (p);
 
-                    // inner shadow render must come AFTER the path render
-                    shadow.render (g, p);
+                        // inner shadow render must come AFTER the path render
+                        shadow.render (g, p);
+                    }
 
                     save_test_image (result, "inner_shadow_2px_positive_offset_x");
 
@@ -206,14 +231,18 @@ TEST_CASE ("Melatonin Blur Inner Shadow")
 
                 SECTION ("offset greater than radius matches figma/css")
                 {
-                    g.fillAll (juce::Colours::white);
-                    // offset larger than radius, so we can't pull pixels from the single chan blur anymore
-                    shadow = { { juce::Colours::white, 2, { 3, 0 } } };
-                    g.setColour (juce::Colours::black);
-                    g.fillPath (p);
+                    {
+                        juce::Graphics g (result);
+                        g.fillAll (juce::Colours::white);
+                        g.fillAll (juce::Colours::white);
+                        // offset larger than radius, so we can't pull pixels from the single chan blur anymore
+                        shadow = { { juce::Colours::white, 2, { 3, 0 } } };
+                        g.setColour (juce::Colours::black);
+                        g.fillPath (p);
 
-                    // inner shadow render must come AFTER the path render
-                    shadow.render (g, p);
+                        // inner shadow render must come AFTER the path render
+                        shadow.render (g, p);
+                    }
 
                     save_test_image (result, "inner_shadow_2px_positive_offset_3");
 
@@ -230,14 +259,17 @@ TEST_CASE ("Melatonin Blur Inner Shadow")
 
                 SECTION ("negative")
                 {
-                    g.fillAll (juce::Colours::white);
-                    shadow = { { juce::Colours::white, 2, { -2, 0 } } };
-                    g.setColour (juce::Colours::black);
-                    g.fillPath (p);
+                    {
+                        juce::Graphics g (result);
+                        g.fillAll (juce::Colours::white);
+                        g.fillAll (juce::Colours::white);
+                        shadow = { { juce::Colours::white, 2, { -2, 0 } } };
+                        g.setColour (juce::Colours::black);
+                        g.fillPath (p);
 
-                    // inner shadow render must come AFTER the path render
-                    shadow.render (g, p);
-
+                        // inner shadow render must come AFTER the path render
+                        shadow.render (g, p);
+                    }
                     save_test_image (result, "inner_shadow_2px_negative_offset_x");
                     // inner right edge has more white
 
@@ -278,19 +310,25 @@ TEST_CASE ("Melatonin Blur Inner Shadow")
         // just show us one rounded corner
         // corners of 8 get us a very round corner
         rounded.addRoundedRectangle (-5, -5, 10, 10, 5);
-
-        g.fillAll (juce::Colours::white);
         melatonin::InnerShadow shadow = { { juce::Colours::white, 2 } };
-        g.setColour (juce::Colours::black);
-        g.fillPath (rounded);
 
-        auto cornerColorWithoutShadow = result.getPixelAt (4, 4).getBrightness();
+        float cornerColorWithoutShadow;
+
+        {
+            juce::Graphics g (result);
+            g.fillAll (juce::Colours::white);
+            g.setColour (juce::Colours::black);
+            g.fillPath (rounded);
+        }
+        cornerColorWithoutShadow = result.getPixelAt (4, 4).getBrightness();
         CHECK (cornerColorWithoutShadow == Catch::Approx (1.0f));
 
-        // inner shadow render must come AFTER the path render
-        shadow.render (g, rounded);
+        {
+            juce::Graphics g (result);
 
-        save_test_image (result, "inner_shadow_2px_clipped");
+            // inner shadow render must come AFTER the path render
+            shadow.render (g, rounded);
+        }
 
         SECTION ("corner still white")
         {
