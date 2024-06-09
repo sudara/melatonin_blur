@@ -17,7 +17,6 @@ TEST_CASE ("Melatonin Blur JUCE sanity checks")
         // the image bounds backing our temporary context must be able to contain the transformed image
         // here we will work in 4x4, it will be transformed by the context to 8x8
         juce::Image image (juce::Image::PixelFormat::ARGB, 8, 8, true);
-        juce::Image::BitmapData data (image, juce::Image::BitmapData::readOnly);
 
         // create a 4x4 rectangle
         juce::Path p;
@@ -34,7 +33,7 @@ TEST_CASE ("Melatonin Blur JUCE sanity checks")
         }
 
         save_test_image(image, "path_drawing_respects_context_scale");
-
+        juce::Image::BitmapData data (image, juce::Image::BitmapData::readOnly);
         CHECK(image.getPixelAt(0, 0).toString() == juce::Colours::lime.toString());
         CHECK(data.getPixelColour (0,0) == juce::Colours::lime);
         CHECK(data.getPixelColour (0,0).toString() == juce::Colours::lime.toString());
