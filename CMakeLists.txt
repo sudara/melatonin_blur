@@ -76,6 +76,12 @@ if (MelatoninBlur_IS_TOP_LEVEL)
         JUCE_USE_CURL=0
     )
 
+    # Temporary workaround for https://github.com/actions/runner-images/issues/10020
+    if(MSVC)
+        target_compile_options(Tests PRIVATE /D_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR)
+        target_compile_options(Benchmarks PRIVATE /D_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR)
+    endif()
+
     include(${Catch2_SOURCE_DIR}/extras/Catch.cmake)
     catch_discover_tests(Tests)
     catch_discover_tests(Benchmarks)

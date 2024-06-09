@@ -78,6 +78,10 @@ jobs:
         shell: bash
         run: cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }} --parallel 4
 
-      - name: Test
+      - name: Tests
         working-directory: ${{ env.BUILD_DIR }}
-        run: ctest --output-on-failure -j4 -VV
+        run: ./Tests
+
+      - name: Benchmarks
+        working-directory: ${{ env.BUILD_DIR }}
+        run: ./Benchmarks
