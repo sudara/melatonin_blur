@@ -15,8 +15,6 @@ TEST_CASE ("Melatonin Blur Composite ARGB")
     {
         // boot up the bare minimum of a CachedShadow
         juce::Image context (juce::Image::PixelFormat::ARGB, 20, 20, true);
-        juce::Graphics g (context);
-        g.fillAll (juce::Colours::white);
 
         SECTION ("match a single channel blur")
         {
@@ -26,7 +24,12 @@ TEST_CASE ("Melatonin Blur Composite ARGB")
             // make a 4x4 at 2,2
             p.addRectangle (juce::Rectangle<float> (2, 2, 4, 4));
             auto shadow = melatonin::DropShadow ({ s1 });
-            shadow.render (g, p);
+
+            {
+                juce::Graphics g (context);
+                g.fillAll (juce::Colours::white);
+                shadow.render (g, p);
+            }
 
             // check bounds of non-white rectangle
             CHECK (filledBounds (context) == juce::Rectangle<int> (0, 0, 8, 8));
@@ -40,7 +43,12 @@ TEST_CASE ("Melatonin Blur Composite ARGB")
             // make a 4x4 at 2,2
             p.addRectangle (juce::Rectangle<float> (2, 2, 4, 4));
             auto shadow = melatonin::DropShadow ({ s1 });
-            shadow.render (g, p);
+
+            {
+                juce::Graphics g (context);
+                g.fillAll (juce::Colours::white);
+                shadow.render (g, p);
+            }
 
             save_test_image (context, "offset");
 
@@ -58,8 +66,13 @@ TEST_CASE ("Melatonin Blur Composite ARGB")
             juce::Path p;
             // make a 4x4 at 2,2
             p.addRectangle (juce::Rectangle<float> (3, 3, 4, 4));
-            auto shadow = melatonin::DropShadow ({ s1, s2 });
-            shadow.render (g, p);
+
+            {
+                juce::Graphics g (context);
+                g.fillAll (juce::Colours::white);
+                auto shadow = melatonin::DropShadow ({ s1, s2 });
+                shadow.render (g, p);
+            }
 
             // check bounds of non-white rectangle
             CHECK (filledBounds (context).toString() == juce::Rectangle<int> (0, 0, 10, 10).toString());
@@ -75,8 +88,13 @@ TEST_CASE ("Melatonin Blur Composite ARGB")
             juce::Path p;
             // make a 4x4 at 2,2
             p.addRectangle (juce::Rectangle<float> (2, 2, 4, 4));
-            auto shadow = melatonin::DropShadow ({ s1, s2 });
-            shadow.render (g, p);
+            {
+                juce::Graphics g (context);
+                g.fillAll (juce::Colours::white);
+
+                auto shadow = melatonin::DropShadow ({ s1, s2 });
+                shadow.render (g, p);
+            }
 
             // check bounds of non-white rectangle
             // it's just 2px wider
@@ -91,9 +109,15 @@ TEST_CASE ("Melatonin Blur Composite ARGB")
             // make a 4x4 at 2,2
             p.addRectangle (juce::Rectangle<float> (2, 2, 4, 4));
             auto shadow = melatonin::DropShadow ({ s1 });
-            shadow.render (g, p);
 
-            save_test_image(context, "zero_radius");
+            {
+                juce::Graphics g (context);
+                g.fillAll (juce::Colours::white);
+
+                shadow.render (g, p);
+            }
+
+            save_test_image (context, "zero_radius");
 
             // check bounds of non-white rectangle
             CHECK (filledBounds (context).toString() == juce::Rectangle<int> (2, 2, 4, 4).toString());
@@ -104,7 +128,7 @@ TEST_CASE ("Melatonin Blur Composite ARGB")
     {
         juce::Image context (juce::Image::PixelFormat::ARGB, 150, 150, true);
         juce::Graphics g (context);
-        g.addTransform(juce::AffineTransform::scale (2));
+        g.addTransform (juce::AffineTransform::scale (2));
         g.fillAll (juce::Colours::white);
 
         auto dummyShadow = melatonin::ShadowParameters ({ juce::Colours::black, 2, { 0, 0 }, 0 });
@@ -118,9 +142,9 @@ TEST_CASE ("Melatonin Blur Composite ARGB")
         auto shadow = melatonin::InnerShadow (dummyShadow);
         shadow.render (g, p);
         auto originalPath = shadow.lastOriginAgnosticPath;
-        shadow.render(g, p);
+        shadow.render (g, p);
         auto translatedPath = shadow.lastOriginAgnosticPath;
 
-        CHECK(originalPath == translatedPath);
+        CHECK (originalPath == translatedPath);
     }
 }

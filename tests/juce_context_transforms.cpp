@@ -19,17 +19,19 @@ TEST_CASE ("Melatonin Blur JUCE sanity checks")
         juce::Image image (juce::Image::PixelFormat::ARGB, 8, 8, true);
         juce::Image::BitmapData data (image, juce::Image::BitmapData::readOnly);
 
-        // create our new context
-        juce::Graphics g2 (image);
-        g2.addTransform (juce::AffineTransform::scale (scaleFactor));
-
         // create a 4x4 rectangle
         juce::Path p;
         p.addRectangle (juce::Rectangle<float> (4, 4));
 
-        // draw the rectangle
-        g2.setColour (juce::Colours::lime);
-        g2.fillPath (p);
+        {
+            // create our new context
+            juce::Graphics g2 (image);
+            g2.addTransform (juce::AffineTransform::scale (scaleFactor));
+
+            // draw the rectangle
+            g2.setColour (juce::Colours::lime);
+            g2.fillPath (p);
+        }
 
         save_test_image(image, "path_drawing_respects_context_scale");
 
@@ -48,17 +50,19 @@ TEST_CASE ("Melatonin Blur JUCE sanity checks")
         // our source will be 4x4, transformed by the context to 8x8
         juce::Image simulated2xContext (juce::Image::PixelFormat::ARGB, 8, 8, true);
 
-        juce::Graphics g (simulated2xContext);
-        g.addTransform (juce::AffineTransform::scale (scaleFactor));
+        {
+            juce::Graphics g (simulated2xContext);
+            g.addTransform (juce::AffineTransform::scale (scaleFactor));
 
-        // simulate creating a normal 4x4 image
-        // for example, our "lowQuality" drop shadows do this behind the scenes
-        juce::Image source (juce::Image::PixelFormat::ARGB, 4, 4, true);
-        juce::Graphics g2 (source);
-        g2.setColour (juce::Colours::lime);
-        g2.fillAll();
+            // simulate creating a normal 4x4 image
+            // for example, our "lowQuality" drop shadows do this behind the scenes
+            juce::Image source (juce::Image::PixelFormat::ARGB, 4, 4, true);
+            juce::Graphics g2 (source);
+            g2.setColour (juce::Colours::lime);
+            g2.fillAll();
 
-        g.drawImageAt (source, 0, 0, false);
+            g.drawImageAt (source, 0, 0, false);
+        }
 
         save_test_image (simulated2xContext, "simulated2xcontext");
 
@@ -74,20 +78,23 @@ TEST_CASE ("Melatonin Blur JUCE sanity checks")
         // our source will be 4x4, transformed by the context to 8x8
         juce::Image simulated2xContext (juce::Image::PixelFormat::ARGB, 8, 8, true);
 
-        juce::Graphics g (simulated2xContext);
-        g.addTransform (juce::AffineTransform::scale (scaleFactor));
+        {
+            juce::Graphics g (simulated2xContext);
+            g.addTransform (juce::AffineTransform::scale (scaleFactor));
 
-        // simulate creating a 8x8 image, like our high quality blurs do
-        juce::Image source (juce::Image::PixelFormat::ARGB, 8, 8, true);
-        juce::Graphics g2 (source);
+            // simulate creating a 8x8 image, like our high quality blurs do
+            juce::Image source (juce::Image::PixelFormat::ARGB, 8, 8, true);
+            juce::Graphics g2 (source);
 
-        // the transforms on source and target match
-        g2.addTransform (juce::AffineTransform::scale (scaleFactor));
-        g2.setColour (juce::Colours::lime);
-        g2.fillAll();
+            // the transforms on source and target match
+            g2.addTransform (juce::AffineTransform::scale (scaleFactor));
+            g2.setColour (juce::Colours::lime);
+            g2.fillAll();
 
-        // TODO: I wonder if JUCE's drawImageAt could be cheaper if the transforms were compared?
-        g.drawImageAt (source, 0, 0, false);
+
+            // TODO: I wonder if JUCE's drawImageAt could be cheaper if the transforms were compared?
+            g.drawImageAt (source, 0, 0, false);
+        }
 
         // confirm the entire 8x8 is filled
         CHECK (isImageFilled (simulated2xContext, juce::Colours::lime) == true);
