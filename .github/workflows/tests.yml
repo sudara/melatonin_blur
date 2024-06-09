@@ -72,7 +72,7 @@ jobs:
 
       - name: Configure
         shell: bash
-        run: cmake -B ${{ env.BUILD_DIR }} -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache . -DCMAKE_SYSTEM_VERSION=10.0.22621.0
+        run: cmake -B ${{ env.BUILD_DIR }} -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache . -DCMAKE_SYSTEM_VERSION=10.0.22621.0
 
       - name: Build
         shell: bash
