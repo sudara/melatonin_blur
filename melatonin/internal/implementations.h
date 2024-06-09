@@ -82,7 +82,7 @@ namespace melatonin::blur
 #elif defined(MELATONIN_BLUR_IPP)
         ippVectorSingleChannel (img, radius);
 #else
-        melatonin::blur::juceFloatVectorSingleChannel (img, static_cast<int>(radius));
+        melatonin::blur::juceFloatVectorSingleChannel (img, radius);
 #endif
     }
 
