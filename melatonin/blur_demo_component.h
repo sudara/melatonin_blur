@@ -148,14 +148,14 @@ namespace melatonin
             strokedInnerShadow.render (g, strokedInnerPath, juce::PathStrokeType (6));
 
             g.setColour (juce::Colours::white);
-            g.setFont (juce::Font (50).boldened());
+            g.setFont (g.getCurrentFont().withHeight (50).boldened());
             textDropShadow.render (g, "drop", textBounds, juce::Justification::left);
             g.drawText ("drop", textBounds, juce::Justification::left);
 
             g.drawText ("inner", textBounds, juce::Justification::centredRight);
             textInnerShadow.render (g, "inner", textBounds.toFloat(), juce::Justification::centredRight);
 
-            g.setFont (juce::Font (16));
+            g.setFont (16);
             auto labels = juce::StringArray ("radius", "spread", "offsetX", "offsetY", "opacity");
             for (auto i = 0; i < labels.size(); ++i)
             {
@@ -164,7 +164,7 @@ namespace melatonin
             auto elapsed = juce::Time::getMillisecondCounterHiRes() - start;
 
             g.setColour (juce::Colours::white);
-            g.setFont (juce::Font (16));
+            g.setFont (20);
             g.drawText ("rendered in " + juce::String (elapsed, 3) + "ms", getLocalBounds().removeFromTop (50), juce::Justification::centred);
         }
 
@@ -276,7 +276,11 @@ namespace melatonin
         }
 
     private:
+        #if JUCE_MAJOR_VERSION >= 8
+        juce::Font font = juce::FontOptions {}.withName("Arial").withHeight (110.f).withStyle ("bold");
+        #else
         juce::Font font { "Arial", 110.f, juce::Font::bold };
+        #endif
         melatonin::DropShadow dropShadow {
             { juce::Colour::fromRGB (196, 181, 157), 12, { 0, 13 } },
             { juce::Colours::white, 1, { 0, -2 } }

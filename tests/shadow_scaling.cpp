@@ -190,7 +190,6 @@ TEST_CASE ("Melatonin Blur Shadow Scaling")
                 }
                 save_test_image (noScale, "noscalerender");
                 auto firstPixelBrightness = getScaledBrightness (noScale, 1, 4, 1.0f);
-                auto secondPixelBrightness = getScaledBrightness (noScale, 2, 4, 1.0f);
 
                 SECTION ("logical radius 2, scale 2, lofi")
                 {

@@ -1,12 +1,10 @@
-#pragma once
-
-#include "../melatonin/implementations/dequeue.h"
+// #include "../melatonin/implementations/dequeue.h"
 #include "../melatonin/implementations/float_vector_stack_blur.h"
 #include "../melatonin/implementations/gin.h"
-#include "../melatonin/implementations/naive.h"
-#include "../melatonin/implementations/naive_class.h"
-#include "../melatonin/implementations/naive_with_martin_optimization.h"
-#include "../melatonin/implementations/templated_function.h"
+// #include "../melatonin/implementations/naive.h"
+// #include "../melatonin/implementations/naive_class.h"
+// #include "../melatonin/implementations/naive_with_martin_optimization.h"
+// #include "../melatonin/implementations/templated_function.h"
 #include "../melatonin/internal/implementations.h"
 
 // These require melatonin::vector, not in this repo
@@ -26,31 +24,31 @@
 // Keeps the actual tests DRY
 // bit ugly to wrap everything in std::function
 // it's because our stack blur is a class, not free func
-using BlurFunction = std::function<void (juce::Image&, int)>;
+using BlurFunction = std::function<void (juce::Image&, size_t)>;
 inline auto singleColorBlurImplementation()
 {
     return GENERATE (
-        std::make_pair ("gin", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::ginSingleChannel (img, radius); } }),
+        std::make_pair ("gin", BlurFunction { [] (juce::Image& img, size_t radius) { melatonin::stackBlur::ginSingleChannel (img, (unsigned int) radius); } }),
         // std::make_pair ("prefix sum naive", BlurFunction { [] (juce::Image& img, int radius) { melatonin::blur::prefixSumSingleChannel (img, radius); } }),
-        //std::make_pair ("dequeue", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::dequeueSingleChannel (img, radius); } }),
-        //std::make_pair ("circularBuffer", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::circularBufferSingleChannel (img, radius); } }),
-        //std::make_pair ("martin optimization", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::martinOptimizationSingleChannel (img, radius); } }),
+        // std::make_pair ("dequeue", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::dequeueSingleChannel (img, radius); } }),
+        // std::make_pair ("circularBuffer", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::circularBufferSingleChannel (img, radius); } }),
+        // std::make_pair ("martin optimization", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::martinOptimizationSingleChannel (img, radius); } }),
         //    std::make_pair ("vector", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::vectorSingleChannel (img, radius); } }),
         //    std::make_pair ("vector optimized", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::vectorOptimizedSingleChannel (img, radius); } }),
         //    std::make_pair ("vector class", BlurFunction { [&] (juce::Image& img, int radius) { melatonin::VectorStackBlur stackBlur (img, radius); } }),
-        std::make_pair ("juce's FloatVectorOperations", BlurFunction { [&] (juce::Image& img, int radius) { melatonin::blur::juceFloatVectorSingleChannel (img, radius); } }),
-        //std::make_pair ("naive class", BlurFunction { [&] (juce::Image& img, int radius) { melatonin::NaiveStackBlur stackBlur (img, radius); } }),
-        //std::make_pair ("templated function", BlurFunction { [&] (juce::Image& img, int radius) { melatonin::stackBlur::singleChannelTemplated (img, radius); } }),
-        //        std::make_pair ("templated function float", BlurFunction { [&] (juce::Image& img, int radius) { melatonin::stackBlur::templatedFloatSingleChannel (img, radius); } }),
-        std::make_pair ("Melatonin", BlurFunction { [&] (juce::Image& img, int radius) { melatonin::blur::singleChannel (img, radius); } }));
+        std::make_pair ("juce's FloatVectorOperations", BlurFunction { [&] (juce::Image& img, size_t radius) { melatonin::blur::juceFloatVectorSingleChannel (img, radius); } }),
+        // std::make_pair ("naive class", BlurFunction { [&] (juce::Image& img, int radius) { melatonin::NaiveStackBlur stackBlur (img, radius); } }),
+        // std::make_pair ("templated function", BlurFunction { [&] (juce::Image& img, int radius) { melatonin::stackBlur::singleChannelTemplated (img, radius); } }),
+        //         std::make_pair ("templated function float", BlurFunction { [&] (juce::Image& img, int radius) { melatonin::stackBlur::templatedFloatSingleChannel (img, radius); } }),
+        std::make_pair ("Melatonin", BlurFunction { [&] (juce::Image& img, size_t radius) { melatonin::blur::singleChannel (img, radius); } }));
 }
 
 inline auto rgbaBlurImplementation()
 {
     return GENERATE (
-        std::make_pair ("gin", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::ginARGB (img, radius); } }),
-        std::make_pair ("juce's FloatVectorOperations", BlurFunction { [&] (juce::Image& img, int radius) { melatonin::blur::juceFloatVectorARGB (img, radius); } }),
-        std::make_pair ("Melatonin", BlurFunction { [&] (juce::Image& img, int radius) {
+        std::make_pair ("gin", BlurFunction { [] (juce::Image& img, size_t radius) { melatonin::stackBlur::ginARGB (img, (unsigned int) radius); } }),
+        std::make_pair ("juce's FloatVectorOperations", BlurFunction { [&] (juce::Image& img, size_t radius) { melatonin::blur::juceFloatVectorARGB (img, radius); } }),
+        std::make_pair ("Melatonin", BlurFunction { [&] (juce::Image& img, size_t radius) {
             // argb goes haywire in-place, so we need to copy
             auto src = img.createCopy();
             melatonin::blur::argb (src, img, radius);
@@ -165,7 +163,6 @@ TEST_CASE ("Melatonin Blur")
 
         SECTION ("center 2 bright has symmetrical result")
         {
-
             const auto& [name, blur] = singleColorBlurImplementation();
 
             {
@@ -526,9 +523,9 @@ TEST_CASE ("Melatonin Blur")
                         std::vector<float> pixel = { 0.0f, 0.0f, 0.0f, 1.0f };
 
                         // modify just one channel of the pixel
-                        pixel[i] = 1.0f;
+                        pixel[(size_t) i] = 1.0f;
 
-                        std::vector<float> expected (image.getWidth());
+                        std::vector<float> expected ((size_t) image.getWidth());
 
                         {
                             juce::Image::BitmapData data (image, juce::Image::BitmapData::readWrite);
@@ -539,7 +536,7 @@ TEST_CASE ("Melatonin Blur")
                                 // yeah, this is sort of a mindfuck, going from BGRA -> RGBA
                                 auto pixelColor = juce::Colour::fromFloatRGBA (pixel[2], pixel[1], pixel[0], pixel[3]);
                                 data.setPixelColour (x, 0, pixelColor);
-                                expected[x] = pixel[i];
+                                expected[(size_t) x] = pixel[(size_t) i];
                             }
                         }
 

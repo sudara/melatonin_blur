@@ -491,5 +491,5 @@ TEST_CASE ("Melatonin Blur JUCE premultiplied check")
         CHECK (actualPixel.g == 0u);
         CHECK (actualPixel.b == 0u);
     }
-};
+}
 #endif
