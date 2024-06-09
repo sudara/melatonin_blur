@@ -115,10 +115,11 @@ TEST_CASE ("Melatonin Blur Stroked Path")
         {
             juce::Graphics g (result);
             shadow.render (g, p, strokeType);
-            CHECK (getPixel (result, 2, 6) != "FF000000");
-            CHECK (getPixel (result, 3, 5) != "FF000000");
-            CHECK (getPixel (result, 4, 4) != "FF000000");
         }
+        CHECK (getPixel (result, 2, 6) != "FF000000");
+        CHECK (getPixel (result, 3, 5) != "FF000000");
+        CHECK (getPixel (result, 4, 4) != "FF000000");
+
         save_test_image (result, "stroked_path_inner.png");
     }
 }
