@@ -34,13 +34,16 @@ TEST_CASE ("Melatonin Blur Text Shadow")
             juce::Graphics g (result);
             g.fillAll (juce::Colours::white);
             g.setColour (juce::Colours::black);
-            g.setFont(g.getCurrentFont().withHeight(13));
+            g.setFont(g.getCurrentFont().withHeight(12)); // macos and windows happy with 13, ubuntu needs 12
             g.drawText ("O", 0, 0, 9, 9, juce::Justification::centred, false);
         }
 
         save_test_image (result, "text_no_shadow.png");
         // middle of image is white
         CHECK (result.getPixelAt (4, 4).toDisplayString (true) == "FFFFFFFF");
+
+        // whole image isn't white
+        CHECK (isImageFilled (result, juce::Colours::white) != true);
 
         // top middle is close to black
         auto topMiddle = result.getPixelAt (4, 4);
