@@ -34,8 +34,10 @@ jobs:
       fail-fast: false # show errors for each platform vs. cancel build
       matrix:
         os: [ macos-11, macos-12, macos-13, macos-14, windows-2022, windows-2019, ubuntu-latest ]
+        juce: [ 7, 8 ]
 
     steps:
+
       # Setup MSVC toolchain and developer command prompt (Windows)
       - uses: ilammy/msvc-dev-cmd@v1
         with:
@@ -55,7 +57,6 @@ jobs:
 
       - name: Install Ninja (Windows)
         if: runner.os == 'Windows'
-        shell: bash
         run: choco install ninja
 
       - name: Install macOS Deps
@@ -71,11 +72,26 @@ jobs:
         uses: mozilla-actions/sccache-action@v0.0.4
 
       - name: Configure
-        shell: bash
-        run: cmake -B ${{ env.BUILD_DIR }} -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache . -DCMAKE_SYSTEM_VERSION=10.0.22621.0
+        if: runner.os == 'Windows'
+        # D_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR is a temporary workaround for a Visual Studio+GA snafu
+        # check if resolved here: https://github.com/sudara/pamplejuce/issues/103
+        run: | 
+          if [ ${{ matrix.juce }} -eq 8 ]; then
+            cmake -B ${{ env.BUILD_DIR }} -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache . -DCMAKE_SYSTEM_VERSION=10.0.22621.0 -DCMAKE_CXX_FLAGS=" /D_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR -DJUCE8=ON"
+          else
+            cmake -B ${{ env.BUILD_DIR }} -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache . -DCMAKE_SYSTEM_VERSION=10.0.22621.0 -DCMAKE_CXX_FLAGS=" /D_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR"
+          fi
+
+      - name: Configure
+        if: runner.os != 'Windows'
+        run: |
+          if [ ${{ matrix.juce }} -eq 8 ]; then
+            cmake -B ${{ env.BUILD_DIR }} -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache . -DJUCE8=ON
+          else 
+            cmake -B ${{ env.BUILD_DIR }} -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache .
+          fi
 
       - name: Build
-        shell: bash
         run: cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }} --parallel 4
 
       - name: Tests

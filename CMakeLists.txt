@@ -9,13 +9,23 @@ set(CMAKE_CXX_STANDARD_REQUIRED YES)
 
 include(FetchContent)
 if (MelatoninBlur_IS_TOP_LEVEL)
-    message(STATUS "Cloning JUCE...")
+    option(JUCE_8 "Run tests on JUCE8" ON)
 
+    message(STATUS "Cloning JUCE...")
+    if(JUCE_8)
     FetchContent_Declare(JUCE
             GIT_REPOSITORY https://github.com/juce-framework/JUCE.git
             GIT_TAG juce8
             GIT_PROGRESS TRUE
     )
+    else()
+    FetchContent_Declare(JUCE
+            GIT_REPOSITORY
+            GIT_TAG 7.0.12
+            GIT_PROGRESS TRUE
+    )
+    endif()
+
     FetchContent_MakeAvailable(JUCE)
 
     FetchContent_Declare(Catch2
@@ -88,12 +98,6 @@ if (MelatoninBlur_IS_TOP_LEVEL)
         # https://stackoverflow.com/q/45685487
         target_compile_options(Benchmarks PUBLIC $<$<CONFIG:RELEASE>:-Ofast>)
         target_compile_options(Benchmarks PUBLIC $<$<CONFIG:RelWithDebInfo>:-Ofast>)
-    endif ()
-
-    # Temporary workaround for https://github.com/actions/runner-images/issues/10020
-    if (MSVC)
-        target_compile_options(Tests PUBLIC /D_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR)
-        target_compile_options(Benchmarks PUBLIC /D_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR)
     endif ()
 
 else ()
