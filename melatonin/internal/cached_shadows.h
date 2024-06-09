@@ -13,7 +13,6 @@ namespace melatonin::internal
         explicit CachedShadows (const std::vector<ShadowParameters>& shadowParameters, bool force_inner = false);
 
     public:
-        virtual ~CachedShadows() = default;
 
         // store a copy of the path to compare against for caching
         // public for testability, sorry not sorry
