@@ -65,7 +65,11 @@ namespace melatonin::internal
         struct TextArrangement
         {
             juce::String text = {};
+           #if JUCE_MAJOR_VERSION == 8
+            juce::Font font { juce::FontOptions() };
+           #else
             juce::Font font = {};
+           #endif
             juce::Rectangle<float> area = {};
             juce::Justification justification = juce::Justification::left;
 
