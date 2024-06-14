@@ -76,8 +76,8 @@ jobs:
         # D_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR is a temporary workaround for a Visual Studio+GA snafu
         # check if resolved here: https://github.com/sudara/pamplejuce/issues/103
         run: | 
-          if [ "${{ matrix.juce }}" == "JUCE8" ]; then
-            cmake -B ${{ env.BUILD_DIR }} -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache . -DCMAKE_SYSTEM_VERSION=10.0.22621.0 -DCMAKE_CXX_FLAGS=" /D_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR -DJUCE8=ON"
+          if [ "${{ matrix.juce }}" == "JUCE7" ]; then
+            cmake -B ${{ env.BUILD_DIR }} -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache . -DCMAKE_SYSTEM_VERSION=10.0.22621.0 -DCMAKE_CXX_FLAGS=" /D_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR -DJUCE7=ON"
           else
             cmake -B ${{ env.BUILD_DIR }} -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache . -DCMAKE_SYSTEM_VERSION=10.0.22621.0 -DCMAKE_CXX_FLAGS=" /D_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR"
           fi
@@ -85,8 +85,8 @@ jobs:
       - name: Configure
         if: runner.os != 'Windows'
         run: |
-          if [ "${{ matrix.juce }}" == "JUCE8" ]; then
-            cmake -B ${{ env.BUILD_DIR }} -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache . -DJUCE8=ON
+          if [ "${{ matrix.juce }}" == "JUCE7" ]; then
+            cmake -B ${{ env.BUILD_DIR }} -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache . -DJUCE7=ON
           else 
             cmake -B ${{ env.BUILD_DIR }} -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache .
           fi
