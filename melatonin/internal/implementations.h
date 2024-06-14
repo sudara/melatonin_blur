@@ -72,7 +72,7 @@ namespace melatonin::internal
 // Don't use these directly, use melatonin::CachedBlur!
 namespace melatonin::blur
 {
-    static inline void singleChannel (juce::Image& img, size_t radius)
+    [[maybe_unused]] static inline void singleChannel (juce::Image& img, size_t radius)
     {
 #if MELATONIN_BLUR_VIMAGE
         if (internal::vImageSingleChannelAvailable())
@@ -82,11 +82,11 @@ namespace melatonin::blur
 #elif defined(MELATONIN_BLUR_IPP)
         ippVectorSingleChannel (img, radius);
 #else
-        melatonin::blur::juceFloatVectorSingleChannel (img, static_cast<int>(radius));
+        melatonin::blur::juceFloatVectorSingleChannel (img, radius);
 #endif
     }
 
-    static inline void argb ([[maybe_unused]] juce::Image& srcImage, juce::Image& dstImage, size_t radius)
+    [[maybe_unused]] static inline void argb ([[maybe_unused]] juce::Image& srcImage, juce::Image& dstImage, size_t radius)
     {
 #if MELATONIN_BLUR_VIMAGE_MACOS14
         if (internal::vImageARGBAvailable())

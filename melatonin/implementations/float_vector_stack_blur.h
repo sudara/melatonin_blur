@@ -12,15 +12,15 @@
  */
 namespace melatonin::blur
 {
-    static void juceFloatVectorSingleChannel (juce::Image& img, int radius)
+    static void juceFloatVectorSingleChannel (juce::Image& img, size_t radius)
     {
-        const int w = static_cast<int> (img.getWidth());
-        const int h = static_cast<int> (img.getHeight());
+        const auto w = (size_t) img.getWidth();
+        const auto h = (size_t) img.getHeight();
 
         juce::Image::BitmapData data (img, juce::Image::BitmapData::readWrite);
 
         // Ensure radius is within bounds
-        radius = juce::jlimit (1, 254, radius);
+        radius = juce::jlimit ((size_t) 1, (size_t) 254, radius);
 
         // This tracks the start of the circular buffer
         unsigned int queueIndex = 0;
@@ -31,7 +31,7 @@ namespace melatonin::blur
         // and remove the left values of the queue from the stack
         // the blurred pixel is then calculated by dividing by the number of "values" in the weighted stack sum
         // in the end, we're working with a divisor, since FloatVectorOps doesn't do division
-        auto divisor = 1.0f / float ((radius + 1) * (radius + 1));
+        const auto divisor = 1.0f / float ((radius + 1) * (radius + 1));
 
         // we're going to be using vectors, allocated once
         // and used for both horizontal and vertical passes
@@ -53,7 +53,7 @@ namespace melatonin::blur
          *     We need to convert all the pixels in the queue to floats anyway
          */
         std::vector<std::vector<float>> queue;
-        for (auto i = 0; i < radius * 2 + 1; ++i)
+        for (size_t i = 0; i < radius * 2 + 1; ++i)
         {
             queue.emplace_back (vectorSize, 0.0f);
         }
@@ -77,8 +77,8 @@ namespace melatonin::blur
 
         // to start with, populate a fresh vector with float values of the leftmost pixels
         // A 255 uint8 value will literally become 255.0f
-        for (auto i = 0; i < h; ++i)
-            tempPixelVector[(uint8_t) i] = (float) data.getLinePointer (i)[0];
+        for (size_t i = 0; i < h; ++i)
+            tempPixelVector[(uint8_t) i] = (float) data.getLinePointer ((int) i)[0];
 
         // Now pre-fill the left half of the queue with this leftmost pixel value
         for (size_t i = 0; i <= size_t (radius); ++i)
@@ -91,19 +91,19 @@ namespace melatonin::blur
 
         // Fill the right half of the queue with the next pixel values
         // zero is the center pixel here, it was already added above (radius + 1) times to the sum
-        for (auto i = 1; i <= radius; ++i)
+        for (size_t i = 1; i <= radius; ++i)
         {
             if (i <= w - 1)
             {
-                for (int row = 0; row < h; ++row)
-                    tempPixelVector[(size_t) row] = data.getLinePointer (row)[(size_t) data.pixelStride * i];
+                for (size_t row = 0; row < h; ++row)
+                    tempPixelVector[row] = data.getLinePointer ((int) row)[(size_t) data.pixelStride * i];
             }
             // edge case where queue is bigger than image width!
             // for example in our vertical tests where width=1
             else
             {
-                for (int row = 0; row < h; ++row)
-                    tempPixelVector[(size_t) row] = data.getLinePointer (row)[data.pixelStride * (w - 1)];
+                for (size_t row = 0; row < h; ++row)
+                    tempPixelVector[row] = data.getLinePointer ((int) row)[(size_t) data.pixelStride * (w - 1)];
             }
 
             juce::FloatVectorOperations::copy (queue[radius + i].data(), tempPixelVector.data(), h);
@@ -111,7 +111,7 @@ namespace melatonin::blur
             juce::FloatVectorOperations::addWithMultiply (stackSumVector.data(), tempPixelVector.data(), (float) (radius + 1 - i), h);
         }
 
-        for (int x = 0; x < w; ++x)
+        for (size_t x = 0; x < w; ++x)
         {
             // calculate the blurred value from the stack
             // it first goes in a temporary location...
@@ -120,8 +120,8 @@ namespace melatonin::blur
 
             // ...before being placed back in our image data as uint8
             // unfortunately not a great way to vectorize this with juce
-            for (auto i = 0; i < h; ++i)
-                data.getLinePointer (i)[(size_t) data.pixelStride * x] = (unsigned char) tempPixelVector[(size_t) i];
+            for (size_t i = 0; i < h; ++i)
+                data.getLinePointer ((int) i)[(size_t) data.pixelStride * x] = (unsigned char) tempPixelVector[i];
 
             // remove the outgoing sum from the stack
             juce::FloatVectorOperations::subtract (stackSumVector.data(), sumOutVector.data(), h);
@@ -135,13 +135,13 @@ namespace melatonin::blur
             if (x + radius + 1 < w)
             {
                 // grab incoming pixels for each row (they are offset by x+radius+1)
-                for (int row = 0; row < h; ++row)
-                    queue[queueIndex][(size_t) row] = data.getLinePointer (row)[(size_t) data.pixelStride * (x + radius + 1)];
+                for (size_t row = 0; row < h; ++row)
+                    queue[queueIndex][row] = data.getLinePointer ((int) row)[(size_t) data.pixelStride * (x + radius + 1)];
             }
             else
             {
-                for (int row = 0; row < h; ++row)
-                    queue[queueIndex][(size_t) row] = data.getLinePointer (row)[(size_t) data.pixelStride * ((size_t) w - 1)];
+                for (size_t row = 0; row < h; ++row)
+                    queue[queueIndex][row] = data.getLinePointer ((int) row)[(size_t) data.pixelStride * ((size_t) w - 1)];
             }
 
             // Also add the incoming value to the sumInVector
@@ -172,12 +172,12 @@ namespace melatonin::blur
         queueIndex = 0;
 
         // populate our temp vector with float values of the topmost pixels
-        for (size_t i = 0; i < static_cast<size_t>(w); ++i)
+        for (size_t i = 0; i < static_cast<size_t> (w); ++i)
             tempPixelVector[i] = (float) data.getLinePointer (0)[i];
 
         // Now pre-fill the left half of the queue with the topmost pixel values
         // (queue is already initialized from the horizontal pass)
-        for (size_t i = 0; i <= static_cast<size_t>(radius); ++i)
+        for (size_t i = 0; i <= static_cast<size_t> (radius); ++i)
         {
             // these init left side AND middle of the stack
             juce::FloatVectorOperations::copy (queue[i].data(), tempPixelVector.data(), w);
@@ -186,19 +186,19 @@ namespace melatonin::blur
         }
 
         // Fill the right half of the queue with pixel values from the next rows
-        for (auto i = 1; i <= radius; ++i)
+        for (size_t i = 1; i <= radius; ++i)
         {
             if (i <= h - 1)
             {
                 for (size_t col = 0; col < (size_t) w; ++col)
-                    tempPixelVector[col] = (float) data.getLinePointer (i)[col];
+                    tempPixelVector[col] = (float) data.getLinePointer ((int) i)[col];
             }
             // edge case where queue is bigger than image width!
             // for example vertical test where width = 1
             else
             {
                 for (size_t col = 0; col < (size_t) w; ++col)
-                    tempPixelVector[col] = (float) data.getLinePointer (h - 1)[col];
+                    tempPixelVector[col] = (float) data.getLinePointer ((int) h - 1)[col];
             }
 
             juce::FloatVectorOperations::copy (queue[radius + i].data(), tempPixelVector.data(), w);
@@ -206,7 +206,7 @@ namespace melatonin::blur
             juce::FloatVectorOperations::addWithMultiply (stackSumVector.data(), tempPixelVector.data(), (float) (radius + 1 - i), w);
         }
 
-        for (auto y = 0; y < h; ++y)
+        for (size_t y = 0; y < h; ++y)
         {
             // calculate the blurred value vector from the stack
             // it first goes in a temporary location...
@@ -214,8 +214,8 @@ namespace melatonin::blur
             juce::FloatVectorOperations::multiply (tempPixelVector.data(), divisor, w);
 
             // ...before being placed back in our image data as uint8
-            for (size_t i = 0; i < static_cast<size_t>(w); ++i)
-                data.getLinePointer (y)[i] = (uint8_t) tempPixelVector[i];
+            for (size_t i = 0; i < static_cast<size_t> (w); ++i)
+                data.getLinePointer ((int) y)[i] = (uint8_t) tempPixelVector[i];
 
             // remove the outgoing sum from the stack
             juce::FloatVectorOperations::subtract (stackSumVector.data(), sumOutVector.data(), w);
@@ -235,7 +235,7 @@ namespace melatonin::blur
             {
                 // bottom of image, grab bottom pixel
                 for (size_t col = 0; col < (size_t) w; ++col)
-                    queue[queueIndex][col] = (float) data.getLinePointer (h - 1)[col];
+                    queue[queueIndex][col] = (float) data.getLinePointer ((int) h - 1)[col];
             }
 
             // Also add the incoming value to the sumInVector
@@ -260,15 +260,15 @@ namespace melatonin::blur
 
     // The ARGB channel is byte order agnostic
     // it just performs stack blur on 4 channels without caring what they are
-    [[maybe_unused]] static void juceFloatVectorARGB (juce::Image& img, int radius)
+    [[maybe_unused]] static void juceFloatVectorARGB (juce::Image& img, size_t radius)
     {
-        const int w = static_cast<int> (img.getWidth());
-        const int h = static_cast<int> (img.getHeight());
+        const auto w = size_t (img.getWidth());
+        const auto h = size_t (img.getHeight());
 
         juce::Image::BitmapData data (img, juce::Image::BitmapData::readWrite);
 
         // Ensure radius is within bounds
-        radius = juce::jlimit (1, 254, radius);
+        radius = juce::jlimit ((size_t) 1, (size_t) 254, radius);
 
         // This tracks the start of the circular buffer
         unsigned int queueIndex = 0;
@@ -307,7 +307,7 @@ namespace melatonin::blur
         std::vector<std::vector<float>> queue2;
         std::vector<std::vector<float>> queue3;
 
-        for (auto i = 0; i < radius * 2 + 1; ++i)
+        for (size_t i = 0; i < radius * 2 + 1; ++i)
         {
             queue0.emplace_back (vectorSize, 0.0f);
             queue1.emplace_back (vectorSize, 0.0f);
@@ -346,16 +346,16 @@ namespace melatonin::blur
 
         // to start with, populate a fresh vector with float values of the leftmost pixels
         // A 255 uint8 value will literally become 255.0f
-        for (auto i = 0; i < h; ++i)
+        for (size_t i = 0; i < h; ++i)
         {
-            tempPixelVector0[(uint8_t) i] = (float) data.getLinePointer (i)[0];
-            tempPixelVector1[(uint8_t) i] = (float) data.getLinePointer (i)[1];
-            tempPixelVector2[(uint8_t) i] = (float) data.getLinePointer (i)[2];
-            tempPixelVector3[(uint8_t) i] = (float) data.getLinePointer (i)[3];
+            tempPixelVector0[(uint8_t) i] = (float) data.getLinePointer ((int) i)[0];
+            tempPixelVector1[(uint8_t) i] = (float) data.getLinePointer ((int) i)[1];
+            tempPixelVector2[(uint8_t) i] = (float) data.getLinePointer ((int) i)[2];
+            tempPixelVector3[(uint8_t) i] = (float) data.getLinePointer ((int) i)[3];
         }
 
         // Now pre-fill the left half of the queue with this leftmost pixel value
-        for (size_t i = 0u; i <= static_cast<size_t>(radius); ++i)
+        for (size_t i = 0u; i <= static_cast<size_t> (radius); ++i)
         {
             // these initialize the left side AND middle of the stack
             juce::FloatVectorOperations::copy (queue0[i].data(), tempPixelVector0.data(), h);
@@ -374,28 +374,28 @@ namespace melatonin::blur
 
         // Fill the right half of the queue with the next pixel values
         // zero is the center pixel here, it was already added above (radius + 1) times to the sum
-        for (auto i = 1; i <= radius; ++i)
+        for (size_t i = 1; i <= radius; ++i)
         {
             if (i <= w - 1)
             {
-                for (int row = 0; row < h; ++row)
+                for (size_t row = 0; row < h; ++row)
                 {
-                    tempPixelVector0[(size_t) row] = data.getLinePointer (row)[(size_t) data.pixelStride * i];
-                    tempPixelVector1[(size_t) row] = data.getLinePointer (row)[(size_t) data.pixelStride * i + 1];
-                    tempPixelVector2[(size_t) row] = data.getLinePointer (row)[(size_t) data.pixelStride * i + 2];
-                    tempPixelVector3[(size_t) row] = data.getLinePointer (row)[(size_t) data.pixelStride * i + 3];
+                    tempPixelVector0[row] = data.getLinePointer ((int) row)[(size_t) data.pixelStride * i];
+                    tempPixelVector1[row] = data.getLinePointer ((int) row)[(size_t) data.pixelStride * i + 1];
+                    tempPixelVector2[row] = data.getLinePointer ((int) row)[(size_t) data.pixelStride * i + 2];
+                    tempPixelVector3[row] = data.getLinePointer ((int) row)[(size_t) data.pixelStride * i + 3];
                 }
             }
             else
             {
                 // edge case where queue is bigger than image width!
                 // for example in our vertical tests where width=1
-                for (int row = 0; row < h; ++row)
+                for (size_t row = 0; row < h; ++row)
                 {
-                    tempPixelVector0[(size_t) row] = data.getLinePointer (row)[data.pixelStride * (w - 1)];
-                    tempPixelVector1[(size_t) row] = data.getLinePointer (row)[data.pixelStride * (w - 1) + 1];
-                    tempPixelVector2[(size_t) row] = data.getLinePointer (row)[data.pixelStride * (w - 1) + 2];
-                    tempPixelVector3[(size_t) row] = data.getLinePointer (row)[data.pixelStride * (w - 1) + 3];
+                    tempPixelVector0[row] = data.getLinePointer ((int) row)[(size_t) data.pixelStride * (w - 1)];
+                    tempPixelVector1[row] = data.getLinePointer ((int) row)[(size_t) data.pixelStride * (w - 1) + 1];
+                    tempPixelVector2[row] = data.getLinePointer ((int) row)[(size_t) data.pixelStride * (w - 1) + 2];
+                    tempPixelVector3[row] = data.getLinePointer ((int) row)[(size_t) data.pixelStride * (w - 1) + 3];
                 }
             }
 
@@ -414,7 +414,7 @@ namespace melatonin::blur
         }
 
         // horizontal pass main loop
-        for (auto x = 0; x < w; ++x)
+        for (size_t x = 0; x < w; ++x)
         {
             // calculate the blurred value from the stack
             // it first goes in a temporary location...
@@ -428,12 +428,12 @@ namespace melatonin::blur
             juce::FloatVectorOperations::multiply (tempPixelVector3.data(), divisor, h);
 
             // ...before being placed back in our image data as uint8
-            for (auto i = 0; i < h; ++i)
+            for (size_t i = 0; i < h; ++i)
             {
-                data.getLinePointer (i)[(size_t) data.pixelStride * x] = (unsigned char) tempPixelVector0[(size_t) i];
-                data.getLinePointer (i)[(size_t) data.pixelStride * x + 1] = (unsigned char) tempPixelVector1[(size_t) i];
-                data.getLinePointer (i)[(size_t) data.pixelStride * x + 2] = (unsigned char) tempPixelVector2[(size_t) i];
-                data.getLinePointer (i)[(size_t) data.pixelStride * x + 3] = (unsigned char) tempPixelVector3[(size_t) i];
+                data.getLinePointer ((int) i)[(size_t) data.pixelStride * x] = (unsigned char) tempPixelVector0[i];
+                data.getLinePointer ((int) i)[(size_t) data.pixelStride * x + 1] = (unsigned char) tempPixelVector1[i];
+                data.getLinePointer ((int) i)[(size_t) data.pixelStride * x + 2] = (unsigned char) tempPixelVector2[i];
+                data.getLinePointer ((int) i)[(size_t) data.pixelStride * x + 3] = (unsigned char) tempPixelVector3[i];
             }
 
             // remove the outgoing sum from the stack
@@ -454,7 +454,7 @@ namespace melatonin::blur
             if (x + radius + 1 < w)
             {
                 // grab incoming pixels for each row (they are offset by x+radius+1)
-                for (int row = 0; row < h; ++row)
+                for (int row = 0; row < (int) h; ++row)
                 {
                     queue0[queueIndex][(size_t) row] = data.getLinePointer (row)[(size_t) data.pixelStride * (x + radius + 1)];
                     queue1[queueIndex][(size_t) row] = data.getLinePointer (row)[(size_t) data.pixelStride * (x + radius + 1) + 1];
@@ -464,7 +464,7 @@ namespace melatonin::blur
             }
             else
             {
-                for (int row = 0; row < h; ++row)
+                for (int row = 0; row < (int) h; ++row)
                 {
                     queue0[queueIndex][(size_t) row] = data.getLinePointer (row)[(size_t) data.pixelStride * ((size_t) w - 1)];
                     queue1[queueIndex][(size_t) row] = data.getLinePointer (row)[(size_t) data.pixelStride * ((size_t) w - 1) + 1];
@@ -524,17 +524,17 @@ namespace melatonin::blur
 
         // populate our temp vector with float values of the topmost pixels
         // this *could* be vectorized easily, but we'd need to do a conversion step somehow
-        for (size_t i = 0; i < static_cast<size_t>(w); ++i)
+        for (size_t i = 0; i < static_cast<size_t> (w); ++i)
         {
-            tempPixelVector0[i] = (float) data.getLinePointer (0)[i * data.pixelStride];
-            tempPixelVector1[i] = (float) data.getLinePointer (0)[i * data.pixelStride + 1];
-            tempPixelVector2[i] = (float) data.getLinePointer (0)[i * data.pixelStride + 2];
-            tempPixelVector3[i] = (float) data.getLinePointer (0)[i * data.pixelStride + 3];
+            tempPixelVector0[i] = (float) data.getLinePointer (0)[(int) i * data.pixelStride];
+            tempPixelVector1[i] = (float) data.getLinePointer (0)[(int) i * data.pixelStride + 1];
+            tempPixelVector2[i] = (float) data.getLinePointer (0)[(int) i * data.pixelStride + 2];
+            tempPixelVector3[i] = (float) data.getLinePointer (0)[(int) i * data.pixelStride + 3];
         }
 
         // Now pre-fill the left half of the queue with the topmost pixel values
         // (queue is already initialized from the horizontal pass)
-        for (size_t i = 0; i <= static_cast<size_t>(radius); ++i)
+        for (size_t i = 0; i <= static_cast<size_t> (radius); ++i)
         {
             // these init left side AND middle of the stack
             juce::FloatVectorOperations::copy (queue0[i].data(), tempPixelVector0.data(), w);
@@ -552,16 +552,16 @@ namespace melatonin::blur
         }
 
         // Fill the right half of the queue with pixel values from the next rows
-        for (auto i = 1; i <= radius; ++i)
+        for (size_t i = 1; i <= radius; ++i)
         {
             if (i <= h - 1)
             {
                 for (size_t col = 0; col < (size_t) w; ++col)
                 {
-                    tempPixelVector0[col] = (float) data.getLinePointer (i)[col * data.pixelStride];
-                    tempPixelVector1[col] = (float) data.getLinePointer (i)[col * data.pixelStride + 1];
-                    tempPixelVector2[col] = (float) data.getLinePointer (i)[col * data.pixelStride + 2];
-                    tempPixelVector3[col] = (float) data.getLinePointer (i)[col * data.pixelStride + 3];
+                    tempPixelVector0[col] = (float) data.getLinePointer ((int) i)[col * (size_t) data.pixelStride];
+                    tempPixelVector1[col] = (float) data.getLinePointer ((int) i)[col * (size_t) data.pixelStride + 1];
+                    tempPixelVector2[col] = (float) data.getLinePointer ((int) i)[col * (size_t) data.pixelStride + 2];
+                    tempPixelVector3[col] = (float) data.getLinePointer ((int) i)[col * (size_t) data.pixelStride + 3];
                 }
             }
             // edge case where queue is bigger than image width!
@@ -570,10 +570,10 @@ namespace melatonin::blur
             {
                 for (size_t col = 0; col < (size_t) w; ++col)
                 {
-                    tempPixelVector0[col] = (float) data.getLinePointer (h - 1)[col * data.pixelStride];
-                    tempPixelVector1[col] = (float) data.getLinePointer (h - 1)[col * data.pixelStride + 1];
-                    tempPixelVector2[col] = (float) data.getLinePointer (h - 1)[col * data.pixelStride + 2];
-                    tempPixelVector3[col] = (float) data.getLinePointer (h - 1)[col * data.pixelStride + 3];
+                    tempPixelVector0[col] = (float) data.getLinePointer ((int) h - 1)[col * (size_t) data.pixelStride];
+                    tempPixelVector1[col] = (float) data.getLinePointer ((int) h - 1)[col * (size_t) data.pixelStride + 1];
+                    tempPixelVector2[col] = (float) data.getLinePointer ((int) h - 1)[col * (size_t) data.pixelStride + 2];
+                    tempPixelVector3[col] = (float) data.getLinePointer ((int) h - 1)[col * (size_t) data.pixelStride + 3];
                 }
             }
 
@@ -591,7 +591,7 @@ namespace melatonin::blur
             juce::FloatVectorOperations::addWithMultiply (stackSumVector3.data(), tempPixelVector3.data(), (float) (radius + 1 - i), w);
         }
 
-        for (auto y = 0; y < h; ++y)
+        for (size_t y = 0; y < h; ++y)
         {
             // calculate the blurred value vector from the stack
             // it first goes in a temporary location...
@@ -606,12 +606,12 @@ namespace melatonin::blur
 
             // ...before being placed back in our image data as uint8
             // manually iterate across the row here, no easy way to do this in juce
-            for (size_t i = 0; i < static_cast<size_t>(w); ++i)
+            for (size_t i = 0; i < static_cast<size_t> (w); ++i)
             {
-                data.getLinePointer (y)[i * data.pixelStride] = (unsigned char) tempPixelVector0[i];
-                data.getLinePointer (y)[i * data.pixelStride + 1] = (unsigned char) tempPixelVector1[i];
-                data.getLinePointer (y)[i * data.pixelStride + 2] = (unsigned char) tempPixelVector2[i];
-                data.getLinePointer (y)[i * data.pixelStride + 3] = (unsigned char) tempPixelVector3[i];
+                data.getLinePointer ((int) y)[i * (size_t) data.pixelStride] = (unsigned char) tempPixelVector0[i];
+                data.getLinePointer ((int) y)[i * (size_t) data.pixelStride + 1] = (unsigned char) tempPixelVector1[i];
+                data.getLinePointer ((int) y)[i * (size_t) data.pixelStride + 2] = (unsigned char) tempPixelVector2[i];
+                data.getLinePointer ((int) y)[i * (size_t) data.pixelStride + 3] = (unsigned char) tempPixelVector3[i];
             }
 
             // remove the outgoing sum from the stack
@@ -633,10 +633,10 @@ namespace melatonin::blur
                 // grab pixels from each row, offset by x+radius+1
                 for (size_t col = 0; col < (size_t) w; ++col)
                 {
-                    queue0[queueIndex][col] = (float) data.getLinePointer ((int) (y + radius + 1))[col * data.pixelStride];
-                    queue1[queueIndex][col] = (float) data.getLinePointer ((int) (y + radius + 1))[col * data.pixelStride + 1];
-                    queue2[queueIndex][col] = (float) data.getLinePointer ((int) (y + radius + 1))[col * data.pixelStride + 2];
-                    queue3[queueIndex][col] = (float) data.getLinePointer ((int) (y + radius + 1))[col * data.pixelStride + 3];
+                    queue0[queueIndex][col] = (float) data.getLinePointer ((int) (y + radius + 1))[col * (size_t) data.pixelStride];
+                    queue1[queueIndex][col] = (float) data.getLinePointer ((int) (y + radius + 1))[col * (size_t) data.pixelStride + 1];
+                    queue2[queueIndex][col] = (float) data.getLinePointer ((int) (y + radius + 1))[col * (size_t) data.pixelStride + 2];
+                    queue3[queueIndex][col] = (float) data.getLinePointer ((int) (y + radius + 1))[col * (size_t) data.pixelStride + 3];
                 }
             }
             else
@@ -644,10 +644,10 @@ namespace melatonin::blur
                 // bottom of image, grab bottom pixel
                 for (size_t col = 0; col < (size_t) w; ++col)
                 {
-                    queue0[queueIndex][col] = (float) data.getLinePointer (h - 1)[col * data.pixelStride];
-                    queue1[queueIndex][col] = (float) data.getLinePointer (h - 1)[col * data.pixelStride + 1];
-                    queue2[queueIndex][col] = (float) data.getLinePointer (h - 1)[col * data.pixelStride + 2];
-                    queue3[queueIndex][col] = (float) data.getLinePointer (h - 1)[col * data.pixelStride + 3];
+                    queue0[queueIndex][col] = (float) data.getLinePointer ((int) h - 1)[col * (size_t) data.pixelStride];
+                    queue1[queueIndex][col] = (float) data.getLinePointer ((int) h - 1)[col * (size_t) data.pixelStride + 1];
+                    queue2[queueIndex][col] = (float) data.getLinePointer ((int) h - 1)[col * (size_t) data.pixelStride + 2];
+                    queue3[queueIndex][col] = (float) data.getLinePointer ((int) h - 1)[col * (size_t) data.pixelStride + 3];
                 }
             }
 

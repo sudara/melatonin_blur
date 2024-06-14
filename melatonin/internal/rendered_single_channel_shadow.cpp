@@ -41,23 +41,23 @@ namespace melatonin::internal
 
         // each shadow is its own single channel image associated with a color
         juce::Image renderedSingleChannel (juce::Image::SingleChannel, scaledShadowBounds.getWidth(), scaledShadowBounds.getHeight(), true);
+        {
+            // boot up a graphics context to give us access to fillPath, etc
+            juce::Graphics g2 (renderedSingleChannel);
 
-        // boot up a graphics context to give us access to fillPath, etc
-        juce::Graphics g2 (renderedSingleChannel);
+            // ensure we're working at the correct scale
+            g2.addTransform (juce::AffineTransform::scale (scale));
 
-        // ensure we're working at the correct scale
-        g2.addTransform (juce::AffineTransform::scale (scale));
+            // cache at full opacity (later composited with the correct color/opacity)
+            g2.setColour (juce::Colours::white);
 
-        // cache at full opacity (later composited with the correct color/opacity)
-        g2.setColour (juce::Colours::white);
+            // we're still working @1x until fillPath happens
+            // blurContextBounds x/y is negative (relative to path @ 0,0) and we must render in positive space
+            // Note that offset isn't used here,
+            auto unscaledPosition = -scaledShadowBounds.getPosition().toFloat() / scale;
 
-        // we're still working @1x until fillPath happens
-        // blurContextBounds x/y is negative (relative to path @ 0,0) and we must render in positive space
-        // Note that offset isn't used here,
-        auto unscaledPosition = -scaledShadowBounds.getPosition().toFloat() / scale;
-
-        g2.fillPath (shadowPath, juce::AffineTransform::translation (unscaledPosition));
-
+            g2.fillPath (shadowPath, juce::AffineTransform::translation (unscaledPosition));
+        }
         // perform the blur with the fastest algorithm available
         melatonin::blur::singleChannel (renderedSingleChannel, (size_t) scaledRadius);
 

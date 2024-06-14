@@ -8,7 +8,6 @@ on:
 env:
   BUILD_TYPE: Release
   BUILD_DIR: Builds
-  CMAKE_BUILD_PARALLEL_LEVEL: 3 # Use up to 3 cpus to build juceaide, etc
   HOMEBREW_NO_INSTALL_CLEANUP: 1
   SCCACHE_GHA_ENABLED: "true"
 
@@ -26,16 +25,31 @@ permissions:
 jobs:
 
   BuildAndTest:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
     name: Tests
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 20
+    timeout-minutes: 20 # macos-11 in particular needs more than 15 min
 
     strategy:
       fail-fast: false # show errors for each platform vs. cancel build
       matrix:
-        os: [ macos-11, macos-12, macos-13, macos-14, windows-latest, ubuntu-latest ]
+        os: [ macos-11, macos-12, macos-13, macos-14, windows-2022, windows-2019, ubuntu-latest ]
+        juce: [ JUCE7, JUCE8 ]
 
     steps:
+
+      # Setup MSVC toolchain and developer command prompt (Windows)
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          sdk: 10.0.22621.0
+
+      # This block can be removed once 15.1 is default (JUCE requires it when building on macOS 14)
+      - name: Use latest Xcode on system (macOS)
+        if: ${{ runner.os == 'macOS' }}
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -43,7 +57,6 @@ jobs:
 
       - name: Install Ninja (Windows)
         if: runner.os == 'Windows'
-        shell: bash
         run: choco install ninja
 
       - name: Install macOS Deps
@@ -54,23 +67,37 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update && sudo apt install libasound2-dev libx11-dev libxinerama-dev libxext-dev libfreetype6-dev libwebkit2gtk-4.0-dev libglu1-mesa-dev ninja-build
-          # downgrade gcc to workaround 22.04 and C++20 issue
-          # see: https://github.com/actions/runner-images/issues/8659
-          sudo rm -f /etc/apt/sources.list.d/ubuntu-toolchain-r-ubuntu-test-jammy.list
-          sudo apt-get update
-          sudo apt-get install -y --allow-downgrades libc6=2.35-0ubuntu3.7 libc6-dev=2.35-0ubuntu3.7 libstdc++6=12.3.0-1ubuntu1~22.04 libgcc-s1=12.3.0-1ubuntu1~22.04
 
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.4
 
       - name: Configure
-        shell: bash
-        run: cmake -B ${{ env.BUILD_DIR }} -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache .
+        if: runner.os == 'Windows'
+        # D_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR is a temporary workaround for a Visual Studio+GA snafu
+        # check if resolved here: https://github.com/sudara/pamplejuce/issues/103
+        run: | 
+          if [ "${{ matrix.juce }}" == "JUCE7" ]; then
+            cmake -B ${{ env.BUILD_DIR }} -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache . -DCMAKE_SYSTEM_VERSION=10.0.22621.0 -DCMAKE_CXX_FLAGS=" /D_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR -DJUCE7=ON"
+          else
+            cmake -B ${{ env.BUILD_DIR }} -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache . -DCMAKE_SYSTEM_VERSION=10.0.22621.0 -DCMAKE_CXX_FLAGS=" /D_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR"
+          fi
+
+      - name: Configure
+        if: runner.os != 'Windows'
+        run: |
+          if [ "${{ matrix.juce }}" == "JUCE7" ]; then
+            cmake -B ${{ env.BUILD_DIR }} -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache . -DJUCE7=ON
+          else 
+            cmake -B ${{ env.BUILD_DIR }} -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache .
+          fi
 
       - name: Build
-        shell: bash
         run: cmake --build ${{ env.BUILD_DIR }} --config ${{ env.BUILD_TYPE }} --parallel 4
 
-      - name: Test
+      - name: Tests
         working-directory: ${{ env.BUILD_DIR }}
-        run: ctest --output-on-failure -j4 -VV
+        run: ./Tests
+
+      - name: Benchmarks
+        working-directory: ${{ env.BUILD_DIR }}
+        run: ./Benchmarks

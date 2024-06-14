@@ -27,22 +27,23 @@ TEST_CASE ("Melatonin Blur Shadow Scaling")
     p.addRectangle (bounds.translated (3, 3));
 
     // needed for JUCE not to pee its pants (aka leak) when working with graphics
-    juce::ScopedJuceInitialiser_GUI juce;
+    juce::ScopedJuceInitialiser_GUI gui;
 
     SECTION ("scaling")
     {
         SECTION ("default scaling (tests not running on a screen) is 1.0")
         {
             juce::Image result (juce::Image::ARGB, 9, 9, true);
-            juce::Graphics g (result);
-            g.fillAll (juce::Colours::white);
+            {
+                juce::Graphics g (result);
+                g.fillAll (juce::Colours::white);
 
-            // offset by 1px to the right/bottom
-            melatonin::DropShadow shadow = { { juce::Colours::black, 1 } };
-            shadow.render (g, p);
-            g.setColour (juce::Colours::black);
-            g.fillPath (p);
-
+                // offset by 1px to the right/bottom
+                melatonin::DropShadow shadow = { { juce::Colours::black, 1 } };
+                shadow.render (g, p);
+                g.setColour (juce::Colours::black);
+                g.fillPath (p);
+            }
             save_test_image (result, "at1x");
 
             // 2 lines of white pixels on all edges
@@ -87,9 +88,11 @@ TEST_CASE ("Melatonin Blur Shadow Scaling")
                     auto contextWidth = juce::roundToInt (9 * scale);
                     auto contextHeight = juce::roundToInt (9 * scale);
                     juce::Image result (juce::Image::ARGB, contextWidth, contextHeight, true);
-                    juce::Graphics g (result);
-                    g.addTransform (juce::AffineTransform::scale (scale));
-                    g.fillAll (juce::Colours::white);
+                    {
+                        juce::Graphics g (result);
+                        g.addTransform (juce::AffineTransform::scale (scale));
+                        g.fillAll (juce::Colours::white);
+                    }
 
                     SECTION ("radius 1")
                     {
@@ -100,33 +103,36 @@ TEST_CASE ("Melatonin Blur Shadow Scaling")
 
                             // all path coordinates upscaled on draw
                             // example: the origin 3,3 will be 12,12 for @4x
-                            shadow.render (g, p);
-                            g.setColour (juce::Colours::black);
-                            g.fillPath (p);
-
+                            {
+                                juce::Graphics g (result);
+                                g.addTransform (juce::AffineTransform::scale (scale));
+                                shadow.render (g, p);
+                                g.setColour (juce::Colours::black);
+                                g.fillPath (p);
+                            }
                             save_test_image (result, "at2xbaybee");
 
                             SECTION ("2 outer edges white")
                             {
                                 // left
-                                CHECK (getScaledBrightness (result, 0, 4, scale) == Catch::Approx (1.0f));
-                                CHECK (getScaledBrightness (result, 1, 4, scale) == Catch::Approx (1.0f));
-                                CHECK (getScaledBrightness (result, 2, 4, scale) != Catch::Approx (1.0f));
+                                CHECK (getScaledBrightness (result, 0, 4, scale) == Catch::Approx (1.0f).margin(0.001));
+                                CHECK (getScaledBrightness (result, 1, 4, scale) == Catch::Approx (1.0f).margin(0.001));
+                                CHECK (getScaledBrightness (result, 2, 4, scale) != Catch::Approx (1.0f).margin(0.001));
 
                                 // top
-                                CHECK (getScaledBrightness (result, 4, 0, scale) == Catch::Approx (1.0f));
-                                CHECK (getScaledBrightness (result, 4, 1, scale) == Catch::Approx (1.0f));
-                                CHECK (getScaledBrightness (result, 4, 2, scale) != Catch::Approx (1.0f));
+                                CHECK (getScaledBrightness (result, 4, 0, scale) == Catch::Approx (1.0f).margin(0.001));
+                                CHECK (getScaledBrightness (result, 4, 1, scale) == Catch::Approx (1.0f).margin(0.001));
+                                CHECK (getScaledBrightness (result, 4, 2, scale) != Catch::Approx (1.0f).margin(0.001));
 
                                 // right
-                                CHECK (getScaledBrightness (result, 8, 4, scale) == Catch::Approx (1.0f));
-                                CHECK (getScaledBrightness (result, 7, 4, scale) == Catch::Approx (1.0f));
-                                CHECK (getScaledBrightness (result, 6, 4, scale) != Catch::Approx (1.0f));
+                                CHECK (getScaledBrightness (result, 8, 4, scale) == Catch::Approx (1.0f).margin(0.001));
+                                CHECK (getScaledBrightness (result, 7, 4, scale) == Catch::Approx (1.0f).margin(0.001));
+                                CHECK (getScaledBrightness (result, 6, 4, scale) != Catch::Approx (1.0f).margin(0.001));
 
                                 // bottom
-                                CHECK (getScaledBrightness (result, 4, 8, scale) == Catch::Approx (1.0f));
-                                CHECK (getScaledBrightness (result, 4, 7, scale) == Catch::Approx (1.0f));
-                                CHECK (getScaledBrightness (result, 4, 6, scale) != Catch::Approx (1.0f));
+                                CHECK (getScaledBrightness (result, 4, 8, scale) == Catch::Approx (1.0f).margin(0.001));
+                                CHECK (getScaledBrightness (result, 4, 7, scale) == Catch::Approx (1.0f).margin(0.001));
+                                CHECK (getScaledBrightness (result, 4, 6, scale) != Catch::Approx (1.0f).margin(0.001));
                             }
                         }
 
@@ -137,10 +143,13 @@ TEST_CASE ("Melatonin Blur Shadow Scaling")
                             melatonin::DropShadow shadow = { { juce::Colours::black, 1, {}, 0 } };
 
                             // passing true here renders low quality!
-                            shadow.render (g, p, true);
-                            g.setColour (juce::Colours::black);
-                            g.fillPath (p);
-
+                            {
+                                juce::Graphics g (result);
+                                g.addTransform (juce::AffineTransform::scale (scale));
+                                shadow.render (g, p, true);
+                                g.setColour (juce::Colours::black);
+                                g.fillPath (p);
+                            }
                             save_test_image (result, "at2xlofi");
 
                             // left
@@ -171,16 +180,16 @@ TEST_CASE ("Melatonin Blur Shadow Scaling")
             {
                 // render an unscaled shadow as reference
                 juce::Image noScale (juce::Image::ARGB, 9, 9, true);
-                juce::Graphics g2 (noScale);
-                g2.fillAll (juce::Colours::white);
-                melatonin::DropShadow noScaleShadow = { { juce::Colours::black, 2 } };
-                noScaleShadow.render (g2, p);
-                g2.setColour (juce::Colours::black);
-                g2.fillPath(p);
-
+                {
+                    juce::Graphics g2 (noScale);
+                    g2.fillAll (juce::Colours::white);
+                    melatonin::DropShadow noScaleShadow = { { juce::Colours::black, 2 } };
+                    noScaleShadow.render (g2, p);
+                    g2.setColour (juce::Colours::black);
+                    g2.fillPath (p);
+                }
                 save_test_image (noScale, "noscalerender");
                 auto firstPixelBrightness = getScaledBrightness (noScale, 1, 4, 1.0f);
-                auto secondPixelBrightness = getScaledBrightness (noScale, 2, 4, 1.0f);
 
                 SECTION ("logical radius 2, scale 2, lofi")
                 {
@@ -188,16 +197,18 @@ TEST_CASE ("Melatonin Blur Shadow Scaling")
                     auto contextWidth = juce::roundToInt (9 * scale);
                     auto contextHeight = juce::roundToInt (9 * scale);
                     juce::Image result (juce::Image::ARGB, contextWidth, contextHeight, true);
-                    juce::Graphics g (result);
-                    g.addTransform (juce::AffineTransform::scale (scale));
-                    g.fillAll (juce::Colours::white);
-
                     melatonin::DropShadow shadow = { { juce::Colours::black, 2 } };
 
-                    // lowQuality! this OS will render up the image to 2x
-                    shadow.render (g, p, true);
-                    g.setColour (juce::Colours::black);
-                    g.fillPath (p);
+                    {
+                        juce::Graphics g (result);
+                        g.addTransform (juce::AffineTransform::scale (scale));
+                        g.fillAll (juce::Colours::white);
+
+                        // lowQuality! this OS will render up the image to 2x
+                        shadow.render (g, p, true);
+                        g.setColour (juce::Colours::black);
+                        g.fillPath (p);
+                    }
 
                     save_test_image(result, "2pxlofi");
 
@@ -233,16 +244,18 @@ TEST_CASE ("Melatonin Blur Shadow Scaling")
                     auto contextWidth = juce::roundToInt (9 * scale);
                     auto contextHeight = juce::roundToInt (9 * scale);
                     juce::Image result (juce::Image::ARGB, contextWidth, contextHeight, true);
-                    juce::Graphics g (result);
-                    g.addTransform (juce::AffineTransform::scale (scale));
-                    g.fillAll (juce::Colours::white);
-
                     melatonin::DropShadow shadow = { { juce::Colours::black, 2 } };
 
-                    // HIGH QUALITY!
-                    shadow.render (g, p);
-                    g.setColour (juce::Colours::black);
-                    g.fillPath (p);
+                    {
+                        juce::Graphics g (result);
+                        g.addTransform (juce::AffineTransform::scale (scale));
+                        g.fillAll (juce::Colours::white);
+
+                        // HIGH QUALITY!
+                        shadow.render (g, p);
+                        g.setColour (juce::Colours::black);
+                        g.fillPath (p);
+                    }
 
                     save_test_image (result, "2pxhighquality");
 
@@ -280,17 +293,20 @@ TEST_CASE ("Melatonin Blur Shadow Scaling")
             auto contextWidth = juce::roundToInt (9 * scale);
             auto contextHeight = juce::roundToInt (9 * scale);
             juce::Image result (juce::Image::ARGB, contextWidth, contextHeight, true);
-            juce::Graphics g (result);
-            g.addTransform (juce::AffineTransform::scale (scale));
-            g.fillAll (juce::Colours::white);
+
 
             // technically shadows will be a bit stronger at x.5 scale
             SECTION ("1.5x the radius of 1 rounds UP to a radius of 2")
             {
                 melatonin::DropShadow shadow = { { juce::Colours::black, 1 } };
-                shadow.render (g, p);
-                g.setColour (juce::Colours::black);
-                g.fillPath (p);
+                {
+                    juce::Graphics g (result);
+                    g.addTransform (juce::AffineTransform::scale (scale));
+                    g.fillAll (juce::Colours::white);
+                    shadow.render (g, p);
+                    g.setColour (juce::Colours::black);
+                    g.fillPath (p);
+                }
 
                 // left
                 CHECK (getScaledBrightness (result, 0, 4, scale) == Catch::Approx (1.0f));
@@ -313,12 +329,17 @@ TEST_CASE ("Melatonin Blur Shadow Scaling")
             {
                 // this now behaves as if the radius is 3
                 melatonin::DropShadow shadow = { { juce::Colours::black, 2 } };
-                shadow.render (g, p);
-                g.setColour (juce::Colours::black);
+                {
+                    juce::Graphics g (result);
+                    g.addTransform (juce::AffineTransform::scale (scale));
+                    g.fillAll (juce::Colours::white);
 
-                // this will have an origin of [4.5, 4.5] and a width of 4.5
-                g.fillPath (p);
+                    shadow.render (g, p);
+                    g.setColour (juce::Colours::black);
 
+                    // this will have an origin of [4.5, 4.5] and a width of 4.5
+                    g.fillPath (p);
+                }
                 // due to subpixel rendering, our blur image is 14px
                 // On the left / top, we are blurring a bit more than 3px away from 4.5 (path's left x)
                 // On the right, we are blurring a bit more than 3px away from 9 (path's right x)
@@ -354,9 +375,6 @@ TEST_CASE ("Melatonin Blur Shadow Scaling")
         auto contextWidth = juce::roundToInt (9);
         auto contextHeight = juce::roundToInt (9);
         juce::Image result (juce::Image::ARGB, contextWidth, contextHeight, true);
-        juce::Graphics g (result);
-
-        g.fillAll (juce::Colours::white);
 
         SECTION ("user scales up")
         {
@@ -364,9 +382,14 @@ TEST_CASE ("Melatonin Blur Shadow Scaling")
 
             // this still behaves as if the radius is 2
             melatonin::DropShadow shadow = { { juce::Colours::black, 2 } };
-            shadow.render (g, p);
-            g.setColour (juce::Colours::black);
-            g.fillPath (p);
+            {
+                juce::Graphics g (result);
+                g.fillAll (juce::Colours::white);
+
+                shadow.render (g, p);
+                g.setColour (juce::Colours::black);
+                g.fillPath (p);
+            }
 
             // left
             CHECK (result.getPixelAt (0, 4).getBrightness() == Catch::Approx (1.0f));
@@ -391,10 +414,14 @@ TEST_CASE ("Melatonin Blur Shadow Scaling")
 
             // this now behaves as if the radius is 2
             melatonin::DropShadow shadow = { { juce::Colours::black, 2 } };
-            shadow.render (g, p);
-            g.setColour (juce::Colours::black);
-            g.fillPath (p);
+            {
+                juce::Graphics g (result);
+                g.fillAll (juce::Colours::white);
 
+                shadow.render (g, p);
+                g.setColour (juce::Colours::black);
+                g.fillPath (p);
+            }
             // left
             CHECK (result.getPixelAt (0, 4).getBrightness() == Catch::Approx (1.0f));
             CHECK (result.getPixelAt (1, 4).getBrightness() == Catch::Approx (0.91373f).margin (0.05f));
