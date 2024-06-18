@@ -5,6 +5,7 @@
 // #include "../melatonin/implementations/naive_class.h"
 // #include "../melatonin/implementations/naive_with_martin_optimization.h"
 // #include "../melatonin/implementations/templated_function.h"
+#include "../melatonin/implementations/direct2d.h"
 #include "../melatonin/internal/implementations.h"
 
 // These require melatonin::vector, not in this repo
@@ -40,6 +41,7 @@ inline auto singleColorBlurImplementation()
         // std::make_pair ("naive class", BlurFunction { [&] (juce::Image& img, int radius) { melatonin::NaiveStackBlur stackBlur (img, radius); } }),
         // std::make_pair ("templated function", BlurFunction { [&] (juce::Image& img, int radius) { melatonin::stackBlur::singleChannelTemplated (img, radius); } }),
         //         std::make_pair ("templated function float", BlurFunction { [&] (juce::Image& img, int radius) { melatonin::stackBlur::templatedFloatSingleChannel (img, radius); } }),
+        std::make_pair ("Direct2D", BlurFunction { [&] (juce::Image& img, size_t radius) { melatonin::blur::direct2DSingleChannel (img, radius); } }),
         std::make_pair ("Melatonin", BlurFunction { [&] (juce::Image& img, size_t radius) { melatonin::blur::singleChannel (img, radius); } }));
 }
 
