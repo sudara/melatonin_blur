@@ -1,3 +1,4 @@
+#include "../melatonin_blur.h"
 // #include "../melatonin/implementations/dequeue.h"
 #include "../melatonin/implementations/float_vector_stack_blur.h"
 #include "../melatonin/implementations/gin.h"
@@ -14,7 +15,6 @@
 // #include "vector_class.h"
 // #include "vector_optimized.h"
 
-#include "../melatonin_blur.h"
 #include "helpers/pixel_helpers.h"
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -50,6 +50,7 @@ inline auto rgbaBlurImplementation()
     return GENERATE (
         std::make_pair ("gin", BlurFunction { [] (juce::Image& img, size_t radius) { melatonin::stackBlur::ginARGB (img, (unsigned int) radius); } }),
         std::make_pair ("juce's FloatVectorOperations", BlurFunction { [&] (juce::Image& img, size_t radius) { melatonin::blur::juceFloatVectorARGB (img, radius); } }),
+        std::make_pair ("Direct2D", BlurFunction { [&] (juce::Image& img, size_t radius) { melatonin::blur::direct2DARGB (img, radius); } }),
         std::make_pair ("Melatonin", BlurFunction { [&] (juce::Image& img, size_t radius) {
             // argb goes haywire in-place, so we need to copy
             auto src = img.createCopy();

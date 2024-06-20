@@ -1,20 +1,12 @@
 #pragma once
 
-#include <d2d1_3.h>
-#include <d3d11_3.h>
-#include <windows.h>
-#include <winrt/Windows.Foundation.h>
-#define JUCE_CORE_INCLUDE_COM_SMART_PTR 1
-#include "juce_graphics/juce_graphics.h"
-#include <juce_graphics/native/juce_Direct2DImage_windows.h>
-#include <juce_graphics/native/juce_DirectX_windows.h>
-
 namespace melatonin::blur
 {
     // stdDev = radius / sqrt(2)
-    constexpr float radiusToStdDev = 1.0f / 1.4142135623730951;
-    static inline void direct2DSingleChannel (juce::Image& img, size_t radius)
+    constexpr float radiusToStdDev = 1.0f / 1.4142135623730951f;
+    static inline void direct2DSingleChannel ([[maybe_unused]] juce::Image& img, [[maybe_unused]] size_t radius)
     {
+#if 0
         auto sourcePixelData = dynamic_cast<juce::Direct2DPixelData*> (img.getPixelData());
         if (!sourcePixelData)
         {
@@ -49,9 +41,22 @@ namespace melatonin::blur
             deviceContext->DrawImage (d2dEffect.get());
             deviceContext->EndDraw();
         }
+#endif
     }
 
     static inline void direct2DARGB (juce::Image& srcImage, juce::Image& dstImage, size_t radius)
     {
+        mescal::Effect effect { mescal::Effect::Type::gaussianBlur };
+
+        effect.setProperty(mescal::Effect::GaussianBlurPropertyIndex::blurAmount, (float)radius * radiusToStdDev);
+        effect.applyEffect (srcImage, dstImage, 1.0f, 1.0f);
+    }
+
+    static inline void direct2DARGB(juce::Image& image, size_t radius)
+    {
+        juce::Image temp { juce::Image::ARGB, image.getWidth(), image.getHeight(), true };
+
+        direct2DARGB (image, temp, radius);
+        image = temp;
     }
 }

@@ -51,6 +51,7 @@ if (MelatoninBlur_IS_TOP_LEVEL)
     target_include_directories(Benchmarks PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/source)
 
     juce_add_module("${CMAKE_CURRENT_SOURCE_DIR}")
+    juce_add_module("C:/proj/MESCAL/module/mescal")
 
     target_link_libraries(Tests PRIVATE
             melatonin_blur
@@ -60,7 +61,8 @@ if (MelatoninBlur_IS_TOP_LEVEL)
             juce::juce_audio_basics # FloatVectorOperations
             juce::juce_recommended_config_flags
             juce::juce_recommended_lto_flags
-            juce::juce_recommended_warning_flags)
+            juce::juce_recommended_warning_flags
+            mescal)
 
     target_link_libraries(Benchmarks PRIVATE
             melatonin_blur
@@ -70,7 +72,8 @@ if (MelatoninBlur_IS_TOP_LEVEL)
             juce::juce_audio_basics # FloatVectorOperations
             juce::juce_recommended_config_flags
             juce::juce_recommended_lto_flags
-            juce::juce_recommended_warning_flags)
+            juce::juce_recommended_warning_flags
+    mescal)
 
     # Enable this once tests are happy fundamentally in CI
     set_target_properties(Tests PROPERTIES COMPILE_WARNING_AS_ERROR ON)
