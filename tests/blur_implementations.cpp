@@ -1,4 +1,7 @@
 // #include "../melatonin/implementations/dequeue.h"
+
+#include "../melatonin/implementations/direct2d.cpp"
+
 #include "../melatonin/implementations/float_vector_stack_blur.h"
 #include "../melatonin/implementations/gin.h"
 // #include "../melatonin/implementations/naive.h"
@@ -28,7 +31,7 @@ using BlurFunction = std::function<void (juce::Image&, size_t)>;
 inline auto singleColorBlurImplementation()
 {
     return GENERATE (
-        std::make_pair ("gin", BlurFunction { [] (juce::Image& img, size_t radius) { melatonin::stackBlur::ginSingleChannel (img, (unsigned int) radius); } }),
+       // std::make_pair ("gin", BlurFunction { [] (juce::Image& img, size_t radius) { melatonin::stackBlur::ginSingleChannel (img, (unsigned int) radius); } }),
         // std::make_pair ("prefix sum naive", BlurFunction { [] (juce::Image& img, int radius) { melatonin::blur::prefixSumSingleChannel (img, radius); } }),
         // std::make_pair ("dequeue", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::dequeueSingleChannel (img, radius); } }),
         // std::make_pair ("circularBuffer", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::circularBufferSingleChannel (img, radius); } }),
@@ -36,11 +39,12 @@ inline auto singleColorBlurImplementation()
         //    std::make_pair ("vector", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::vectorSingleChannel (img, radius); } }),
         //    std::make_pair ("vector optimized", BlurFunction { [] (juce::Image& img, int radius) { melatonin::stackBlur::vectorOptimizedSingleChannel (img, radius); } }),
         //    std::make_pair ("vector class", BlurFunction { [&] (juce::Image& img, int radius) { melatonin::VectorStackBlur stackBlur (img, radius); } }),
-        std::make_pair ("juce's FloatVectorOperations", BlurFunction { [&] (juce::Image& img, size_t radius) { melatonin::blur::juceFloatVectorSingleChannel (img, radius); } }),
+        //std::make_pair ("juce's FloatVectorOperations", BlurFunction { [&] (juce::Image& img, size_t radius) { melatonin::blur::juceFloatVectorSingleChannel (img, radius); } }),
         // std::make_pair ("naive class", BlurFunction { [&] (juce::Image& img, int radius) { melatonin::NaiveStackBlur stackBlur (img, radius); } }),
         // std::make_pair ("templated function", BlurFunction { [&] (juce::Image& img, int radius) { melatonin::stackBlur::singleChannelTemplated (img, radius); } }),
         //         std::make_pair ("templated function float", BlurFunction { [&] (juce::Image& img, int radius) { melatonin::stackBlur::templatedFloatSingleChannel (img, radius); } }),
-        std::make_pair ("Melatonin", BlurFunction { [&] (juce::Image& img, size_t radius) { melatonin::blur::singleChannel (img, radius); } }));
+        std::make_pair ("Direct2D", BlurFunction { [&] (juce::Image& img, size_t radius) { melatonin::blur::direct2DSingleChannel (img, radius); } }));
+        //std::make_pair ("Melatonin", BlurFunction { [&] (juce::Image& img, size_t radius) { melatonin::blur::singleChannel (img, radius); } }));
 }
 
 inline auto rgbaBlurImplementation()

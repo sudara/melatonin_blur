@@ -1,4 +1,6 @@
 #pragma once
+#include "internal/rendered_single_channel_shadow.h"
+#include "internal/implementations.h"
 
 namespace melatonin
 {

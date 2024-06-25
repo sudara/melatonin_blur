@@ -1,7 +1,11 @@
-#include "melatonin_blur.h"
+#if JUCE_WINDOWS
+    #include "melatonin/implementations/direct2d.cpp"
+#endif
+
 #include "melatonin/cached_blur.cpp"
 #include "melatonin/internal/cached_shadows.cpp"
 #include "melatonin/internal/rendered_single_channel_shadow.cpp"
+
 
 #if RUN_MELATONIN_BENCHMARKS
     #include "benchmarks/benchmarks.cpp"
