@@ -94,6 +94,8 @@ Download (via git like above, or via the UI here) and "Add a module from a speci
 
 ### IPP on Windows
 
+Remember, IPP is optional. It just gives you a good speed boost on Windows.
+
 If you aren't already using it, Intel IPP might feel like an annoying dependency. Understandable! [I wrote a blog post describing how to set it up locally and in CI](https://melatonin.dev/blog/using-intel-performance-primitives-ipp-with-juce-and-cmake/).
 
 It's not too bad! It's fantastic tool to have for dsp as well (albeit with an annoying API!) and it'll speed up the single channel (shadows, etc) on Windows. And don't worry, without IPP you'll still get Stack Blur performance + shadow caching.
@@ -297,13 +299,6 @@ Right now, the API just mirrors `g.drawText`, so it's not particularly DRY. I'm 
 Just like `g.drawText`, you can pass in a `juce::Rectangle<int>`, `juce::Rectangle<float>`, or the `x, y, w, h` as bounds arguments.
 
 Text shadows are cached. As with path shadows, repainting is cheap and changing their color, offset, opacity is free. However, changing the font, text, justification or bounds will require re-rendering (both the glyphs and underlying blur).
-
-### pathWithShadow
-
-You can use `pathWithShadow` to combine a path and inner/drop shadows into a single object for rendering convenience. 
-
-```cpp
-
 
 ### Full Color Blurs
 
