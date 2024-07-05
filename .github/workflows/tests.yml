@@ -33,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false # show errors for each platform vs. cancel build
       matrix:
-        os: [ macos-11, macos-12, macos-13, macos-14, windows-2022, windows-2019, ubuntu-latest ]
+        os: [ macos-11, macos-12, macos-13, macos-14, windows-2022, windows-2019, ubuntu-20.04, ubuntu-latest ]
         juce: [ JUCE7, JUCE8 ]
 
     steps:
