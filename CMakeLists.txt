@@ -73,7 +73,7 @@ if (MelatoninBlur_IS_TOP_LEVEL)
             juce::juce_recommended_warning_flags)
 
     # Enable this once tests are happy fundamentally in CI
-    set_target_properties(Tests PROPERTIES COMPILE_WARNING_AS_ERROR ON)
+    # set_target_properties(Tests PROPERTIES COMPILE_WARNING_AS_ERROR ON)
 
     target_compile_definitions(Tests PRIVATE
             PROJECT_ROOT="${CMAKE_SOURCE_DIR}"
