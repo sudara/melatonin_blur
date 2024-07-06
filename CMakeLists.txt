@@ -9,20 +9,20 @@ set(CMAKE_CXX_STANDARD_REQUIRED YES)
 
 include(FetchContent)
 if (MelatoninBlur_IS_TOP_LEVEL)
-    option(JUCE_7 "Run tests on JUCE 7" OFF)
+    option(JUCE7 "Run tests on JUCE 7" OFF)
 
-    message(STATUS "Cloning JUCE...")
-    if (JUCE_7)
+    if (JUCE7)
+        message(STATUS "Cloning JUCE 7...")
         FetchContent_Declare(JUCE
                 GIT_REPOSITORY
                 GIT_TAG 7.0.12
                 GIT_PROGRESS TRUE
         )
     else ()
-
+        message(STATUS "Cloning JUCE 8...")
         FetchContent_Declare(JUCE
                 GIT_REPOSITORY https://github.com/juce-framework/JUCE.git
-                GIT_TAG develop
+                GIT_TAG master
                 GIT_PROGRESS TRUE
         )
     endif ()
