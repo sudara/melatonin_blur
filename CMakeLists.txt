@@ -22,7 +22,7 @@ if (MelatoninBlur_IS_TOP_LEVEL)
 
         FetchContent_Declare(JUCE
                 GIT_REPOSITORY https://github.com/juce-framework/JUCE.git
-                GIT_TAG master
+                GIT_TAG develop
                 GIT_PROGRESS TRUE
         )
     endif ()
