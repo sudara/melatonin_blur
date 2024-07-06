@@ -66,6 +66,8 @@ jobs:
       - name: Install Linux Deps
         if: runner.os == 'Linux'
         run: |
+          # manually install gcc-11 and set as default for 20.04
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test
           sudo apt-get update && sudo apt install libasound2-dev libx11-dev libxinerama-dev libxext-dev libfreetype6-dev libwebkit2gtk-4.0-dev libglu1-mesa-dev ninja-build g++-11 gcc-11
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 100
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 100
