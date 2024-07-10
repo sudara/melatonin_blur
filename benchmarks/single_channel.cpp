@@ -83,6 +83,13 @@ TEST_CASE ("Melatonin Blur Single Channel Benchmarks")
                         auto color = data.getPixelColour (dimension - radius, dimension - radius);
                         return color;
                     };
+
+                    BENCHMARK ("Direct2D")
+                    {
+                        melatonin::blur::direct2DSingleChannel(image, radius);
+                        auto color = data.getPixelColour (dimension - radius, dimension - radius);
+                        return color;
+                    };
                 }
             }
         }

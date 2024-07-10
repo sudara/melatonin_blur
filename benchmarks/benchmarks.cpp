@@ -1,3 +1,4 @@
+#include "../melatonin/implementations/direct2D.cpp"
 #include "catch2/benchmark/catch_benchmark.hpp"
 #include "catch2/catch_approx.hpp"
 #include "catch2/catch_test_macros.hpp"
@@ -10,8 +11,8 @@
 
 // other benchmarks
 #include "single_channel.cpp"
-#include "argb.cpp"
-#include "drop_shadow.cpp"
+//#include "argb.cpp"
+//#include "drop_shadow.cpp"
 
 TEST_CASE ("Melatonin Blur Benchmarks Misc")
 {
