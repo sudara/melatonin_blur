@@ -1,6 +1,4 @@
 #include "rendered_single_channel_shadow.h"
-#include "implementations.h"
-#include "juce_gui_basics/juce_gui_basics.h"
 
 namespace melatonin::internal
 {

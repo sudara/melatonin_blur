@@ -1,4 +1,7 @@
-#if JUCE_WINDOWS
+// this has to come first
+// ideally we could include juce_core to figure out what the JUCE version is
+// but including anything JUCE at this point breaks things
+#if 1
     #include "melatonin/implementations/direct2d.cpp"
 #endif
 

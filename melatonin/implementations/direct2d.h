@@ -14,6 +14,6 @@ namespace melatonin::blur
     //
     // But according to actual CSS and Figma output (to pass our tests) it needs to even smaller:
     constexpr float radiusToStdDev = 1.0f / 1.25f;
-    static inline void direct2DSingleChannel (juce::Image& img, size_t radius);
-    static inline void direct2DARGB (juce::Image& srcImage, juce::Image& dstImage, size_t radius);
+    inline void direct2DSingleChannel (juce::Image& img, size_t radius);
+    inline void direct2DARGB (juce::Image& srcImage, juce::Image& dstImage, size_t radius);
 }

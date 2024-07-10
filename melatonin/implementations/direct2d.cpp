@@ -5,13 +5,12 @@
 #include <winrt/Windows.Foundation.h>
 #define JUCE_CORE_INCLUDE_COM_SMART_PTR 1
 #include "direct2d.h"
-#include <juce_core/juce_core.h>
-#include <juce_graphics/juce_graphics.h>
-#include <juce_graphics/native/juce_Direct2DImage_windows.h>
 #include <juce_graphics/native/juce_DirectX_windows.h>
+#include <juce_graphics/native/juce_Direct2DImage_windows.h>
+
 namespace melatonin::blur
 {
-    static inline void direct2DSingleChannel (juce::Image& img, size_t radius)
+    inline void direct2DSingleChannel (juce::Image& img, size_t radius)
     {
         auto sourcePixelData = dynamic_cast<juce::Direct2DPixelData*> (img.getPixelData());
         if (!sourcePixelData)
@@ -59,7 +58,7 @@ namespace melatonin::blur
         }
     }
 
-    static inline void direct2DARGB (juce::Image& srcImage, juce::Image& dstImage, size_t radius)
+    inline void direct2DARGB (juce::Image& srcImage, juce::Image& dstImage, size_t radius)
     {
         auto sourcePixelData = dynamic_cast<juce::Direct2DPixelData*> (srcImage.getPixelData());
         auto destPixelData = dynamic_cast<juce::Direct2DPixelData*> (dstImage.getPixelData());
