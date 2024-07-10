@@ -1,7 +1,10 @@
+
+#include "melatonin/implementations/platform_headers.h"
+
 // this has to come first
 // ideally we could include juce_core to figure out what the JUCE version is
 // but including anything JUCE at this point breaks things
-#if 1
+#if JUCE_WINDOWS && JUCE_MAJOR_VERSION >= 8
     #include "melatonin/implementations/direct2d.cpp"
 #endif
 

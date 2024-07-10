@@ -1,9 +1,5 @@
-#include <d2d1_3.h>
-#include <d2d1_3helper.h>
-#include <d3d11_3.h>
-#include <windows.h>
-#include <winrt/Windows.Foundation.h>
-#define JUCE_CORE_INCLUDE_COM_SMART_PTR 1
+#if JUCE_WINDOWS && JUCE_MAJOR_VERSION >= 8
+
 #include "direct2d.h"
 #include <juce_graphics/native/juce_DirectX_windows.h>
 #include <juce_graphics/native/juce_Direct2DImage_windows.h>
@@ -100,3 +96,5 @@ namespace melatonin::blur
         }
     }
 }
+
+#endif
