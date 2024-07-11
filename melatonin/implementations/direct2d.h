@@ -13,7 +13,7 @@ namespace melatonin::blur
     // stdDev = radius / sqrt(2)
     //
     // But according to actual CSS and Figma output (to pass our tests) it needs to even smaller:
-    constexpr float radiusToStdDev = 1.0f / 1.25f;
+    constexpr float radiusToStdDev = 1.0f / 1.26f;
     inline void direct2DSingleChannel (juce::Image& img, size_t radius);
     inline void direct2DARGB (juce::Image& srcImage, juce::Image& dstImage, size_t radius);
 }

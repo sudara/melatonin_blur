@@ -1,14 +1,17 @@
-// this has to come first
-// ideally we could include juce_core to figure out what the JUCE version is
-// but including anything JUCE at this point breaks things
-#if 1
+// These defines are required to load juce_core in
+// assuming we later need native functionality like direct2d, etc
+// juce_core must be loaded *first* so we can detect platform/version
+#define JUCE_CORE_INCLUDE_COM_SMART_PTR 1
+#define JUCE_CORE_INCLUDE_NATIVE_HEADERS 1
+#include <juce_core/juce_core.h>
+
+#if JUCE_WINDOWS && JUCE_MAJOR_VERSION >= 8
     #include "melatonin/implementations/direct2d.cpp"
 #endif
 
 #include "melatonin/cached_blur.cpp"
 #include "melatonin/internal/cached_shadows.cpp"
 #include "melatonin/internal/rendered_single_channel_shadow.cpp"
-
 
 #if RUN_MELATONIN_BENCHMARKS
     #include "benchmarks/benchmarks.cpp"

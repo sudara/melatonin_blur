@@ -51,7 +51,7 @@ inline auto rgbaBlurImplementation()
 {
     return GENERATE (
         std::make_pair ("gin", BlurFunction { [] (juce::Image& img, size_t radius) { melatonin::stackBlur::ginARGB (img, (unsigned int) radius); } }),
-        std::make_pair ("juce's FloatVectorOperations", BlurFunction { [&] (juce::Image& img, size_t radius) { melatonin::blur::juceFloatVectorARGB (img, radius); } }),
+        //std::make_pair ("juce's FloatVectorOperations", BlurFunction { [&] (juce::Image& img, size_t radius) { melatonin::blur::juceFloatVectorARGB (img, radius); } }),
         std::make_pair ("Melatonin", BlurFunction { [&] (juce::Image& img, size_t radius) {
             // argb goes haywire in-place, so we need to copy
             auto src = img.createCopy();

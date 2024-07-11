@@ -57,7 +57,12 @@ namespace melatonin::internal
             g2.fillPath (shadowPath, juce::AffineTransform::translation (unscaledPosition));
         }
         // perform the blur with the fastest algorithm available
+#if MELATONIN_BLUR_DIRECT2D
+        // Direct2D actually uses std dev under the hood, calculating from DIP (display independent pixels)
+        melatonin::blur::singleChannel (renderedSingleChannel, (size_t) parameters.radius);
+#else
         melatonin::blur::singleChannel (renderedSingleChannel, (size_t) scaledRadius);
+#endif
 
         singleChannelRender = renderedSingleChannel;
         return singleChannelRender;
