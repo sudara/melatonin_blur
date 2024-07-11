@@ -1,6 +1,5 @@
 // #include "../melatonin/implementations/dequeue.h"
-
-#include "../melatonin/implementations/direct2d.cpp"
+#include "../melatonin/implementations/platform_includes.h"
 
 #include "../melatonin/implementations/float_vector_stack_blur.h"
 #include "../melatonin/implementations/gin.h"

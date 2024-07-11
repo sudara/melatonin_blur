@@ -61,12 +61,6 @@ TEST_CASE ("Melatonin Blur ARGB Benchmarks")
                         return color;
                     };
 
-                    BENCHMARK ("Direct2D")
-                    {
-                        melatonin::blur::direct2DARGB (src, dst, radius);
-                        auto color = dstData.getPixelColour (20, 20);
-                        return color;
-                    };
                 }
             }
         }
