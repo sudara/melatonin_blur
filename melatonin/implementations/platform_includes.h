@@ -5,6 +5,9 @@
 // juce_core must be loaded *first* so we can detect platform/version
 #define JUCE_CORE_INCLUDE_COM_SMART_PTR 1
 #define JUCE_CORE_INCLUDE_NATIVE_HEADERS 1
+#define JUCE_GRAPHICS_INCLUDE_COREGRAPHICS_HELPERS 1
+
+#pragma clang diagnostic ignored "-Wimport-preprocessor-directive-pedantic"
 #include <juce_core/juce_core.h>
 
 #if JUCE_WINDOWS && JUCE_MAJOR_VERSION >= 8

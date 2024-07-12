@@ -6,7 +6,8 @@
 // These are *compile-time* flags for implementation choices
 // There are also runtime considerations, see below this block
 #if JUCE_MAC || JUCE_IOS
-
+    #define MELATONIN_CORE_IMAGE 1
+    #include "../implementations/core_image.h"
     // https://developer.apple.com/documentation/accelerate/4172615-vimagesepconvolve_argb8888
     #if (defined(__MAC_OS_X_VERSION_MAX_ALLOWED) && __MAC_OS_X_VERSION_MAX_ALLOWED >= 140000) \
         || (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) && __IPHONE_OS_VERSION_MAX_ALLOWED >= 170000)
@@ -76,7 +77,9 @@ namespace melatonin::blur
 {
     [[maybe_unused]] static inline void singleChannel (juce::Image& img, size_t radius)
     {
-#if MELATONIN_BLUR_DIRECT2D
+        #if MELATONIN_CORE_IMAGE
+        melatonin::blur::coreImageSingleChannel (img, radius);
+#elif MELATONIN_BLUR_DIRECT2D
         melatonin::blur::direct2DSingleChannel (img, radius);
 #elif MELATONIN_BLUR_VIMAGE
         if (internal::vImageSingleChannelAvailable())
