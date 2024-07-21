@@ -12,4 +12,6 @@
 
 #if JUCE_WINDOWS && JUCE_MAJOR_VERSION >= 8
     #include "direct2d.cpp"
+#elif JUCE_MAC || JUCE_IOS
+    #define MELATONIN_BLUR_CORE_IMAGE 1
 #endif

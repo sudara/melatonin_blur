@@ -22,19 +22,19 @@ TEST_CASE ("Melatonin Blur Single Channel Benchmarks")
                     //                    };
                     //
 
-                    BENCHMARK ("Gin (reference implementation)")
-                    {
-                        melatonin::stackBlur::ginSingleChannel (image, radius);
-                        auto color = data.getPixelColour (dimension - radius, dimension - radius);
-                        return color;
-                    };
-
-                    BENCHMARK ("Naive (Circular Buffer)")
-                    {
-                        melatonin::stackBlur::circularBufferSingleChannel (image, radius);
-                        auto color = data.getPixelColour (dimension - radius, dimension - radius);
-                        return color;
-                    };
+                    // BENCHMARK ("Gin (reference implementation)")
+                    // {
+                    //     melatonin::stackBlur::ginSingleChannel (image, radius);
+                    //     auto color = data.getPixelColour (dimension - radius, dimension - radius);
+                    //     return color;
+                    // };
+                    //
+                    // BENCHMARK ("Naive (Circular Buffer)")
+                    // {
+                    //     melatonin::stackBlur::circularBufferSingleChannel (image, radius);
+                    //     auto color = data.getPixelColour (dimension - radius, dimension - radius);
+                    //     return color;
+                    // };
 
                     //                    BENCHMARK ("Tent")
                     //                    {
@@ -70,12 +70,12 @@ TEST_CASE ("Melatonin Blur Single Channel Benchmarks")
                     //                        return color;
                     //                    };
 
-                    BENCHMARK ("JUCE FloatVectorOperations")
-                    {
-                        melatonin::blur::juceFloatVectorSingleChannel (image, radius);
-                        auto color = data.getPixelColour (dimension - radius, dimension - radius);
-                        return color;
-                    };
+                    // BENCHMARK ("JUCE FloatVectorOperations")
+                    // {
+                    //     melatonin::blur::juceFloatVectorSingleChannel (image, radius);
+                    //     auto color = data.getPixelColour (dimension - radius, dimension - radius);
+                    //     return color;
+                    // };
 
                     BENCHMARK ("Melatonin")
                     {
@@ -84,12 +84,12 @@ TEST_CASE ("Melatonin Blur Single Channel Benchmarks")
                         return color;
                     };
 
-                    BENCHMARK ("Direct2D")
-                    {
-                        melatonin::blur::direct2DSingleChannel(image, radius);
-                        auto color = data.getPixelColour (dimension - radius, dimension - radius);
-                        return color;
-                    };
+//                    BENCHMARK ("Direct2D")
+//                    {
+//                        melatonin::blur::direct2DSingleChannel(image, radius);
+//                        auto color = data.getPixelColour (dimension - radius, dimension - radius);
+//                        return color;
+//                    };
                 }
             }
         }
