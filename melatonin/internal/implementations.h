@@ -4,9 +4,10 @@
 #include "../implementations/gin.h"
 
 // These are *compile-time* flags for implementation choices
-// There are also runtime considerations
+// There are also runtime considerations, see below this block
 #if JUCE_MAC || JUCE_IOS
-
+    // #define MELATONIN_CORE_IMAGE 1
+    // #include "../implementations/core_image.h"
     // https://developer.apple.com/documentation/accelerate/4172615-vimagesepconvolve_argb8888
     #if (defined(__MAC_OS_X_VERSION_MAX_ALLOWED) && __MAC_OS_X_VERSION_MAX_ALLOWED >= 140000) \
         || (defined(__IPHONE_OS_VERSION_MAX_ALLOWED) && __IPHONE_OS_VERSION_MAX_ALLOWED >= 170000)
@@ -23,7 +24,10 @@
         #include "../implementations/float_vector_stack_blur.h"
     #endif
 #elif JUCE_WINDOWS
-    #if defined(PAMPLEJUCE_IPP) || defined(JUCE_IPP_AVAILABLE)
+    #if JUCE_MAJOR_VERSION >= 8
+        #include "../implementations/direct2d.h"
+        #define MELATONIN_BLUR_DIRECT2D 1
+    #elif defined(PAMPLEJUCE_IPP) || defined(JUCE_IPP_AVAILABLE)
         #define MELATONIN_BLUR_IPP 1
         #include "../implementations/ipp_vector.h" // single channel
     #else
@@ -32,13 +36,12 @@
 #elif JUCE_LINUX || JUCE_BSD || JUCE_ANDROID
     #include "../implementations/float_vector_stack_blur.h"
 #else
-  #error "Unsupported platform!"
+    #error "Unsupported platform!"
 #endif
 
 #if JUCE_MAC || JUCE_IOS
     #include <TargetConditionals.h>
 #endif
-
 
 // *Runtime* checks for vImage
 // Even if it compiles, we need to check when running on older devices
@@ -74,7 +77,11 @@ namespace melatonin::blur
 {
     [[maybe_unused]] static inline void singleChannel (juce::Image& img, size_t radius)
     {
-#if MELATONIN_BLUR_VIMAGE
+        #if MELATONIN_CORE_IMAGE
+        melatonin::blur::coreImageSingleChannel (img, radius);
+#elif MELATONIN_BLUR_DIRECT2D
+        melatonin::blur::direct2DSingleChannel (img, radius);
+#elif MELATONIN_BLUR_VIMAGE
         if (internal::vImageSingleChannelAvailable())
             melatonin::blur::vImageSingleChannel (img, radius);
         else
@@ -88,13 +95,15 @@ namespace melatonin::blur
 
     [[maybe_unused]] static inline void argb ([[maybe_unused]] juce::Image& srcImage, juce::Image& dstImage, size_t radius)
     {
-#if MELATONIN_BLUR_VIMAGE_MACOS14
+#if MELATONIN_BLUR_DIRECT2D
+        melatonin::blur::direct2DARGB (srcImage, dstImage, radius);
+#elif MELATONIN_BLUR_VIMAGE_MACOS14
         if (internal::vImageARGBAvailable())
             melatonin::blur::vImageARGB (srcImage, dstImage, radius);
         else
             melatonin::stackBlur::ginARGB (dstImage, static_cast<unsigned int> (radius));
 #else
-        stackBlur::ginARGB (dstImage, static_cast<unsigned int>(radius));
+        stackBlur::ginARGB (dstImage, static_cast<unsigned int> (radius));
 #endif
     }
 }

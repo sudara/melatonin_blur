@@ -12,7 +12,7 @@
  */
 namespace melatonin::blur
 {
-    static void juceFloatVectorSingleChannel (juce::Image& img, size_t radius)
+    [[maybe_unused]] static void juceFloatVectorSingleChannel (juce::Image& img, size_t radius)
     {
         const auto w = (size_t) img.getWidth();
         const auto h = (size_t) img.getHeight();

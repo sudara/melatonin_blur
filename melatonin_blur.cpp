@@ -1,4 +1,6 @@
-#include "melatonin_blur.h"
+// this must come first
+#include "melatonin/implementations/platform_includes.h"
+
 #include "melatonin/cached_blur.cpp"
 #include "melatonin/internal/cached_shadows.cpp"
 #include "melatonin/internal/rendered_single_channel_shadow.cpp"

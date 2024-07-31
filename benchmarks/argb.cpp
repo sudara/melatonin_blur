@@ -60,6 +60,7 @@ TEST_CASE ("Melatonin Blur ARGB Benchmarks")
                         auto color = dstData.getPixelColour (20, 20);
                         return color;
                     };
+
                 }
             }
         }

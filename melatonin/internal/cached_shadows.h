@@ -1,6 +1,5 @@
 #pragma once
 #include "rendered_single_channel_shadow.h"
-
 namespace melatonin::internal
 {
     // This class isn't meant for direct usage and may change its API over time!
