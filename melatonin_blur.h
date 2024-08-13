@@ -5,7 +5,7 @@ BEGIN_JUCE_MODULE_DECLARATION
 
 ID:               melatonin_blur
 vendor:           Sudara
-version:          1.3.0
+version:          1.4.0
 name:             Optimized CPU vector blurring and JUCE drop shadowing with tests and benchmarks
 description:      Blurry Life
 license:          MIT
@@ -20,4 +20,10 @@ END_JUCE_MODULE_DECLARATION
 
 #include "melatonin/cached_blur.h"
 #include "melatonin/shadows.h"
-#include "melatonin/blur_demo_component.h"
+
+// leave tracing code in place for future performance debugging
+#ifndef MELATONIN_PERFOTTO
+    #define TRACE_COMPONENT(...)
+    #define TRACE_COMPONENT_BEGIN(name)
+    #define TRACE_COMPONENT_END()
+#endif
