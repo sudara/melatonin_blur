@@ -26,8 +26,10 @@ namespace melatonin::internal
 
     void CachedShadows::render (juce::Graphics& g, const juce::Path& newPath, bool lowQuality)
     {
-        // on render, there might not be a shadow yet (we can add one later)
-        // and the path might be empty (usually due to messy resize/paint logic)
+        TRACE_COMPONENT();
+
+        // On render, there might not be a shadow yet (we can add one later)
+        // The path might be empty due to messy resize/paint logic on initialization.
         if (renderedSingleChannelShadows.empty() || newPath.getBounds().isEmpty())
             return;
 
@@ -44,6 +46,8 @@ namespace melatonin::internal
 
     void CachedShadows::render (juce::Graphics& g, const juce::Path& newPath, const juce::PathStrokeType& newType, bool lowQuality)
     {
+        TRACE_COMPONENT();
+
         if (renderedSingleChannelShadows.empty())
             return;
 
@@ -67,6 +71,8 @@ namespace melatonin::internal
 
     void CachedShadows::render (juce::Graphics& g, const juce::String& text, const juce::Rectangle<float>& area, juce::Justification justification)
     {
+        TRACE_COMPONENT();
+
         if (renderedSingleChannelShadows.empty())
             return;
 
@@ -179,12 +185,14 @@ namespace melatonin::internal
 
     void CachedShadows::updatePathIfNeeded (juce::Path& pathToBlur)
     {
+        TRACE_COMPONENT();
+
         // stripping the origin lets us animate/translate paths in our UI without breaking blur cache
-        auto incomingOrigin = pathToBlur.getBounds().getPosition();
+        const auto incomingOrigin = pathToBlur.getBounds().getPosition().toDouble();
         pathToBlur.applyTransform (juce::AffineTransform::translation (-incomingOrigin));
 
         // has the path actually changed?
-        if (needsRecalculate || (pathToBlur != lastOriginAgnosticPath))
+        if (needsRecalculate || (!approximatelyEqualPaths (pathToBlur, lastOriginAgnosticPath)))
         {
             // we already created a copy (that is passed in here), this is faster than creating another
             lastOriginAgnosticPath.swapWithPath (pathToBlur);
@@ -199,7 +207,7 @@ namespace melatonin::internal
 
             needsRecalculate = true;
         }
-        else if (incomingOrigin != pathPositionInContext)
+        else if (!juce::approximatelyEqual (incomingOrigin, pathPositionInContext))
         {
             // reposition the cached single channel shadows
             pathPositionInContext = incomingOrigin;
@@ -208,6 +216,8 @@ namespace melatonin::internal
 
     void CachedShadows::recalculateBlurs()
     {
+        TRACE_COMPONENT();
+
         for (auto& shadow : renderedSingleChannelShadows)
         {
             shadow.render (lastOriginAgnosticPath, scale, stroked);
@@ -218,6 +228,8 @@ namespace melatonin::internal
 
     void CachedShadows::renderInternal (juce::Graphics& g)
     {
+        TRACE_COMPONENT();
+
         // if it's a new path or the path actually changed, redo the single channel blurs
         if (needsRecalculate)
             recalculateBlurs();
@@ -233,6 +245,8 @@ namespace melatonin::internal
 
     void CachedShadows::drawARGBComposite (juce::Graphics& g, bool optimizeClipBounds)
     {
+        TRACE_COMPONENT();
+
         // support default constructors, 0 radius blurs, etc
         if (compositedARGB.isNull())
             return;
@@ -261,6 +275,8 @@ namespace melatonin::internal
 
     void CachedShadows::compositeShadowsToARGB()
     {
+        TRACE_COMPONENT();
+
         // figure out the largest bounds we need to composite
         // this is the union of all the shadow bounds
         // they should all align with the path at 0,0
@@ -273,7 +289,7 @@ namespace melatonin::internal
                 compositeBounds = compositeBounds.getUnion (s.getScaledBounds());
         }
 
-        scaledCompositePosition = compositeBounds.getPosition().toFloat();
+        scaledCompositePosition = compositeBounds.getPosition().toDouble();
 
         if (compositeBounds.isEmpty())
             return;
@@ -369,5 +385,47 @@ namespace melatonin::internal
             g2.drawImageAt (shadow.getImage(), shadowOffsetFromComposite.getX(), shadowOffsetFromComposite.getY(), true);
         }
         needsRecomposite = false;
+    }
+
+    // Debug: 20-80µs
+    // Release: 2-4µs
+    // Unfortunately, path comparison in JUCE doesn't hold up to translation and float inaccuracies
+    // see: https://forum.juce.com/t/should-juce-path-equality-use-approximatelyequal/59739/2
+    bool CachedShadows::approximatelyEqualPaths (const juce::Path& first, const juce::Path& second, float tolerance)
+    {
+        TRACE_COMPONENT();
+
+        if (first.isEmpty() && second.isEmpty())
+            return true;
+
+        const auto t = juce::Tolerance<float> {}.withAbsolute (tolerance);
+
+        // first check bounds
+        const auto firstBounds = first.getBounds();
+        const auto secondBounds = second.getBounds();
+        if (!juce::approximatelyEqual (firstBounds.getX(), secondBounds.getX(), t)
+            || !juce::approximatelyEqual (firstBounds.getY(), secondBounds.getY(), t)
+            || !juce::approximatelyEqual (firstBounds.getWidth(), secondBounds.getWidth(), t)
+            || !juce::approximatelyEqual (firstBounds.getHeight(), secondBounds.getHeight(), t))
+            return false;
+
+
+        // Next, check a few random points in the path
+        // sample a couple random points and make sure things are identical
+        for (auto i = 0; i < 2; ++i)
+        {
+            const auto testX = firstBounds.getX() + juce::Random::getSystemRandom().nextFloat() * firstBounds.getWidth();
+            const auto testY = firstBounds.getY() + juce::Random::getSystemRandom().nextFloat() * firstBounds.getHeight();
+            const juce::Point randomPoint = { testX, testY };
+            juce::Point<float> firstFoundPoint;
+            juce::Point<float> secondFoundPoint;
+            first.getNearestPoint (randomPoint, firstFoundPoint);
+            second.getNearestPoint (randomPoint, secondFoundPoint);
+            if (!juce::approximatelyEqual (firstFoundPoint.getX(), secondFoundPoint.getX(), t)
+                || !juce::approximatelyEqual (firstFoundPoint.getY(), secondFoundPoint.getY(), t))
+                return false;
+        }
+
+        return true;
     }
 }

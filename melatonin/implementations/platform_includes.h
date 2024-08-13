@@ -1,5 +1,3 @@
-#pragma once
-
 // These defines are required to load juce_core in
 // assuming we later need native functionality like direct2d, etc
 // juce_core must be loaded *first* so we can detect platform/version

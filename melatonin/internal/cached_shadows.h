@@ -12,7 +12,6 @@ namespace melatonin::internal
         explicit CachedShadows (const std::vector<ShadowParameters>& shadowParameters, bool force_inner = false);
 
     public:
-
         // store a copy of the path to compare against for caching
         // public for testability, sorry not sorry
         // too lazy to break out ARGBComposite into its own class
@@ -31,6 +30,12 @@ namespace melatonin::internal
         CachedShadows& setColor (juce::Colour color, size_t index = 0);
         CachedShadows& setOpacity (float opacity, size_t index = 0);
 
+        // JUCE's path quality doesn't hold up after translation
+        // see: https://forum.juce.com/t/should-juce-path-equality-use-approximatelyequal/59739
+        // this high tolerance is set from experience, float tolerances from repeatedly transformed paths add up!
+        // (or there's some optimization missing which could reduce the inaccuracies from building up)
+        [[nodiscard]] static bool approximatelyEqualPaths (const juce::Path& first, const juce::Path& second, float tolerance = 1e-5f);
+
     protected:
         // TODO: Is there a better pattern here?
         // InnerShadow must set inner=true
@@ -42,11 +47,11 @@ namespace melatonin::internal
 
     private:
         // any float offset from 0,0 the path has is stored here
-        juce::Point<float> pathPositionInContext = {};
+        juce::Point<double> pathPositionInContext = {};
 
         // this stores the final, end result
         juce::Image compositedARGB;
-        juce::Point<float> scaledCompositePosition;
+        juce::Point<double> scaledCompositePosition;
 
         // each component blur is stored here, their positions are stored in ShadowParameters
         std::vector<RenderedSingleChannelShadow> renderedSingleChannelShadows;
@@ -63,11 +68,11 @@ namespace melatonin::internal
         struct TextArrangement
         {
             juce::String text;
-            #if JUCE_MAJOR_VERSION >= 8
+#if JUCE_MAJOR_VERSION >= 8
             juce::Font font = juce::FontOptions {};
-            #else
+#else
             juce::Font font;
-            #endif
+#endif
             juce::Rectangle<float> area;
             juce::Justification justification = juce::Justification::left;
 

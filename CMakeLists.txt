@@ -14,14 +14,15 @@ if (MelatoninBlur_IS_TOP_LEVEL)
     message(STATUS "Cloning JUCE...")
     if (JUCE_7)
         FetchContent_Declare(JUCE
-                GIT_REPOSITORY
+                GIT_REPOSITORY https://github.com/juce-framework/JUCE.git
                 GIT_TAG 7.0.12
                 GIT_PROGRESS TRUE
         )
     else ()
 
         FetchContent_Declare(JUCE
-                GIT_REPOSITORY https://github.com/juce-framework/JUCE.git
+                # includes a tiny fix to JUCE to help building root-level modules
+                GIT_REPOSITORY https://github.com/sudara/JUCE.git
                 GIT_TAG develop
                 GIT_PROGRESS TRUE
         )
