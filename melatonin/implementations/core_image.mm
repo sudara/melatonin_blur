@@ -17,19 +17,18 @@ namespace melatonin::blur
     // It's ok for this to be accessed from multiple threads
     // It being static here isn't the most beautiful, but should be safe
     // https://developer.apple.com/documentation/coreimage/cicontext
-    // Note that the format can't be kCIFormatA8:
+    // Note that the format can't be single channel kCIFormatA8:
     // [api] CIContext working format must be kCIFormatBGRA8, kCIFormatRGBA8, kCIFormatRGBAh, kCIFormatRGBAf or nil. Ignoring request for A8.
-    // Also note that this cannot be inside the function, as it will result in an EXC_BAD_ACCESS
+    // Also note that this cannot be static inside the function, as it will result in an EXC_BAD_ACCESS
     // https://petercompernolle.com/2015/excbadaccess-with-coreimage
-    //static juce::Image contextImage = juce::Image (juce::Image::SingleChannel, 1000, 1000, true);
-    static CIContext* ciContext = [CIContext contextWithOptions: nil];
+    static CIContext* ciContext = [CIContext contextWithOptions:nil];
+
+    auto colorSpace = juce::detail::ColorSpacePtr { CGColorSpaceCreateWithName (kCGColorSpaceSRGB) };
 
     // [CIContext contextWithOptions:@{kCIContextUseSoftwareRenderer: @(YES)}] // Software renderer faster?
 
-
     void coreImageSingleChannel (juce::Image& img, size_t radius)
     {
-
         static auto singleColorColorSpace = juce::detail::ColorSpacePtr { CGColorSpaceCreateWithName (kCGColorSpaceGenericGrayGamma2_2) };
 
         //            CGDirectDisplayID displayID = CGMainDisplayID();
@@ -66,11 +65,11 @@ namespace melatonin::blur
         //                [affineClampFilter setValue:inputImage forKey:kCIInputImageKey];
 
         // Apply Gaussian blur filter
-//        CIFilter* blurFilter = [CIFilter filterWithName:@ "CIBoxBlur"];
-//        [blurFilter setValue:inputImage forKey:kCIInputImageKey];
-//        [blurFilter setValue:@((float) radius / 3) forKey:kCIInputRadiusKey];
+        CIFilter* blurFilter = [CIFilter filterWithName:@ "CIBoxBlur"];
+        [blurFilter setValue:inputImage forKey:kCIInputImageKey];
+        [blurFilter setValue:@((float) radius / 3) forKey:kCIInputRadiusKey];
 
-        //CIImage* outputImage = blurFilter.outputImage;
+        CIImage* outputImage = blurFilter.outputImage;
 
         // Use the input image's extent, since the outputs extent is infinite
         CGRect rect = { { 0, 0 }, { static_cast<CGFloat> (img.getWidth()), static_cast<CGFloat> (img.getHeight()) } };
@@ -79,9 +78,9 @@ namespace melatonin::blur
         // https://developer.apple.com/documentation/coreimage/kciformatl8
         // This is where drawing from the GPU to the CPU happens.
         // So this is where all the time goes.
-        CGImageRef blurredCGImage = [ciContext createCGImage:inputImage fromRect:inputImage.extent format:kCIFormatL8 colorSpace:singleColorColorSpace.get()];
+        CGImageRef blurredCGImage = [ciContext createCGImage:outputImage fromRect:inputImage.extent];
 
-       //[ciContext drawImage:outputImage  inRect:rect fromRect:rect];
+        //[ciContext drawImage:outputImage  inRect:rect fromRect:rect];
 
         //        size_t width = CGImageGetWidth (blurredCGImage);
         //        size_t height = CGImageGetHeight (blurredCGImage);
@@ -107,23 +106,23 @@ namespace melatonin::blur
     void coreImageARGB (juce::Image& srcImage, juce::Image& dstImage, size_t radius)
     {
         juce::Image::BitmapData srcBitmapData (srcImage, juce::Image::BitmapData::readWrite);
-        auto colorSpace = juce::detail::ColorSpacePtr { CGColorSpaceCreateWithName (kCGColorSpaceSRGB) };
-        auto srcContext = juce::detail::ContextPtr { CGBitmapContextCreate (srcBitmapData.data,
-            static_cast<size_t> (srcBitmapData.width),
-            static_cast<size_t> (srcBitmapData.height),
-            8,
-            static_cast<size_t> (srcBitmapData.lineStride),
-            colorSpace.get(),
-            kCGImageAlphaPremultipliedLast) };
-
-        // this is doing something strange.... without it, everything is happy
-        CGImageRef cgImage = CGBitmapContextCreateImage (srcContext.get());
+        //        auto srcContext = juce::detail::ContextPtr { CGBitmapContextCreate (srcBitmapData.data,
+        //            static_cast<size_t> (srcBitmapData.width),
+        //            static_cast<size_t> (srcBitmapData.height),
+        //            8,
+        //            static_cast<size_t> (srcBitmapData.lineStride),
+        //            colorSpace.get(),
+        //            kCGImageAlphaPremultipliedLast) };
+        //
+        //        // this is doing something strange.... without it, everything is happy
+        //        CGImageRef cgImage = CGBitmapContextCreateImage (srcContext.get());
+        CGImageRef cgImage = juce::juce_createCoreGraphicsImage (srcImage, colorSpace.get());
         CIImage* ciImage = [CIImage imageWithCGImage:cgImage];
 
         // Apply Gaussian blur filter
         CIFilter* blurFilter = [CIFilter filterWithName:@ "CIGaussianBlur"];
         [blurFilter setValue:ciImage forKey:kCIInputImageKey];
-        [blurFilter setValue:@(radius) forKey:@"inputRadius"];
+        [blurFilter setValue:@(radius / 3) forKey:@"inputRadius"];
         CIImage* blurredImage = [blurFilter valueForKey:kCIOutputImageKey];
 
         // Render the blurred image back to the original CGContext
@@ -141,7 +140,7 @@ namespace melatonin::blur
             colorSpace.get(),
             kCGImageAlphaPremultipliedLast) };
 
-        // Draw the blurred image back into the original CGContext
+        // Draw the blurred image back
         CGContextDrawImage (dstContext.get(), CGRectMake (0, 0, dstImage.getWidth(), dstImage.getHeight()), blurredCGImage);
 
         CGImageRelease (cgImage);
