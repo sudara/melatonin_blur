@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(MelatoninBlur VERSION 1.0.0 LANGUAGES CXX
+project(MelatoninBlur VERSION 1.0.0 LANGUAGES CXX C
         DESCRIPTION "Fast Blurs for JUCE"
         HOMEPAGE_URL "https://github.com/sudara/melatonin_blur")
 
@@ -21,8 +21,7 @@ if (MelatoninBlur_IS_TOP_LEVEL)
     else ()
 
         FetchContent_Declare(JUCE
-                # includes a tiny fix to JUCE to help building root-level modules
-                GIT_REPOSITORY https://github.com/sudara/JUCE.git
+                GIT_REPOSITORY https://github.com/juce-framework/JUCE.git
                 GIT_TAG develop
                 GIT_PROGRESS TRUE
         )
@@ -34,7 +33,7 @@ if (MelatoninBlur_IS_TOP_LEVEL)
             GIT_REPOSITORY https://github.com/catchorg/Catch2.git
             GIT_PROGRESS TRUE
             GIT_SHALLOW TRUE
-            GIT_TAG v3.6.0)
+            GIT_TAG v3.7.0)
     FetchContent_MakeAvailable(Catch2) # find_package equivalent
 
     enable_testing()
@@ -45,7 +44,8 @@ if (MelatoninBlur_IS_TOP_LEVEL)
 
     file(GLOB_RECURSE BlurTests CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/tests/*.cpp")
     target_sources(Tests PRIVATE ${BlurTests})
-    target_sources(Benchmarks PRIVATE "benchmarks/benchmarks.cpp")
+    file(GLOB_RECURSE BlurBenchmarks CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/benchmarks/benchmarks.cpp")
+    target_sources(Benchmarks PRIVATE ${BlurBenchmarks})
 
     # Our executables need to know about our plugin code...
     target_include_directories(Tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/source)

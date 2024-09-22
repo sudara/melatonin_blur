@@ -32,6 +32,7 @@ TEST_CASE ("Melatonin Blur Text Shadow")
     {
         {
             juce::Graphics g (result);
+            jassert(g.getCurrentFont().getTypefacePtr());
             g.fillAll (juce::Colours::white);
             g.setColour (juce::Colours::black);
             g.setFont(g.getCurrentFont().withHeight(12)); // macos and windows happy with 13, ubuntu needs 12

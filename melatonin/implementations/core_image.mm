@@ -1,4 +1,5 @@
 #define JUCE_GRAPHICS_INCLUDE_COREGRAPHICS_HELPERS 1
+#include "juce_core/native/juce_CFHelpers_mac.h"
 #include "core_image.h"
 #include "../../tests/helpers/pixel_helpers.h"
 #include "juce_core/juce_core.h"

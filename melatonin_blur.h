@@ -22,7 +22,7 @@ END_JUCE_MODULE_DECLARATION
 #include "melatonin/shadows.h"
 
 // leave tracing code in place for future performance debugging
-#ifndef MELATONIN_PERFOTTO
+#ifndef PERFETTO
     #define TRACE_COMPONENT(...)
     #define TRACE_COMPONENT_BEGIN(name)
     #define TRACE_COMPONENT_END()
