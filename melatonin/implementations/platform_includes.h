@@ -9,7 +9,10 @@
 // see https://forum.juce.com/t/no-template-named-cfuniqueptr-using-xcode13/62528
 // #define JUCE_GRAPHICS_INCLUDE_COREGRAPHICS_HELPERS 1
 
+#ifndef JUCE_WINDOWS
 #pragma clang diagnostic ignored "-Wimport-preprocessor-directive-pedantic"
+#endif
+
 #include <juce_core/juce_core.h>
 
 #if JUCE_WINDOWS && JUCE_MAJOR_VERSION >= 8
