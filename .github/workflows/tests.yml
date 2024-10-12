@@ -11,7 +11,8 @@ env:
   BUILD_TYPE: Release
   BUILD_DIR: Builds
   HOMEBREW_NO_INSTALL_CLEANUP: 1
-  SCCACHE_GHA_ENABLED: "true"
+  SCCACHE_GHA_ENABLED: true
+  SCCACHE_CACHE_MULTIARCH: 1
 
 concurrency:
   group: ${{ github.workflow }}.${{ github.ref }}
