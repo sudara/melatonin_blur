@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(MelatoninBlur VERSION 1.0.0 LANGUAGES CXX
+project(MelatoninBlur VERSION 1.0.0 LANGUAGES C CXX
         DESCRIPTION "Fast Blurs for JUCE"
         HOMEPAGE_URL "https://github.com/sudara/melatonin_blur")
 
