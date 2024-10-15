@@ -9,9 +9,16 @@ namespace melatonin::internal
     {
     protected:
         CachedShadows() = default;
+        CachedShadows (const CachedShadows&) = default;
+        CachedShadows& operator= (const CachedShadows&) = default;
+        CachedShadows (CachedShadows&&) = default;
+        CachedShadows& operator= (CachedShadows&&) = default;
+        
         CachedShadows (std::initializer_list<ShadowParameters> shadowParameters, bool force_inner = false);
         explicit CachedShadows (const std::vector<ShadowParameters>& shadowParameters, bool force_inner = false);
-
+        
+        virtual ~CachedShadows() = default;
+        
     public:
 
         // store a copy of the path to compare against for caching
