@@ -27,6 +27,8 @@ BraceWrapping: # Allman except for lambdas
   AfterClass: true
   AfterCaseLabel: true
   AfterFunction: true
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
   AfterNamespace: true
   AfterStruct: true
   BeforeElse: true
