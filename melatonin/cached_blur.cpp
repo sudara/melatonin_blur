@@ -40,12 +40,10 @@ namespace melatonin
         needsRedraw = true;
     }
 
-
     juce::Image& CachedBlur::render()
     {
         // You either need to have called update or rendered with a src!
         jassert (dst.isValid());
         return dst;
     }
-
 }

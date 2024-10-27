@@ -2,7 +2,7 @@
 
 namespace melatonin::internal
 {
-    CachedShadows::CachedShadows (std::initializer_list<ShadowParameters> shadowParameters, bool force_inner)
+    CachedShadows::CachedShadows (std::initializer_list<ShadowParametersInt> shadowParameters, const bool force_inner)
     {
         for (auto& parameters : shadowParameters)
         {
@@ -13,7 +13,7 @@ namespace melatonin::internal
         }
     }
 
-    CachedShadows::CachedShadows (const std::vector<ShadowParameters>& shadowParameters, bool force_inner)
+    CachedShadows::CachedShadows (const std::vector<ShadowParametersInt>& shadowParameters, const bool force_inner)
     {
         for (auto& parameters : shadowParameters)
         {
@@ -24,7 +24,27 @@ namespace melatonin::internal
         }
     }
 
-    void CachedShadows::render (juce::Graphics& g, const juce::Path& newPath, bool lowQuality)
+    CachedShadows::CachedShadows (const std::initializer_list<int> radii, const bool isInner)
+    {
+        for (const auto radius : radii)
+        {
+            auto& shadow = renderedSingleChannelShadows.emplace_back (ShadowParametersInt { juce::Colours::black, radius });
+            if (isInner)
+                shadow.parameters.inner = true;
+        }
+    }
+
+    CachedShadows::CachedShadows (const std::initializer_list<float> radii, const bool isInner)
+    {
+        for (const auto radius : radii)
+        {
+            auto& shadow = renderedSingleChannelShadows.emplace_back (ShadowParametersInt { juce::Colours::black, juce::roundToInt (radius) });
+            if (isInner)
+                shadow.parameters.inner = true;
+        }
+    }
+
+    void CachedShadows::render (juce::Graphics& g, const juce::Path& newPath, const bool lowQuality)
     {
         // on render, there might not be a shadow yet (we can add one later)
         // and the path might be empty (usually due to messy resize/paint logic)
@@ -42,7 +62,7 @@ namespace melatonin::internal
         renderInternal (g);
     }
 
-    void CachedShadows::render (juce::Graphics& g, const juce::Path& newPath, const juce::PathStrokeType& newType, bool lowQuality)
+    void CachedShadows::render (juce::Graphics& g, const juce::Path& newPath, const juce::PathStrokeType& newType, const bool lowQuality)
     {
         if (renderedSingleChannelShadows.empty())
             return;
@@ -101,26 +121,26 @@ namespace melatonin::internal
         render (g, text, juce::Rectangle<int> (x, y, width, height).toFloat(), justification);
     }
 
-    CachedShadows& CachedShadows::setRadius (size_t radius, size_t index)
+    CachedShadows& CachedShadows::setRadius (const float radius, const size_t index)
     {
         if (canUpdateShadow (index))
-            needsRecalculate = renderedSingleChannelShadows[index].updateRadius ((int) radius);
+            needsRecalculate |= renderedSingleChannelShadows[index].updateRadius ((int) radius);
 
         return *this;
     }
 
-    CachedShadows& CachedShadows::setSpread (size_t spread, size_t index)
+    CachedShadows& CachedShadows::setSpread (const float spread, const size_t index)
     {
         if (canUpdateShadow (index))
-            needsRecalculate = renderedSingleChannelShadows[index].updateSpread ((int) spread);
+            needsRecalculate |= renderedSingleChannelShadows[index].updateSpread ((int) spread);
 
         return *this;
     }
 
-    CachedShadows& CachedShadows::setOffset (juce::Point<int> offset, size_t index)
+    CachedShadows& CachedShadows::setOffset (const juce::Point<double> offset, const size_t index)
     {
         if (canUpdateShadow (index))
-            needsRecomposite = renderedSingleChannelShadows[index].updateOffset (offset, scale);
+            needsRecomposite |= renderedSingleChannelShadows[index].updateOffset (offset.roundToInt(), scale);
 
         return *this;
     }
@@ -128,7 +148,7 @@ namespace melatonin::internal
     CachedShadows& CachedShadows::setColor (juce::Colour color, size_t index)
     {
         if (canUpdateShadow (index))
-            needsRecomposite = renderedSingleChannelShadows[index].updateColor (color);
+            needsRecomposite |= renderedSingleChannelShadows[index].updateColor (color);
 
         return *this;
     }
@@ -136,7 +156,7 @@ namespace melatonin::internal
     CachedShadows& CachedShadows::setOpacity (float opacity, size_t index)
     {
         if (canUpdateShadow (index))
-            needsRecomposite = renderedSingleChannelShadows[index].updateOpacity (opacity);
+            needsRecomposite |= renderedSingleChannelShadows[index].updateOpacity (opacity);
 
         return *this;
     }

@@ -4,7 +4,7 @@
 
 namespace melatonin::internal
 {
-    RenderedSingleChannelShadow::RenderedSingleChannelShadow (ShadowParameters p) : parameters (p) {}
+    RenderedSingleChannelShadow::RenderedSingleChannelShadow (ShadowParametersInt p) : parameters (p) {}
 
     juce::Image& RenderedSingleChannelShadow::render (juce::Path& originAgnosticPath, float scale, bool stroked)
     {

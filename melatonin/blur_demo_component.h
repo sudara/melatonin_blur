@@ -72,22 +72,22 @@ namespace melatonin
             };
 
             offsetXSlider.onValueChange = [this] {
-                dropShadow.setOffset ({ (int) offsetXSlider.getValue(), (int) offsetYSlider.getValue() });
-                innerShadow.setOffset ({ (int) offsetXSlider.getValue(), (int) offsetYSlider.getValue() });
-                strokedDropShadow.setOffset ({ (int) offsetXSlider.getValue(), (int) offsetYSlider.getValue() });
-                strokedInnerShadow.setOffset ({ (int) offsetXSlider.getValue(), (int) offsetYSlider.getValue() });
-                textDropShadow.setOffset ({ (int) offsetXSlider.getValue(), (int) offsetYSlider.getValue() });
-                textInnerShadow.setOffset ({ (int) offsetXSlider.getValue(), (int) offsetYSlider.getValue() });
+                dropShadow.setOffset ({ offsetXSlider.getValue(), offsetYSlider.getValue() });
+                innerShadow.setOffset ({ offsetXSlider.getValue(), offsetYSlider.getValue() });
+                strokedDropShadow.setOffset ({ offsetXSlider.getValue(), offsetYSlider.getValue() });
+                strokedInnerShadow.setOffset ({ offsetXSlider.getValue(), offsetYSlider.getValue() });
+                textDropShadow.setOffset ({ offsetXSlider.getValue(), offsetYSlider.getValue() });
+                textInnerShadow.setOffset ({ offsetXSlider.getValue(), offsetYSlider.getValue() });
                 repaint();
             };
 
             offsetYSlider.onValueChange = [this] {
-                dropShadow.setOffset ({ (int) offsetXSlider.getValue(), (int) offsetYSlider.getValue() });
-                innerShadow.setOffset ({ (int) offsetXSlider.getValue(), (int) offsetYSlider.getValue() });
-                strokedDropShadow.setOffset ({ (int) offsetXSlider.getValue(), (int) offsetYSlider.getValue() });
-                strokedInnerShadow.setOffset ({ (int) offsetXSlider.getValue(), (int) offsetYSlider.getValue() });
-                textDropShadow.setOffset ({ (int) offsetXSlider.getValue(), (int) offsetYSlider.getValue() });
-                textInnerShadow.setOffset ({ (int) offsetXSlider.getValue(), (int) offsetYSlider.getValue() });
+                dropShadow.setOffset ({ offsetXSlider.getValue(), offsetYSlider.getValue() });
+                innerShadow.setOffset ({ offsetXSlider.getValue(), offsetYSlider.getValue() });
+                strokedDropShadow.setOffset ({ offsetXSlider.getValue(), offsetYSlider.getValue() });
+                strokedInnerShadow.setOffset ({ offsetXSlider.getValue(), offsetYSlider.getValue() });
+                textDropShadow.setOffset ({ offsetXSlider.getValue(), offsetYSlider.getValue() });
+                textInnerShadow.setOffset ({ offsetXSlider.getValue(), offsetYSlider.getValue() });
                 repaint();
             };
 
