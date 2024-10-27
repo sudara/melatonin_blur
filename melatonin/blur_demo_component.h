@@ -52,22 +52,22 @@ namespace melatonin
             opacitySlider.setValue (1);
 
             radiusSlider.onValueChange = [this] {
-                dropShadow.setRadius ((size_t) radiusSlider.getValue());
-                innerShadow.setRadius ((size_t) radiusSlider.getValue());
-                strokedDropShadow.setRadius ((size_t) radiusSlider.getValue());
-                strokedInnerShadow.setRadius ((size_t) radiusSlider.getValue());
-                textDropShadow.setRadius ((size_t) radiusSlider.getValue());
-                textInnerShadow.setRadius ((size_t) radiusSlider.getValue());
+                dropShadow.setRadius (radiusSlider.getValue());
+                innerShadow.setRadius (radiusSlider.getValue());
+                strokedDropShadow.setRadius (radiusSlider.getValue());
+                strokedInnerShadow.setRadius (radiusSlider.getValue());
+                textDropShadow.setRadius (radiusSlider.getValue());
+                textInnerShadow.setRadius (radiusSlider.getValue());
                 repaint();
             };
 
             spreadSlider.onValueChange = [this] {
-                dropShadow.setSpread ((size_t) spreadSlider.getValue());
-                innerShadow.setSpread ((size_t) spreadSlider.getValue());
-                strokedDropShadow.setSpread ((size_t) spreadSlider.getValue());
-                strokedInnerShadow.setSpread ((size_t) spreadSlider.getValue());
-                textDropShadow.setSpread ((size_t) spreadSlider.getValue());
-                textInnerShadow.setSpread ((size_t) spreadSlider.getValue());
+                dropShadow.setSpread (spreadSlider.getValue());
+                innerShadow.setSpread (spreadSlider.getValue());
+                strokedDropShadow.setSpread (spreadSlider.getValue());
+                strokedInnerShadow.setSpread (spreadSlider.getValue());
+                textDropShadow.setSpread (spreadSlider.getValue());
+                textInnerShadow.setSpread (spreadSlider.getValue());
                 repaint();
             };
 
@@ -92,12 +92,12 @@ namespace melatonin
             };
 
             opacitySlider.onValueChange = [this] {
-                dropShadow.setOpacity ((float) opacitySlider.getValue());
-                innerShadow.setOpacity ((float) opacitySlider.getValue());
-                strokedDropShadow.setOpacity ((float) opacitySlider.getValue());
-                strokedInnerShadow.setOpacity ((float) opacitySlider.getValue());
-                textDropShadow.setOpacity ((float) opacitySlider.getValue());
-                textInnerShadow.setOpacity ((float) opacitySlider.getValue());
+                dropShadow.setOpacity (opacitySlider.getValue());
+                innerShadow.setOpacity (opacitySlider.getValue());
+                strokedDropShadow.setOpacity (opacitySlider.getValue());
+                strokedInnerShadow.setOpacity (opacitySlider.getValue());
+                textDropShadow.setOpacity (opacitySlider.getValue());
+                textInnerShadow.setOpacity (opacitySlider.getValue());
                 repaint();
             };
 #if MELATONIN_VBLANK
@@ -276,11 +276,11 @@ namespace melatonin
         }
 
     private:
-        #if JUCE_MAJOR_VERSION >= 8
-        juce::Font font = juce::FontOptions {}.withName("Arial").withHeight (110.f).withStyle ("bold");
-        #else
+#if JUCE_MAJOR_VERSION >= 8
+        juce::Font font = juce::FontOptions {}.withName ("Arial").withHeight (110.f).withStyle ("bold");
+#else
         juce::Font font { "Arial", 110.f, juce::Font::bold };
-        #endif
+#endif
         melatonin::DropShadow dropShadow {
             { juce::Colour::fromRGB (196, 181, 157), 12, { 0, 13 } },
             { juce::Colours::white, 1, { 0, -2 } }

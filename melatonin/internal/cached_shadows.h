@@ -16,7 +16,7 @@ namespace melatonin::internal
 
         // allow us to just pass multiple radii to get multiple shadows
         CachedShadows (std::initializer_list<int> radii, bool isInner = false);
-        CachedShadows (std::initializer_list<float> radii, bool isInner = false);
+        CachedShadows (std::initializer_list<double> radii, bool isInner = false);
 
         // multiple shadows
         CachedShadows (std::initializer_list<ShadowParametersInt> shadowParameters, bool force_inner = false);
@@ -38,14 +38,13 @@ namespace melatonin::internal
         void render (juce::Graphics& g, const juce::String& text, int x, int y, int width, int height, juce::Justification justification);
 
         // these are float that will round, ints will implicitly convert
-        CachedShadows& setRadius (float radius, size_t index = 0);
-        CachedShadows& setSpread (float spread, size_t index = 0);
+        CachedShadows& setRadius (double radius, size_t index = 0);
+        CachedShadows& setSpread (double spread, size_t index = 0);
 
         // this takes a double so that it's happy implicitly converting to float and then eventually int
         CachedShadows& setOffset (juce::Point<double> offset, size_t index = 0);
         CachedShadows& setColor (juce::Colour color, size_t index = 0);
-        CachedShadows& setOpacity (float opacity, size_t index = 0);
-
+        CachedShadows& setOpacity (double opacity, size_t index = 0);
 
         // helps with testing and debugging cache
         [[nodiscard]] bool willRecalculate() const { return needsRecalculate; }
@@ -58,6 +57,18 @@ namespace melatonin::internal
         virtual ShadowParametersInt emptyShadow()
         {
             return ShadowParametersInt {};
+        }
+
+        template <typename T>
+        static std::vector<ShadowParametersInt> convertToIntParameters (std::initializer_list<ShadowParameters<T>> params)
+        {
+            std::vector<ShadowParametersInt> intParams;
+            intParams.reserve (params.size());
+            for (const auto& p : params)
+            {
+                intParams.push_back (ShadowParametersInt (p));
+            }
+            return intParams;
         }
 
     private:

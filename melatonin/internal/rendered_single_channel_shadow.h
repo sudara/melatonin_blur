@@ -6,6 +6,7 @@ namespace melatonin
     // these are the parameters required to represent a single drop or inner shadow
     // wish I could put these in shadows.h to help people
     template <typename ValueType = int>
+
     struct ShadowParameters
     {
         // one single color per shadow
@@ -22,21 +23,30 @@ namespace melatonin
 
         // Needed for aggregate-style initialization
         ShadowParameters (juce::Colour c, ValueType r, juce::Point<ValueType> o = {}, ValueType s = 0, bool i = false)
-            : color (c), radius (r), offset (o), spread (s), inner(i) {}
+            : color (c), radius (r), offset (o), spread (s), inner (i) {}
 
         // round all non-int types
         template <typename OtherType>
         explicit ShadowParameters (const ShadowParameters<OtherType>& other)
             : color (other.color),
               radius (juce::roundToInt (other.radius)),
-              offset (other.roundToInt()),
+              offset (other.offset.toInt()),
               spread (juce::roundToInt (other.spread)),
               inner (other.inner)
+        {}
+
+        // SFINAE needed to force when used in initializer lists to convert double/float to int
+        // Replace with requires when moving to C++20
+        template <typename FloatType,
+            typename = std::enable_if_t<std::is_floating_point_v<FloatType> && std::is_same_v<ValueType, int>>>
+        ShadowParameters (juce::Colour c, FloatType r, juce::Point<FloatType> o, FloatType s, bool i = false)
+            : ShadowParameters (ShadowParameters<FloatType> (c, r, o, s, i))
         {}
 
         ShadowParameters() = default;
     };
 
+    // Then your alias
     using ShadowParametersInt = ShadowParameters<>;
 
     namespace internal

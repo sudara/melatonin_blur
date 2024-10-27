@@ -34,7 +34,7 @@ namespace melatonin::internal
         }
     }
 
-    CachedShadows::CachedShadows (const std::initializer_list<float> radii, const bool isInner)
+    CachedShadows::CachedShadows (const std::initializer_list<double> radii, const bool isInner)
     {
         for (const auto radius : radii)
         {
@@ -121,7 +121,7 @@ namespace melatonin::internal
         render (g, text, juce::Rectangle<int> (x, y, width, height).toFloat(), justification);
     }
 
-    CachedShadows& CachedShadows::setRadius (const float radius, const size_t index)
+    CachedShadows& CachedShadows::setRadius (const double radius, const size_t index)
     {
         if (canUpdateShadow (index))
             needsRecalculate |= renderedSingleChannelShadows[index].updateRadius ((int) radius);
@@ -129,7 +129,7 @@ namespace melatonin::internal
         return *this;
     }
 
-    CachedShadows& CachedShadows::setSpread (const float spread, const size_t index)
+    CachedShadows& CachedShadows::setSpread (const double spread, const size_t index)
     {
         if (canUpdateShadow (index))
             needsRecalculate |= renderedSingleChannelShadows[index].updateSpread ((int) spread);
@@ -153,10 +153,10 @@ namespace melatonin::internal
         return *this;
     }
 
-    CachedShadows& CachedShadows::setOpacity (float opacity, size_t index)
+    CachedShadows& CachedShadows::setOpacity (double opacity, size_t index)
     {
         if (canUpdateShadow (index))
-            needsRecomposite |= renderedSingleChannelShadows[index].updateOpacity (opacity);
+            needsRecomposite |= renderedSingleChannelShadows[index].updateOpacity (static_cast<float> (opacity));
 
         return *this;
     }

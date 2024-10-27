@@ -33,12 +33,11 @@ namespace melatonin
     public:
         DropShadow() = default;
 
-        // allow us to just pass a radius to get a black shadow
-        explicit DropShadow (const int radius) : CachedShadows ({ { juce::Colours::black, radius } }) {}
-        explicit DropShadow (const float radius) : CachedShadows ({ { juce::Colours::black, juce::roundToInt (radius) } }) {}
+        // allow us to just pass a double/float/int (implicitly converted) radius to get a black shadow
+        explicit DropShadow (const double radius) : CachedShadows ({ { juce::Colours::black, juce::roundToInt (radius) } }) {}
 
         // allow us to just pass multiple radii to get multiple shadows
-        DropShadow (std::initializer_list<int> radii) : CachedShadows (radii) {}
+        DropShadow (std::initializer_list<double> radii) : CachedShadows (radii) {}
 
         // individual arguments
         DropShadow (const juce::Colour color, const int radius, const juce::Point<int> offset = { 0, 0 }, const int spread = 0)
@@ -51,11 +50,6 @@ namespace melatonin
         // single ShadowParameters with integer arguments
         // melatonin::DropShadow ({Colour::fromRGBA (255, 183, 43, 111), pulse (6)}).render (g, button);
         explicit DropShadow (ShadowParametersInt p) : CachedShadows ({ p }) {}
-
-        // single ShadowParameters with float/double argumuents
-        template <typename T>
-        explicit DropShadow (const ShadowParameters<T>& p) : CachedShadows ({ p })
-        {}
 
         // multiple ShadowParametersInt
         DropShadow (std::initializer_list<ShadowParametersInt> p) : CachedShadows (p) {}
@@ -72,11 +66,10 @@ namespace melatonin
         InnerShadow() = default;
 
         // allow us to just pass a radius to get a black shadow
-        explicit InnerShadow (const int radius) : CachedShadows ({ { juce::Colours::black, radius } }, true) {}
-        explicit InnerShadow (const float radius) : CachedShadows ({ { juce::Colours::black, juce::roundToInt (radius) } }, true) {}
+        explicit InnerShadow (const double radius) : CachedShadows ({ { juce::Colours::black, juce::roundToInt (radius) } }, true) {}
 
         // allow us to just pass multiple radii to get multiple shadows
-        InnerShadow (std::initializer_list<int> radii) : CachedShadows (radii, true) {}
+        InnerShadow (std::initializer_list<double> radii) : CachedShadows (radii, true) {}
 
         // individual arguments
         InnerShadow (const juce::Colour color, const int radius, const juce::Point<int> offset = { 0, 0 }, const int spread = 0)

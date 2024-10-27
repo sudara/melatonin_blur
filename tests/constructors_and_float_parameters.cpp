@@ -93,8 +93,43 @@ TEST_CASE ("Melatonin Blur Constructors and Float Parameters")
         }
     }
 
-    SECTION ("float constructors")
+    SECTION ("float")
     {
+        SECTION ("constructors")
+        {
+            SECTION ("takes just a radius via direct init")
+            {
+                melatonin::DropShadow shadow { 2.2 };
+                shadow = { 2.2f };
+                render (shadow, result, p);
+                CHECK (filledBounds (result).toString() == juce::Rectangle<int> (1, 1, 7, 7).toString());
+            }
+
+            SECTION ("takes multiple radii to setup multiple black shadows")
+            {
+                melatonin::DropShadow shadows { 1.2f, 2.5f };
+                shadows = { 1.2, 2.5 };
+                render (shadows, result, p);
+                CHECK (filledBounds (result).toString() == juce::Rectangle<int> (1, 1, 7, 7).toString());
+            }
+
+            SECTION ("takes a ShadowParameters object via direct and copy init")
+            {
+                melatonin::DropShadow shadow { { juce::Colours::black, 1.2f, { 1.1f, 1.1f }, 0.1f } };
+                render (shadow, result, p);
+                shadow = { { juce::Colours::black, 1, { 1, 1 }, 0 } };
+                render (shadow, result, p);
+                CHECK (filledBounds (result).toString() == juce::Rectangle<int> (3, 3, 5, 5).toString());
+            }
+
+            SECTION ("takes multiple ShadowParameters objects via direct and copy init")
+            {
+                melatonin::DropShadow shadow { { juce::Colours::black, 1.2f, { 1.1f, 1.1f }, 0.f }, { juce::Colours::black, 1.f, { 1.f, 1.f }, 0.f } };
+                shadow = { { juce::Colours::black, 1.f, { 1.f, 1.f }, 0.f }, { juce::Colours::black, 1.f, { 1.f, 1.f }, 0.f } };
+                render (shadow, result, p);
+            }
+        }
+
         SECTION ("float radius")
         {
             SECTION ("rounds down")
