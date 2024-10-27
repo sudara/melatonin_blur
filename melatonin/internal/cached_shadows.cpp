@@ -137,10 +137,10 @@ namespace melatonin::internal
         return *this;
     }
 
-    CachedShadows& CachedShadows::setOffset (const juce::Point<double> offset, const size_t index)
+    CachedShadows& CachedShadows::setOffset (const juce::Point<int> offset, const size_t index)
     {
         if (canUpdateShadow (index))
-            needsRecomposite |= renderedSingleChannelShadows[index].updateOffset (offset.roundToInt(), scale);
+            needsRecomposite |= renderedSingleChannelShadows[index].updateOffset (offset, scale);
 
         return *this;
     }

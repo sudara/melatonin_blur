@@ -48,13 +48,63 @@ TEST_CASE ("Melatonin Blur Setters")
             shadow.setRadius (1);
             render (shadow, result, p);
 
-            // check bounds of non-white rectangle
-            CHECK (filledBounds (result).toString() == juce::Rectangle<int> (2, 2, 5, 5).toString());
+            SECTION ("works")
+            {
+                // check bounds of non-white rectangle
+                CHECK (filledBounds (result).toString() == juce::Rectangle<int> (2, 2, 5, 5).toString());
 
-            shadow.setOffset ({ 2, 2 });
-            render (shadow, result, p);
+                shadow.setOffset ({ 2, 2 });
+                render (shadow, result, p);
 
-            CHECK (filledBounds (result).toString() == juce::Rectangle<int> (4, 4, 5, 5).toString());
+                CHECK (filledBounds (result).toString() == juce::Rectangle<int> (4, 4, 5, 5).toString());
+            }
+
+            SECTION ("takes int points")
+            {
+                auto intPoint = juce::Point<int> { 2, 2 };
+                shadow.setOffset (intPoint);
+            }
+
+            SECTION ("takes int literals in brace init")
+            {
+                shadow.setOffset ({ 2, 2 });
+            }
+
+            SECTION ("takes floating point Point")
+            {
+                juce::Point floatPoint { 2.f, 2.f };
+                shadow.setOffset (floatPoint);
+            }
+
+            SECTION ("takes float literals in brace init ")
+            {
+                shadow.setOffset ({ 2.f, 2.f });
+            }
+
+            SECTION ("takes double literals in brace init")
+            {
+                shadow.setOffset ({ 2.0, 2.0 });
+            }
+
+            SECTION ("takes Point<double>")
+            {
+                shadow.setOffset (juce::Point<double> { 2.0, 2.0 });
+            }
+
+            SECTION ("takes x,y integers")
+            {
+                shadow.setOffset (1, 2);
+            }
+
+            SECTION ("takes x,y floats")
+            {
+                shadow.setOffset (1.f, 2.f);
+            }
+
+            SECTION ("takes x,y doubles")
+            {
+                shadow.setOffset (1.0, 2.0);
+            }
         }
 
         SECTION ("setRadius")

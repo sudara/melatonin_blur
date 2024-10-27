@@ -41,8 +41,45 @@ namespace melatonin::internal
         CachedShadows& setRadius (double radius, size_t index = 0);
         CachedShadows& setSpread (double spread, size_t index = 0);
 
-        // this takes a double so that it's happy implicitly converting to float and then eventually int
-        CachedShadows& setOffset (juce::Point<double> offset, size_t index = 0);
+        // accept int offset, this is what {1, 1} will default to
+        // without it, the compiler will fail to pick a type
+        CachedShadows& setOffset (juce::Point<int> offset, size_t index = 0);
+
+        // accept raw initializer list for juce::Point float types like {1.0, 1.0}
+        // without intercepting the list, the compiler tries a float->int narrowing conversion!
+        template <typename T, std::enable_if_t<std::is_floating_point_v<T>, int> = 0>
+        CachedShadows& setOffset (std::initializer_list<T> offset, size_t index = 0)
+        {
+            jassert (offset.size() == 2);
+            auto it = offset.begin();
+            T x = *it++;
+            T y = *it;
+            return setOffset (juce::Point { juce::roundToInt (x), juce::roundToInt (y) }, index);
+        }
+
+        // accept all Point types and round
+        // Use SFINAE to force int type getting the priority with literals like {1, 1}
+        // This allows setOffset({1, 1}) to not be ambiguous
+        // Overload for juce::Point<int>
+        template <typename T, std::enable_if_t<std::is_floating_point_v<T>, int> = 0>
+        CachedShadows& setOffset (const juce::Point<T> offset, size_t index = 0)
+        {
+            return setOffset (offset.toInt(), index);
+        }
+
+        // setOffset(1, 1) will default to int
+        CachedShadows& setOffset (int x, int y, size_t index = 0)
+        {
+            return setOffset (juce::Point<int> { x, y }, index);
+        }
+
+        // setOffset(1.0, 1.0) and float variant work as expected
+        template <typename T>
+        CachedShadows& setOffset (T x, T y, size_t index = 0)
+        {
+            return setOffset (juce::Point<int> { juce::roundToInt(x), juce::roundToInt(y) }, index);
+        }
+
         CachedShadows& setColor (juce::Colour color, size_t index = 0);
         CachedShadows& setOpacity (double opacity, size_t index = 0);
 

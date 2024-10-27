@@ -216,7 +216,7 @@ TEST_CASE ("Melatonin Blur Constructors and Float Parameters")
             shadow.setOffset ({ 1, 1 });
             render (shadow, result, p);
 
-            shadow.setOffset ({ 1.4f, 1.4f });
+            shadow.setOffset ( { 1.4f, 1.4f });
             CHECK (shadow.willRecomposite() == false);
             render (shadow, floatResult, p);
 
