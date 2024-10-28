@@ -38,13 +38,13 @@ works? [I wrote an in-depth article about re-implementing Stack Blur 15+ times](
 
 The docs have outgrown a README file, [visit the new documentation](https://melatonin.dev/manuals/melatonin-blur/installation/cmake/)
 
-[<div align="center"><img src="https://github.com/user-attachments/assets/8eb5a814-1457-4fd0-a979-e9c1cfd800cb" width="450"/></div>](https://melatonin.dev/manuals/melatonin-blur/installation/cmake/)
+[![](https://github.com/user-attachments/assets/8eb5a814-1457-4fd0-a979-e9c1cfd800cb)](https://melatonin.dev/manuals/melatonin-blur/installation/cmake/)
 
 ## Usage
 
 There's all the usage information you could want over at [the official docs](https://melatonin.dev/manuals/melatonin-blur/usage/drop-shadows/)
 
-[<div align="center"><img src="https://github.com/user-attachments/assets/3abedb03-4c15-4c3e-b04e-f7d36eb144aa" width="450"/></div>](https://melatonin.dev/manuals/melatonin-blur/usage/drop-shadows/)
+[![](https://github.com/user-attachments/assets/3abedb03-4c15-4c3e-b04e-f7d36eb144aa)](https://melatonin.dev/manuals/melatonin-blur/usage/drop-shadows/)
 
 
 ## Acknowledgements
