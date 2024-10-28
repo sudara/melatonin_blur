@@ -18,7 +18,7 @@ TEST_CASE ("Melatonin Blur Composite ARGB")
 
         SECTION ("match a single channel blur")
         {
-            auto s1 = melatonin::ShadowParameters ({ juce::Colours::black, 2, { 0, 0 }, 0 });
+            auto s1 = melatonin::ShadowParametersInt ({ juce::Colours::black, 2, { 0, 0 }, 0 });
 
             juce::Path p;
             // make a 4x4 at 2,2
@@ -37,7 +37,7 @@ TEST_CASE ("Melatonin Blur Composite ARGB")
 
         SECTION ("applies offset correctly")
         {
-            auto s1 = melatonin::ShadowParameters ({ juce::Colours::black, 2, { 2, 2 }, 0 });
+            auto s1 = melatonin::ShadowParametersInt ({ juce::Colours::black, 2, { 2, 2 }, 0 });
 
             juce::Path p;
             // make a 4x4 at 2,2
@@ -58,10 +58,10 @@ TEST_CASE ("Melatonin Blur Composite ARGB")
 
         SECTION ("takes the larger of 2 blur bounds")
         {
-            auto s1 = melatonin::ShadowParameters ({ juce::Colours::black, 2, { 0, 0 }, 0 });
+            auto s1 = melatonin::ShadowParametersInt ({ juce::Colours::black, 2, { 0, 0 }, 0 });
 
             // this has a 2px positive offset on the x axis
-            auto s2 = melatonin::ShadowParameters ({ juce::Colours::black, 3, { 0, 0 }, 0 });
+            auto s2 = melatonin::ShadowParametersInt ({ juce::Colours::black, 3, { 0, 0 }, 0 });
 
             juce::Path p;
             // make a 4x4 at 2,2
@@ -80,10 +80,10 @@ TEST_CASE ("Melatonin Blur Composite ARGB")
 
         SECTION ("takes offset into account when unioning bounds")
         {
-            auto s1 = melatonin::ShadowParameters ({ juce::Colours::black, 2, { 0, 0 }, 0 });
+            auto s1 = melatonin::ShadowParametersInt ({ juce::Colours::black, 2, { 0, 0 }, 0 });
 
             // this has a 2px positive offset on the x axis
-            auto s2 = melatonin::ShadowParameters ({ juce::Colours::black, 2, { 2, 0 }, 0 });
+            auto s2 = melatonin::ShadowParametersInt ({ juce::Colours::black, 2, { 2, 0 }, 0 });
 
             juce::Path p;
             // make a 4x4 at 2,2
@@ -103,7 +103,7 @@ TEST_CASE ("Melatonin Blur Composite ARGB")
 
         SECTION ("doesn't freak out with 0 radius")
         {
-            auto s1 = melatonin::ShadowParameters ({ juce::Colours::black, 0, { 0, 0 }, 0 });
+            auto s1 = melatonin::ShadowParametersInt ({ juce::Colours::black, 0, { 0, 0 }, 0 });
 
             juce::Path p;
             // make a 4x4 at 2,2
@@ -131,7 +131,7 @@ TEST_CASE ("Melatonin Blur Composite ARGB")
         g.addTransform (juce::AffineTransform::scale (2));
         g.fillAll (juce::Colours::white);
 
-        auto dummyShadow = melatonin::ShadowParameters ({ juce::Colours::black, 2, { 0, 0 }, 0 });
+        auto dummyShadow = melatonin::ShadowParametersInt ({ juce::Colours::black, 2, { 0, 0 }, 0 });
 
         juce::Path p;
         p.addRectangle (juce::Rectangle<float> (0, 0, 4, 4));

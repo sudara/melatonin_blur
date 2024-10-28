@@ -5,20 +5,49 @@ namespace melatonin
 {
     // these are the parameters required to represent a single drop or inner shadow
     // wish I could put these in shadows.h to help people
+    template <typename ValueType = int>
+
     struct ShadowParameters
     {
         // one single color per shadow
         juce::Colour color = juce::Colours::black;
-        int radius = 1;
-        juce::Point<int> offset = { 0, 0 };
+        ValueType radius = 1;
+        juce::Point<ValueType> offset = { 0, 0 };
 
         // Spread literally just expands or contracts the *path* size
         // Inverted for inner shadows
-        int spread = 0;
+        ValueType spread = 0;
 
         // an inner shadow is just a modified drop shadow
         bool inner = false;
+
+        // Needed for aggregate-style initialization
+        ShadowParameters (juce::Colour c, ValueType r, juce::Point<ValueType> o = {}, ValueType s = 0, bool i = false)
+            : color (c), radius (r), offset (o), spread (s), inner (i) {}
+
+        // round all non-int types
+        template <typename OtherType>
+        explicit ShadowParameters (const ShadowParameters<OtherType>& other)
+            : color (other.color),
+              radius (juce::roundToInt (other.radius)),
+              offset (other.offset.toInt()),
+              spread (juce::roundToInt (other.spread)),
+              inner (other.inner)
+        {}
+
+        // SFINAE needed to force when used in initializer lists to convert double/float to int
+        // Replace with requires when moving to C++20
+        template <typename FloatType,
+            typename = std::enable_if_t<std::is_floating_point_v<FloatType> && std::is_same_v<ValueType, int>>>
+        ShadowParameters (juce::Colour c, FloatType r, juce::Point<FloatType> o, FloatType s, bool i = false)
+            : ShadowParameters (ShadowParameters<FloatType> (c, r, o, s, i))
+        {}
+
+        ShadowParameters() = default;
     };
+
+    // Then your alias
+    using ShadowParametersInt = ShadowParameters<>;
 
     namespace internal
     {
@@ -28,9 +57,9 @@ namespace melatonin
         class RenderedSingleChannelShadow
         {
         public:
-            ShadowParameters parameters;
+            ShadowParametersInt parameters;
 
-            explicit RenderedSingleChannelShadow (ShadowParameters p);
+            explicit RenderedSingleChannelShadow (ShadowParametersInt p);
 
             juce::Image& render (juce::Path& originAgnosticPath, float scale, bool stroked = false);
 

@@ -18,6 +18,7 @@ namespace melatonin
         juce::Image& render();
 
         void setRadius (size_t newRadius);
+        void setRadius (const float newRadius) { setRadius ((size_t) juce::roundToInt (newRadius)); }
 
     private:
         // juce::Images are value objects, reference counted behind the scenes

@@ -27,9 +27,6 @@ TEST_CASE ("Melatonin Blur Drop Shadow")
     // stick the 3x3 box centered inside a 9x9
     p.addRectangle (bounds.translated (3, 3));
 
-    // needed for JUCE not to pee its pants (aka leak) when working with graphics
-    juce::ScopedJuceInitialiser_GUI juce;
-
     juce::Image result (juce::Image::ARGB, 9, 9, true);
 
     SECTION ("no shadow")

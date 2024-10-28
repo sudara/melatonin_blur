@@ -124,7 +124,7 @@ You can specify the color, radius, offset and spread of each blur, passing them 
 
 ```cpp
 
-struct ShadowParameters
+struct ShadowParametersInt
 {
     // one single color per shadow
     juce::Colour color = juce::Colours::black;

@@ -9,7 +9,7 @@
 TEST_CASE ("Melatonin Blur Render To Single Channel")
 {
     using namespace melatonin::internal;
-    auto dummyShadow = melatonin::ShadowParameters ({ juce::Colours::black, 2, { 0, 0 }, 0 });
+    auto dummyShadow = melatonin::ShadowParametersInt ({ juce::Colours::black, 2, { 0, 0 }, 0 });
 
     juce::Path p;
     p.addRectangle (juce::Rectangle<float> (4, 4));
@@ -54,7 +54,7 @@ TEST_CASE ("Melatonin Blur Render To Single Channel")
     {
         auto result = RenderedSingleChannelShadow (dummyShadow).render (p, 1);
 
-        auto lowerAlpha = melatonin::ShadowParameters ({ juce::Colours::black, 2, { 0, 0 }, 0 });
+        auto lowerAlpha = melatonin::ShadowParametersInt ({ juce::Colours::black, 2, { 0, 0 }, 0 });
         auto resultWithLowerAlpha = RenderedSingleChannelShadow (lowerAlpha).render (p, 1);
 
         // check each pixel
@@ -74,7 +74,7 @@ TEST_CASE ("Melatonin Blur Render To Single Channel")
     {
         auto result = RenderedSingleChannelShadow (dummyShadow).render (p, 1);
 
-        auto offsetShadow = melatonin::ShadowParameters ({ juce::Colours::black, 2, { 2, 2 }, 0 });
+        auto offsetShadow = melatonin::ShadowParametersInt ({ juce::Colours::black, 2, { 2, 2 }, 0 });
         auto resultWithOffset = RenderedSingleChannelShadow (offsetShadow).render (p, 1);
 
         // TODO: this isn't working for some reason, even when bounds differ, these pass
@@ -138,7 +138,7 @@ TEST_CASE ("Melatonin Blur Render To Single Channel")
         {
             SECTION ("scales with radius")
             {
-                dummyShadow = melatonin::ShadowParameters ({ juce::Colours::black, 2, { 0, 0 }, 0, true });
+                dummyShadow = melatonin::ShadowParameters<> ({ juce::Colours::black, 2, { 0, 0 }, 0, true });
                 auto result = RenderedSingleChannelShadow (dummyShadow).render (p, 1);
                 CHECK (result.getWidth() == 8);
                 dummyShadow.radius = 3;
