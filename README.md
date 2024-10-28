@@ -44,7 +44,7 @@ The docs have outgrown a README file, [visit the new documentation](https://mela
 
 There's all the usage information you could want over at [the official docs](https://melatonin.dev/manuals/melatonin-blur/usage/drop-shadows/)
 
-[<div align="center"><img src="[https://github.com/user-attachments/assets/8f4fb113-9be1-430c-9ca7-e441228d969c](https://github.com/user-attachments/assets/3abedb03-4c15-4c3e-b04e-f7d36eb144aa)" width="450"/></div>](https://melatonin.dev/manuals/melatonin-blur/usage/drop-shadows/)
+[<div align="center"><img src="https://github.com/user-attachments/assets/3abedb03-4c15-4c3e-b04e-f7d36eb144aa" width="450"/></div>](https://melatonin.dev/manuals/melatonin-blur/usage/drop-shadows/)
 
 
 ## Acknowledgements
