@@ -36,14 +36,15 @@ works? [I wrote an in-depth article about re-implementing Stack Blur 15+ times](
 
 ## Installation
 
-[Visit the new Documentation](https://melatonin.dev/manuals/melatonin-blur/installation/cmake/)
+The docs have outgrown a README file, [visit the new documentation](https://melatonin.dev/manuals/melatonin-blur/installation/cmake/)
 
-[![Arc - 2024-10-28 53@2x](https://github.com/user-attachments/assets/8eb5a814-1457-4fd0-a979-e9c1cfd800cb)](https://melatonin.dev/manuals/melatonin-blur/installation/cmake/)
+[<div align="center"><img src="https://github.com/user-attachments/assets/8eb5a814-1457-4fd0-a979-e9c1cfd800cb" width="550"/></div>](https://melatonin.dev/manuals/melatonin-blur/installation/cmake/)
 
 ## Usage
 
-[Visit the documentation](https://melatonin.dev/manuals/melatonin-blur/usage/drop-shadows/)
-[![Arc - 2024-10-28 54@2x](https://github.com/user-attachments/assets/8f4fb113-9be1-430c-9ca7-e441228d969c)](https://melatonin.dev/manuals/melatonin-blur/usage/drop-shadows/)
+There's all the usage information you could want over at [the official docs](https://melatonin.dev/manuals/melatonin-blur/usage/drop-shadows/)
+
+[<div align="center"><img src="https://github.com/user-attachments/assets/8f4fb113-9be1-430c-9ca7-e441228d969c" width="550"/></div>](https://melatonin.dev/manuals/melatonin-blur/usage/drop-shadows/)
 
 
 ## Acknowledgements
