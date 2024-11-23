@@ -3,11 +3,11 @@
 #include "melatonin/internal/cached_shadows.cpp"
 #include "melatonin/internal/rendered_single_channel_shadow.cpp"
 
-#if RUN_MELATONIN_BENCHMARKS
+#if RUN_MELATONIN_BLUR_BENCHMARKS
     #include "benchmarks/benchmarks.cpp"
 #endif
 
-#if RUN_MELATONIN_TESTS
+#if RUN_MELATONIN_BLUR_TESTS
     #include "tests/blur_implementations.cpp"
     #include "tests/drop_shadow.cpp"
     #include "tests/inner_shadow.cpp"
