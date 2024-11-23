@@ -42,8 +42,6 @@ if (MelatoninBlur_IS_TOP_LEVEL)
     target_compile_features(Tests PUBLIC cxx_std_17)
     target_compile_features(Benchmarks PUBLIC cxx_std_17)
     
-    target_sources(Benchmarks PRIVATE "benchmarks/benchmarks.cpp")
-
     # Our executables need to know about our plugin code...
     target_include_directories(Tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/source)
     target_include_directories(Benchmarks PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/source)
