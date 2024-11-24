@@ -5,10 +5,8 @@
 
     #include "ipp_vector.h"
     #include <ipp.h>
-    #include <ippcore_tl.h>
     #include <ippcv.h>
     #include <ippi.h>
-    #include <ippi_l.h>
     #include <ipps.h>
 
 // This is a port of the cross-platform stack blur implementation in tests/implementations/vector.h
