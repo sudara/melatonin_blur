@@ -5,7 +5,6 @@
 
     #include "ipp_vector.h"
     #include <ipp.h>
-    #include <ipps.h>
 
 // This is a port of the cross-platform stack blur implementation in tests/implementations/vector.h
 // This one doesn't rely on melatonin::vector, only IPP
