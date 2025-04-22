@@ -5,7 +5,7 @@ on:
   push:
   pull_request:
   schedule:
-    - cron:  '10 5 * * *' # run once a day 
+    - cron:  '10 5 * * *' # run once a day
 
 env:
   BUILD_TYPE: Release
@@ -36,7 +36,7 @@ jobs:
     strategy:
       fail-fast: false # show errors for each platform vs. cancel build
       matrix:
-        os: [ macos-13, macos-14, macos-15, windows-2022, windows-2019, ubuntu-20.04, ubuntu-latest ]
+        os: [ macos-13, macos-14, macos-15, windows-2022, windows-2019, ubuntu-20.04, ubuntu-22.04 ]
         juce: [ JUCE7, JUCE8 ]
 
     steps:
