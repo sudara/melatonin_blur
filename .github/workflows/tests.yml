@@ -5,7 +5,7 @@ on:
   push:
   pull_request:
   schedule:
-    - cron:  '10 5 * * *' # run once a day 
+    - cron:  '10 5 * * *' # run once a day
 
 env:
   BUILD_TYPE: Release
@@ -36,8 +36,12 @@ jobs:
     strategy:
       fail-fast: false # show errors for each platform vs. cancel build
       matrix:
-        os: [ macos-13, macos-14, macos-15, windows-2022, windows-2019, ubuntu-20.04, ubuntu-latest ]
+        os: [ macos-13, macos-14, macos-15, windows-2022, windows-2019, ubuntu-22.04 ]
         juce: [ JUCE7, JUCE8 ]
+        exclude:
+          # JUCE 7 uses CGWindowListCreateImage, unavailable on macOS 15
+          - os: macos-15
+            juce: JUCE7
 
     steps:
 
@@ -64,7 +68,7 @@ jobs:
 
       - name: Install macOS Deps
         if: ${{ runner.os == 'macOS' }}
-        run: brew install ninja osxutils
+        run: brew install osxutils
 
       - name: Install Linux Deps
         if: runner.os == 'Linux'
@@ -76,7 +80,7 @@ jobs:
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 100
 
       - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.4
+        uses: mozilla-actions/sccache-action@v0.0.9
 
       - name: Configure
         run: |
