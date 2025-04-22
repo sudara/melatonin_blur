@@ -36,7 +36,7 @@ jobs:
     strategy:
       fail-fast: false # show errors for each platform vs. cancel build
       matrix:
-        os: [ macos-13, macos-14, macos-15, windows-2022, windows-2019, ubuntu-20.04, ubuntu-22.04 ]
+        os: [ macos-13, macos-14, macos-15, windows-2022, windows-2019, ubuntu-22.04 ]
         juce: [ JUCE7, JUCE8 ]
 
     steps:
@@ -64,7 +64,7 @@ jobs:
 
       - name: Install macOS Deps
         if: ${{ runner.os == 'macOS' }}
-        run: brew install ninja osxutils
+        run: brew install osxutils
 
       - name: Install Linux Deps
         if: runner.os == 'Linux'
