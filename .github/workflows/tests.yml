@@ -38,6 +38,10 @@ jobs:
       matrix:
         os: [ macos-13, macos-14, macos-15, windows-2022, windows-2019, ubuntu-22.04 ]
         juce: [ JUCE7, JUCE8 ]
+        exclude:
+          # JUCE 7 uses CGWindowListCreateImage, unavailable on macOS 15
+          - os: macos-15
+            juce: JUCE7
 
     steps:
 
