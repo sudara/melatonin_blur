@@ -20,6 +20,7 @@ namespace melatonin
         void setRadius (size_t newRadius);
         void setRadius (const float newRadius) { setRadius ((size_t) juce::roundToInt (newRadius)); }
 
+        [[nodiscard]] bool isValid() const { return dst.isValid(); }
     private:
         // juce::Images are value objects, reference counted behind the scenes
         // We want to store a reference to the src so we can compare on render
