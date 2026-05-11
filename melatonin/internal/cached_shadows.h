@@ -87,6 +87,12 @@ namespace melatonin::internal
         [[nodiscard]] bool willRecalculate() const { return needsRecalculate; }
         [[nodiscard]] bool willRecomposite() const { return needsRecomposite; }
 
+        // When true, every render() forces a full recalculation regardless of
+        // whether the cache key changed. Intended for benchmarking and the
+        // "uncached" inspection mode in the demo — not for production use.
+        void setBypassCache (bool shouldBypass) { bypassCache = shouldBypass; }
+        [[nodiscard]] bool isBypassingCache() const { return bypassCache; }
+
     protected:
         // TODO: Is there a better pattern here?
         // InnerShadow must set inner=true
@@ -121,6 +127,14 @@ namespace melatonin::internal
 
         // if radius/spread stay the same, we can reuse the blur
         bool needsRecalculate = true;
+
+        // The D2D-enabled generation this cache was last rendered under.
+        // Mismatch on the next render() forces a recalculate so the new backend's
+        // output replaces the stale cached image.
+        std::uint64_t lastDirect2DGeneration = 0;
+
+        // Debug/bench knob: when true, every render forces a full recalc.
+        bool bypassCache = false;
 
         // this lets us adjust color/opacity without re-rendering blurs
         bool needsRecomposite = true;

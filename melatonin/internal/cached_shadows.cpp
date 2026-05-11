@@ -239,6 +239,21 @@ namespace melatonin::internal
 
     void CachedShadows::renderInternal (juce::Graphics& g)
     {
+        // If the D2D backend has been toggled at runtime since we last rendered,
+        // our cached single-channel images came from a different code path and
+        // must be redone. Cheap: one relaxed atomic load + integer compare.
+        if (const auto gen = melatonin::blur::direct2DConfigGeneration(); gen != lastDirect2DGeneration)
+        {
+            needsRecalculate = true;
+            lastDirect2DGeneration = gen;
+        }
+
+        // "Uncached" debug mode: force a full recalc each render. Useful for
+        // perf measurement and for tools that want to observe the worst-case
+        // (cold-cache) cost of every frame.
+        if (bypassCache)
+            needsRecalculate = true;
+
         // if it's a new path or the path actually changed, redo the single channel blurs
         if (needsRecalculate)
             recalculateBlurs();
