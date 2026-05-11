@@ -1,4 +1,5 @@
 #include "cached_shadows.h"
+#include "implementations.h"
 
 namespace melatonin::internal
 {
@@ -303,10 +304,12 @@ namespace melatonin::internal
         // (won't need to specify `fillAlphaChannelWithCurrentBrush` for `drawImageAt`,
         // which slows down the main compositing by a factor of 2-3x)
         // see: https://forum.juce.com/t/faster-blur-glassmorphism-ui/43086/76
-        compositedARGB = { juce::Image::ARGB, (int) compositeBounds.getWidth(), (int) compositeBounds.getHeight(), true };
+        const auto targetBounds = compositeBounds.withZeroOrigin();
+        ensureImage (compositedARGB, juce::Image::ARGB, targetBounds);
 
         // we're already scaled up (if needed) so no .addTransform here
         juce::Graphics g2 (compositedARGB);
+        forceClearTransparent (g2, targetBounds);
 
         for (auto& shadow : renderedSingleChannelShadows)
         {

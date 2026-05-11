@@ -7,6 +7,8 @@
 
 TEST_CASE ("Melatonin Blur Drop Shadow")
 {
+    MELATONIN_BLUR_TEST_EACH_DIRECT2D_MODE();
+
     // here's what our test image looks like:
     // 0=white, 1=black, just to be annoying...
 
@@ -361,6 +363,128 @@ TEST_CASE ("Melatonin Blur Drop Shadow")
         }
     }
 }
+
+// Reused render targets must clear stale pixels when same-bounds paths change shape.
+TEST_CASE ("Melatonin Blur cached shadows clear reused targets")
+{
+    MELATONIN_BLUR_TEST_EACH_DIRECT2D_MODE();
+
+    juce::ScopedJuceInitialiser_GUI juce;
+
+    juce::Path rectangle;
+    rectangle.addRectangle (20, 20, 40, 20);
+
+    juce::Path ellipse;
+    ellipse.addEllipse (20, 20, 40, 20);
+
+    auto renderShadow = [] (melatonin::DropShadow& shadow, const juce::Path& path) {
+        juce::Image image (juce::Image::ARGB, 100, 80, true);
+        juce::Graphics g (image);
+        g.fillAll (juce::Colours::white);
+        shadow.render (g, path);
+        return image;
+    };
+
+    melatonin::DropShadow reusedShadow = { { juce::Colours::black, 4 } };
+    auto warmup = renderShadow (reusedShadow, rectangle);
+    auto reused = renderShadow (reusedShadow, ellipse);
+
+    melatonin::DropShadow freshShadow = { { juce::Colours::black, 4 } };
+    auto fresh = renderShadow (freshShadow, ellipse);
+
+    REQUIRE (imagesAreIdentical (warmup, fresh) == false);
+    REQUIRE (imagesAreIdentical (reused, fresh) == true);
+}
+
+#if MELATONIN_BLUR_USE_DIRECT2D
+namespace
+{
+    bool imageBackupEnabled (const juce::Image& image)
+    {
+        if (auto pixelData = image.getPixelData())
+            if (auto* extensions = pixelData->getBackupExtensions())
+                return extensions->isBackupEnabled();
+
+        return false;
+    }
+
+    juce::Image renderDirect2DComparisonShadow()
+    {
+        juce::Path path;
+        path.addRoundedRectangle (32.0f, 26.0f, 56.0f, 34.0f, 7.0f);
+
+        juce::Image result (juce::Image::ARGB, 128, 96, true);
+        juce::Graphics g (result);
+        g.fillAll (juce::Colours::white);
+
+        melatonin::DropShadow shadow = { { juce::Colours::black.withAlpha (0.7f), 8, { 3, -2 }, 2 } };
+        shadow.render (g, path);
+
+        return result;
+    }
+
+    juce::Image createDirect2DComparisonMask()
+    {
+        juce::Image mask (juce::Image::SingleChannel, 64, 64, true);
+        juce::Graphics g (mask);
+        g.fillAll (juce::Colours::transparentBlack);
+        g.setColour (juce::Colours::white);
+        g.fillEllipse (18.0f, 14.0f, 28.0f, 34.0f);
+        g.fillRect (30, 22, 18, 18);
+        return mask;
+    }
+
+    juce::Image materializeMaskAsARGB (juce::Image& mask)
+    {
+        juce::Image result (juce::Image::ARGB, mask.getWidth(), mask.getHeight(), true);
+        juce::Graphics g (result);
+        g.fillAll (juce::Colours::transparentBlack);
+        g.setColour (juce::Colours::white);
+        g.drawImageAt (mask, 0, 0, true);
+        return result;
+    }
+}
+
+TEST_CASE ("Melatonin Blur Direct2D can be disabled at runtime")
+{
+    juce::ScopedJuceInitialiser_GUI juce;
+    const ScopedDirect2DSetting resetDirect2D;
+
+    melatonin::blur::setDirect2DEnabled (false);
+    REQUIRE (melatonin::blur::isDirect2DEnabled() == false);
+    auto cpuShadow = renderDirect2DComparisonShadow();
+
+    melatonin::blur::setDirect2DEnabled (true);
+    REQUIRE (melatonin::blur::isDirect2DEnabled() == true);
+    auto direct2DShadow = renderDirect2DComparisonShadow();
+
+    REQUIRE (imagesAreIdenticalWithTolerance (cpuShadow, direct2DShadow, 3));
+}
+
+TEST_CASE ("Melatonin Blur Direct2D single channel matches CPU within tolerance")
+{
+    juce::ScopedJuceInitialiser_GUI juce;
+    const ScopedDirect2DSetting resetDirect2D;
+    melatonin::blur::setDirect2DEnabled (true);
+
+    auto source = createDirect2DComparisonMask();
+    auto cpuBlurred = source.createCopy();
+    melatonin::blur::cpuSingleChannel (cpuBlurred, 6);
+
+    juce::Image direct2DBlurred (juce::Image::SingleChannel, source.getWidth(), source.getHeight(), true);
+
+    REQUIRE (imageBackupEnabled (source) == true);
+    REQUIRE (melatonin::blur::direct2DSingleChannel (source, direct2DBlurred, 6));
+    CHECK (imageBackupEnabled (source) == true);
+
+    auto cpuARGB = materializeMaskAsARGB (cpuBlurred);
+    auto direct2DARGB = materializeMaskAsARGB (direct2DBlurred);
+    const auto maximumDifference = maxPixelDifference (cpuARGB, direct2DARGB);
+
+    INFO ("maximum per-channel difference: " << maximumDifference);
+    REQUIRE (maximumDifference <= 3);
+}
+#endif
 
 #if JUCE_MAC
 // Verify what macOS and JUCE are doing at the raw pixel level

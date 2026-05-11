@@ -7,6 +7,14 @@ project(MelatoninBlur VERSION 1.0.0 LANGUAGES C CXX
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 
+if (WIN32)
+    set(MELATONIN_BLUR_USE_DIRECT2D_DEFAULT ON)
+else ()
+    set(MELATONIN_BLUR_USE_DIRECT2D_DEFAULT OFF)
+endif ()
+
+option(MELATONIN_BLUR_USE_DIRECT2D "Compile Direct2D support for melatonin_blur on Windows with JUCE 8+" ${MELATONIN_BLUR_USE_DIRECT2D_DEFAULT})
+
 include(FetchContent)
 if (MelatoninBlur_IS_TOP_LEVEL)
     option(JUCE7 "Run tests on JUCE 7" OFF)
@@ -47,6 +55,8 @@ if (MelatoninBlur_IS_TOP_LEVEL)
     target_include_directories(Benchmarks PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/source)
 
     juce_add_module("${CMAKE_CURRENT_SOURCE_DIR}")
+
+    target_compile_definitions(melatonin_blur INTERFACE MELATONIN_BLUR_USE_DIRECT2D=$<BOOL:${MELATONIN_BLUR_USE_DIRECT2D}>)
 
     target_link_libraries(Tests PRIVATE
         melatonin_blur
@@ -105,4 +115,6 @@ else ()
     endif ()
 
     juce_add_module("${CMAKE_CURRENT_SOURCE_DIR}")
+
+    target_compile_definitions(melatonin_blur INTERFACE MELATONIN_BLUR_USE_DIRECT2D=$<BOOL:${MELATONIN_BLUR_USE_DIRECT2D}>)
 endif ()

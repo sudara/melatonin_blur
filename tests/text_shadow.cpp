@@ -8,6 +8,8 @@
 // All of these tests operate @1x
 TEST_CASE ("Melatonin Blur Text Shadow")
 {
+    MELATONIN_BLUR_TEST_EACH_DIRECT2D_MODE();
+
     // Test Image is a 9x9 with 0 in the center
     // 0 is white, 1 is black
 

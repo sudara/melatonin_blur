@@ -1,5 +1,10 @@
 #pragma once
+#include "../blur_options.h"
 #include "juce_gui_basics/juce_gui_basics.h"
+
+#if MELATONIN_BLUR_USE_DIRECT2D
+    #include "../implementations/direct2d.h"
+#endif
 
 namespace melatonin
 {
@@ -80,6 +85,18 @@ namespace melatonin
             void updateScaledShadowBounds (float scale);
 
         private:
+            // (Re)allocates the image(s) needed for the rasterized path. On D2D we
+            // need a separate mask image; everywhere else the path is rasterized
+            // directly into singleChannelRender. Returns the image to fill the path into.
+            juce::Image& prepareImagesForRender (juce::Rectangle<int> bounds, bool useDirect2D);
+
+            // Runs the blur. On D2D builds, tries D2D and falls back to the CPU
+            // implementation on failure.
+            void blurInto (juce::Image& dst, int radius, bool useDirect2D);
+
+           #if MELATONIN_BLUR_USE_DIRECT2D
+            juce::Image singleChannelMask;
+           #endif
             juce::Image singleChannelRender;
             juce::Rectangle<int> scaledShadowBounds;
             juce::Rectangle<int> scaledPathBounds;
@@ -89,6 +106,12 @@ namespace melatonin
 
             // Offsets are separately stored to translate placement in ARGB compositing.
             juce::Point<int> scaledOffset;
+
+           #if MELATONIN_BLUR_USE_DIRECT2D
+            // Each shadow keeps its own D2D setup so radius/effect changes for one
+            // shadow don't churn another's cached kernel.
+            std::unique_ptr<melatonin::blur::Direct2DSingleChannelBlur> direct2DBlur;
+           #endif
         };
     }
 }

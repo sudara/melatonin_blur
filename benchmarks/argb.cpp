@@ -39,7 +39,7 @@ TEST_CASE ("Melatonin Blur ARGB Benchmarks")
                     {
                         // uses a temp copy internally
                         melatonin::blur::argb (src, dst, radius);
-                        g.drawImageAt (src, 0, 0, true);
+                        g.drawImageAt (dst, 0, 0, true);
                         auto color = dstData.getPixelColour (20, 20);
                         return color;
                     };
@@ -56,10 +56,20 @@ TEST_CASE ("Melatonin Blur ARGB Benchmarks")
                     BENCHMARK ("Melatonin Cached")
                     {
                         // returns a juce::Image to render
-                        g.drawImageAt (blur.render (src), 0, 0, true);
+                        auto& rendered = blur.render (src);
+                        g.drawImageAt (rendered, 0, 0, true);
                         auto color = dstData.getPixelColour (20, 20);
                         return color;
                     };
+
+                   #if MELATONIN_BLUR_USE_DIRECT2D
+                    BENCHMARK ("Direct2D")
+                    {
+                        melatonin::blur::direct2DARGB (src, dst, radius);
+                        auto color = dstData.getPixelColour (20, 20);
+                        return color;
+                    };
+                   #endif
                 }
             }
         }

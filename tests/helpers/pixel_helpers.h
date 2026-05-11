@@ -1,5 +1,28 @@
 #pragma once
 
+#if MELATONIN_BLUR_USE_DIRECT2D
+ #include <catch2/generators/catch_generators_all.hpp>
+
+struct ScopedDirect2DSetting
+{
+    ScopedDirect2DSetting() : previous (melatonin::blur::isDirect2DEnabled()) {}
+
+    ~ScopedDirect2DSetting()
+    {
+        melatonin::blur::setDirect2DEnabled (previous);
+    }
+
+    bool previous = false;
+};
+
+ #define MELATONIN_BLUR_TEST_EACH_DIRECT2D_MODE() \
+     const ScopedDirect2DSetting resetDirect2D; \
+     melatonin::blur::setDirect2DEnabled (GENERATE (false, true)); \
+     CAPTURE (melatonin::blur::isDirect2DEnabled())
+#else
+ #define MELATONIN_BLUR_TEST_EACH_DIRECT2D_MODE() ((void) 0)
+#endif
+
 // We can't rely on JUCE's Colour class for un-premultiplied truth
 // (and don't have access to internals)
 // so lets roll our own access to the data
@@ -211,6 +234,9 @@ inline void setActualPixel (uint8_t* jucePixel, ActualPixel actualPixel)
 
 [[maybe_unused]] static bool imagesAreIdentical (juce::Image& img1, juce::Image& img2)
 {
+    if (img1.getBounds() != img2.getBounds() || img1.getFormat() != img2.getFormat())
+        return false;
+
     juce::Image::BitmapData data1 (img1, juce::Image::BitmapData::readOnly);
     juce::Image::BitmapData data2 (img2, juce::Image::BitmapData::readOnly);
     for (auto y = 0; y < img1.getHeight(); ++y)
@@ -222,6 +248,85 @@ inline void setActualPixel (uint8_t* jucePixel, ActualPixel actualPixel)
         }
     }
     return true;
+}
+
+[[maybe_unused]] static bool imagesAreIdenticalWithTolerance (juce::Image& img1, juce::Image& img2, uint8_t tolerance)
+{
+    if (img1.getBounds() != img2.getBounds() || img1.getFormat() != img2.getFormat())
+        return false;
+
+    juce::Image::BitmapData data1 (img1, juce::Image::BitmapData::readOnly);
+    juce::Image::BitmapData data2 (img2, juce::Image::BitmapData::readOnly);
+
+    for (auto y = 0; y < img1.getHeight(); ++y)
+    {
+        for (auto x = 0; x < img1.getWidth(); ++x)
+        {
+            if (img1.getFormat() == juce::Image::ARGB)
+            {
+                const auto pixel1 = getActualARGBPixel (data1.getPixelPointer (x, y));
+                const auto pixel2 = getActualARGBPixel (data2.getPixelPointer (x, y));
+
+                if (std::abs ((int) pixel1.a - (int) pixel2.a) > tolerance
+                    || std::abs ((int) pixel1.r - (int) pixel2.r) > tolerance
+                    || std::abs ((int) pixel1.g - (int) pixel2.g) > tolerance
+                    || std::abs ((int) pixel1.b - (int) pixel2.b) > tolerance)
+                    return false;
+            }
+            else
+            {
+                const auto pixel1 = data1.getPixelColour (x, y);
+                const auto pixel2 = data2.getPixelColour (x, y);
+
+                if (std::abs ((int) pixel1.getAlpha() - (int) pixel2.getAlpha()) > tolerance
+                    || std::abs ((int) pixel1.getRed() - (int) pixel2.getRed()) > tolerance
+                    || std::abs ((int) pixel1.getGreen() - (int) pixel2.getGreen()) > tolerance
+                    || std::abs ((int) pixel1.getBlue() - (int) pixel2.getBlue()) > tolerance)
+                    return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+[[maybe_unused]] static int maxPixelDifference (juce::Image& img1, juce::Image& img2)
+{
+    if (img1.getBounds() != img2.getBounds() || img1.getFormat() != img2.getFormat())
+        return 255;
+
+    int maxDifference = 0;
+    juce::Image::BitmapData data1 (img1, juce::Image::BitmapData::readOnly);
+    juce::Image::BitmapData data2 (img2, juce::Image::BitmapData::readOnly);
+
+    for (auto y = 0; y < img1.getHeight(); ++y)
+    {
+        for (auto x = 0; x < img1.getWidth(); ++x)
+        {
+            if (img1.getFormat() == juce::Image::ARGB)
+            {
+                const auto pixel1 = getActualARGBPixel (data1.getPixelPointer (x, y));
+                const auto pixel2 = getActualARGBPixel (data2.getPixelPointer (x, y));
+
+                maxDifference = juce::jmax (maxDifference, std::abs ((int) pixel1.a - (int) pixel2.a));
+                maxDifference = juce::jmax (maxDifference, std::abs ((int) pixel1.r - (int) pixel2.r));
+                maxDifference = juce::jmax (maxDifference, std::abs ((int) pixel1.g - (int) pixel2.g));
+                maxDifference = juce::jmax (maxDifference, std::abs ((int) pixel1.b - (int) pixel2.b));
+            }
+            else
+            {
+                const auto pixel1 = data1.getPixelColour (x, y);
+                const auto pixel2 = data2.getPixelColour (x, y);
+
+                maxDifference = juce::jmax (maxDifference, std::abs ((int) pixel1.getAlpha() - (int) pixel2.getAlpha()));
+                maxDifference = juce::jmax (maxDifference, std::abs ((int) pixel1.getRed() - (int) pixel2.getRed()));
+                maxDifference = juce::jmax (maxDifference, std::abs ((int) pixel1.getGreen() - (int) pixel2.getGreen()));
+                maxDifference = juce::jmax (maxDifference, std::abs ((int) pixel1.getBlue() - (int) pixel2.getBlue()));
+            }
+        }
+    }
+
+    return maxDifference;
 }
 
 [[maybe_unused]] static void print_test_image (juce::Image& image)

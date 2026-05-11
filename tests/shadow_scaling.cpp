@@ -6,6 +6,8 @@
 
 TEST_CASE ("Melatonin Blur Shadow Scaling")
 {
+    MELATONIN_BLUR_TEST_EACH_DIRECT2D_MODE();
+
     // here's what our test image looks like:
     // 0=white, 1=black, just to be annoying...
 

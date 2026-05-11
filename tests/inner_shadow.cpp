@@ -8,6 +8,8 @@
 // All of these tests operate @1x
 TEST_CASE ("Melatonin Blur Inner Shadow")
 {
+    MELATONIN_BLUR_TEST_EACH_DIRECT2D_MODE();
+
     // Test Image (differs from drop shadow, has more inner "meat")
     // 0 is white, 1 is black, the shadow will be *white* in the center
 

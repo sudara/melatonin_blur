@@ -29,7 +29,7 @@ jobs:
 
   BuildAndTest:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
-    name: Tests
+    name: Tests (${{ matrix.os }}, ${{ matrix.juce }}, Direct2D ${{ matrix.direct2d }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
 
@@ -38,10 +38,18 @@ jobs:
       matrix:
         os: [ macos-14, macos-26, windows-2022, ubuntu-22.04 ]
         juce: [ JUCE7, JUCE8 ]
+        direct2d: [ OFF ]
         exclude:
           # JUCE 7 uses CGWindowListCreateImage, unavailable on macOS 15+
           - os: macos-26
             juce: JUCE7
+        include:
+          - os: windows-2022
+            juce: JUCE8
+            direct2d: ON
+          - os: windows-2019
+            juce: JUCE8
+            direct2d: ON
 
     steps:
 
@@ -80,9 +88,9 @@ jobs:
       - name: Configure
         run: |
           if [ "${{ matrix.juce }}" == "JUCE7" ]; then
-            cmake -B ${{ env.BUILD_DIR }} -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache . -DJUCE7=ON
+            cmake -B ${{ env.BUILD_DIR }} -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache . -DJUCE7=ON -DMELATONIN_BLUR_USE_DIRECT2D=${{ matrix.direct2d }}
           else 
-            cmake -B ${{ env.BUILD_DIR }} -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache .
+            cmake -B ${{ env.BUILD_DIR }} -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE}} -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache . -DMELATONIN_BLUR_USE_DIRECT2D=${{ matrix.direct2d }}
           fi
 
       - name: Build

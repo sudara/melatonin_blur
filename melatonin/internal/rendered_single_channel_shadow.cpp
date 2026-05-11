@@ -4,7 +4,12 @@
 
 namespace melatonin::internal
 {
-    RenderedSingleChannelShadow::RenderedSingleChannelShadow (ShadowParametersInt p) : parameters (p) {}
+    RenderedSingleChannelShadow::RenderedSingleChannelShadow (ShadowParametersInt p)
+        : parameters (p)
+   #if MELATONIN_BLUR_USE_DIRECT2D
+        , direct2DBlur (std::make_unique<melatonin::blur::Direct2DSingleChannelBlur>())
+   #endif
+    {}
 
     juce::Image& RenderedSingleChannelShadow::render (juce::Path& originAgnosticPath, float scale, bool stroked)
     {
@@ -14,7 +19,13 @@ namespace melatonin::internal
 
         // explicitly support 0 radius shadows and edge spread cases
         if (parameters.radius < 1 || scaledShadowBounds.isEmpty())
+        {
+           #if MELATONIN_BLUR_USE_DIRECT2D
+            singleChannelMask = juce::Image();
+           #endif
             singleChannelRender = juce::Image();
+            return singleChannelRender;
+        }
 
         // We can't modify our original path as it would break cache.
         // Remember, the origin of the path will always be 0,0
@@ -39,11 +50,23 @@ namespace melatonin::internal
             shadowPath.addRectangle (shadowPath.getBounds().expanded ((float) scaledRadius));
         }
 
-        // each shadow is its own single channel image associated with a color
-        juce::Image renderedSingleChannel (juce::Image::SingleChannel, scaledShadowBounds.getWidth(), scaledShadowBounds.getHeight(), true);
+        const auto targetBounds = scaledShadowBounds.withZeroOrigin();
+
+       #if MELATONIN_BLUR_USE_DIRECT2D
+        // Below the pixel threshold D2D setup beats the actual GPU work.
+        // Captured once and passed down so a concurrent setDirect2DEnabled()
+        // can't desync prepareImagesForRender / blurInto mid-render.
+        const auto useDirect2D = melatonin::blur::isDirect2DEnabled()
+                                 && targetBounds.getWidth() * targetBounds.getHeight() >= melatonin::blur::direct2DMinimumSingleChannelPixels;
+       #else
+        constexpr bool useDirect2D = false;
+       #endif
+
+        auto& pathTarget = prepareImagesForRender (targetBounds, useDirect2D);
+
         {
-            // boot up a graphics context to give us access to fillPath, etc
-            juce::Graphics g2 (renderedSingleChannel);
+            juce::Graphics g2 (pathTarget);
+            forceClearTransparent (g2, targetBounds);
 
             // ensure we're working at the correct scale
             g2.addTransform (juce::AffineTransform::scale (scale));
@@ -58,11 +81,51 @@ namespace melatonin::internal
 
             g2.fillPath (shadowPath, juce::AffineTransform::translation (unscaledPosition));
         }
-        // perform the blur with the fastest algorithm available
-        melatonin::blur::singleChannel (renderedSingleChannel, (size_t) scaledRadius);
 
-        singleChannelRender = renderedSingleChannel;
+        blurInto (singleChannelRender, scaledRadius, useDirect2D);
         return singleChannelRender;
+    }
+
+    juce::Image& RenderedSingleChannelShadow::prepareImagesForRender (juce::Rectangle<int> bounds, [[maybe_unused]] bool useDirect2D)
+    {
+        ensureImage (singleChannelRender, juce::Image::SingleChannel, bounds);
+
+       #if MELATONIN_BLUR_USE_DIRECT2D
+        if (useDirect2D)
+        {
+            ensureImage (singleChannelMask, juce::Image::SingleChannel, bounds);
+            return singleChannelMask;
+        }
+       #endif
+
+        return singleChannelRender;
+    }
+
+    void RenderedSingleChannelShadow::blurInto (juce::Image& dst, int radius, [[maybe_unused]] bool useDirect2D)
+    {
+       #if MELATONIN_BLUR_USE_DIRECT2D
+        if (useDirect2D)
+        {
+            if (direct2DBlur->render (singleChannelMask, dst, (size_t) radius))
+                return;
+
+            // D2D bailed (device loss, page allocation failure, etc.). Copy the
+            // rasterized mask into dst so the CPU fallback can blur it in place.
+            // Same format on both sides, so convertFrom is just a memcpy per row.
+            const juce::Image::BitmapData maskData (singleChannelMask, juce::Image::BitmapData::readOnly);
+            juce::Image::BitmapData renderData (dst, juce::Image::BitmapData::writeOnly);
+            renderData.convertFrom (maskData);
+
+            melatonin::blur::cpuSingleChannel (dst, (size_t) radius);
+            return;
+        }
+
+        // useDirect2D == false: prepareImagesForRender rasterized straight into dst.
+        melatonin::blur::cpuSingleChannel (dst, (size_t) radius);
+       #else
+        // perform the blur with the fastest algorithm available
+        melatonin::blur::singleChannel (dst, (size_t) radius);
+       #endif
     }
 
     // Offset is added on the fly, it's not actually a part of the render
