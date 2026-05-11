@@ -30,6 +30,35 @@ namespace melatonin
             addAndMakeVisible (colorSelector);
             addAndMakeVisible (animateButton);
             addAndMakeVisible (resetButton);
+            addAndMakeVisible (bypassCacheToggle);
+            addAndMakeVisible (textShadowsToggle);
+
+#if MELATONIN_BLUR_USE_DIRECT2D
+            addAndMakeVisible (direct2DToggle);
+            direct2DToggle.setToggleState (melatonin::blur::isDirect2DEnabled(), juce::dontSendNotification);
+            direct2DToggle.setColour (juce::ToggleButton::textColourId, juce::Colours::white);
+            direct2DToggle.onClick = [this] {
+                melatonin::blur::setDirect2DEnabled (direct2DToggle.getToggleState());
+                skipNextPerfSample = true;
+                repaint();
+            };
+#endif
+
+            bypassCacheToggle.setColour (juce::ToggleButton::textColourId, juce::Colours::white);
+            bypassCacheToggle.onClick = [this] {
+                const auto b = bypassCacheToggle.getToggleState();
+                dropShadow.setBypassCache (b);
+                innerShadow.setBypassCache (b);
+                strokedDropShadow.setBypassCache (b);
+                strokedInnerShadow.setBypassCache (b);
+                textDropShadow.setBypassCache (b);
+                textInnerShadow.setBypassCache (b);
+                repaint();
+            };
+
+            textShadowsToggle.setToggleState (true, juce::dontSendNotification);
+            textShadowsToggle.setColour (juce::ToggleButton::textColourId, juce::Colours::white);
+            textShadowsToggle.onClick = [this] { repaint(); };
 
             radiusSlider.setColour (juce::Slider::ColourIds::trackColourId, juce::Colours::grey);
             spreadSlider.setColour (juce::Slider::ColourIds::trackColourId, juce::Colours::grey);
@@ -159,15 +188,19 @@ namespace melatonin
             g.strokePath (strokedInnerPath, juce::PathStrokeType (6));
             strokedInnerShadow.render (g, strokedInnerPath, juce::PathStrokeType (6));
 
-            g.setColour (juce::Colours::white);
-            g.setFont (g.getCurrentFont().withHeight (50).boldened());
-            textDropShadow.render (g, "drop", textBounds, juce::Justification::left);
-            g.drawText ("drop", textBounds, juce::Justification::left);
+            if (textShadowsToggle.getToggleState())
+            {
+                g.setColour (juce::Colours::white);
+                g.setFont (g.getCurrentFont().withHeight (50).boldened());
+                textDropShadow.render (g, "drop", textBounds, juce::Justification::left);
+                g.drawText ("drop", textBounds, juce::Justification::left);
 
-            g.drawText ("inner", textBounds, juce::Justification::centredRight);
-            textInnerShadow.render (g, "inner", textBounds.toFloat(), juce::Justification::centredRight);
+                g.drawText ("inner", textBounds, juce::Justification::centredRight);
+                textInnerShadow.render (g, "inner", textBounds.toFloat(), juce::Justification::centredRight);
+            }
 
             g.setFont (16);
+            g.setColour (juce::Colours::white);
             auto labels = juce::StringArray ("radius", "spread", "offsetX", "offsetY", "opacity");
             for (auto i = 0; i < labels.size(); ++i)
             {
@@ -175,10 +208,21 @@ namespace melatonin
             }
             auto elapsed = (float) (juce::Time::getMillisecondCounterHiRes() - start);
 
-            perfHistory[perfWriteIndex] = { elapsed, perfRng.nextFloat() };
-            perfWriteIndex = (perfWriteIndex + 1) % kPerfHistorySize;
-            if (perfFilled < kPerfHistorySize)
-                ++perfFilled;
+            // After the D2D backend is flipped, the very next paint pays a one-shot
+            // recalc cost across every cached shadow. Recording that single outlier
+            // would shoot maxMs through the roof and squash all subsequent samples
+            // into the floor of the graph, so we drop just that one frame.
+            if (skipNextPerfSample)
+            {
+                skipNextPerfSample = false;
+            }
+            else
+            {
+                perfHistory[perfWriteIndex] = { elapsed, perfRng.nextFloat() };
+                perfWriteIndex = (perfWriteIndex + 1) % kPerfHistorySize;
+                if (perfFilled < kPerfHistorySize)
+                    ++perfFilled;
+            }
 
             auto topStrip = getLocalBounds().removeFromTop (80);
             auto headerArea = topStrip.removeFromTop (24);
@@ -188,15 +232,33 @@ namespace melatonin
             drawPerfGraph (g, topStrip);
         }
 
-        static juce::String formatTime (float ms)
+        // U+00B5 (micro sign) as explicit UTF-8 bytes. Avoids MSVC narrow-literal
+        // encoding ambiguity that asserts inside juce::String when the source file
+        // isn't read as UTF-8.
+        static juce::String microsSuffix()
         {
-            return juce::String (juce::roundToInt (ms * 1000.0f)) + "µs";
+            return juce::String (juce::CharPointer_UTF8 ("\xc2\xb5s"));
+        }
+
+        // scaleMs (the axis maximum) chooses the unit so every label on the axis
+        // is in the same one — mixing "400µs" and "1.5ms" labels in the same graph
+        // looks worse than just picking ms when the range exceeds 1ms.
+        // Always one decimal place when in ms: juce::String(float, 0) means
+        // "default precision" in JUCE (i.e. many digits), not "zero decimals".
+        static juce::String formatTime (float ms, float scaleMs)
+        {
+            if (scaleMs >= 1.0f)
+                return juce::String (ms, 1) + "ms";
+            return juce::String (juce::roundToInt (ms * 1000.0f)) + microsSuffix();
         }
 
         void drawPerfGraph (juce::Graphics& g, juce::Rectangle<int> bounds)
         {
             auto labelArea = bounds.removeFromBottom (14);
-            auto graphArea = bounds.reduced (4, 4);
+            // Reserve enough horizontal space on either side of the graph for
+            // the "0" / max axis labels (placed at graphArea.getX() - 40 and
+            // graphArea.getRight() + 2 respectively), otherwise they get clipped.
+            auto graphArea = bounds.reduced (4, 4).withTrimmedLeft (40).withTrimmedRight (62);
 
             float maxMs = 0.001f;
             for (size_t i = 0; i < perfFilled; ++i)
@@ -204,8 +266,8 @@ namespace melatonin
 
             g.setFont (11.0f);
             g.setColour (juce::Colours::white.withAlpha (0.55f));
-            g.drawText ("0µs", juce::Rectangle<int> (graphArea.getX() - 40, labelArea.getY(), 38, labelArea.getHeight()), juce::Justification::centredRight);
-            g.drawText (formatTime (maxMs), juce::Rectangle<int> (graphArea.getRight() + 2, labelArea.getY(), 60, labelArea.getHeight()), juce::Justification::centredLeft);
+            g.drawText (formatTime (0.0f, maxMs), juce::Rectangle<int> (graphArea.getX() - 40, labelArea.getY(), 38, labelArea.getHeight()), juce::Justification::centredRight);
+            g.drawText (formatTime (maxMs, maxMs), juce::Rectangle<int> (graphArea.getRight() + 2, labelArea.getY(), 60, labelArea.getHeight()), juce::Justification::centredLeft);
 
             g.setColour (juce::Colours::white.withAlpha (0.35f));
             constexpr int numIntermediate = 5;
@@ -214,7 +276,7 @@ namespace melatonin
                 auto t = (float) i / (float) (numIntermediate + 1);
                 auto x = juce::roundToInt (juce::jmap (t, (float) graphArea.getX(), (float) graphArea.getRight()));
                 g.fillRect (x, graphArea.getBottom() - 3, 1, 3);
-                g.drawText (formatTime (t * maxMs), juce::Rectangle<int> (x - 30, labelArea.getY(), 60, labelArea.getHeight()), juce::Justification::centred);
+                g.drawText (formatTime (t * maxMs, maxMs), juce::Rectangle<int> (x - 30, labelArea.getY(), 60, labelArea.getHeight()), juce::Justification::centred);
             }
 
             g.setColour (juce::Colours::white.withAlpha (0.12f));
@@ -285,6 +347,20 @@ namespace melatonin
             resetButton.setBounds (buttonRow.removeFromLeft (100));
             buttonRow.removeFromLeft (10);
             animateButton.setBounds (buttonRow.removeFromLeft (100));
+
+#if MELATONIN_BLUR_USE_DIRECT2D
+            auto toggleRow = area.removeFromTop (30).withSizeKeepingCentre (440, 24);
+            direct2DToggle.setBounds (toggleRow.removeFromLeft (110));
+            toggleRow.removeFromLeft (10);
+            bypassCacheToggle.setBounds (toggleRow.removeFromLeft (140));
+            toggleRow.removeFromLeft (10);
+            textShadowsToggle.setBounds (toggleRow.removeFromLeft (170));
+#else
+            auto toggleRow = area.removeFromTop (30).withSizeKeepingCentre (320, 24);
+            bypassCacheToggle.setBounds (toggleRow.removeFromLeft (140));
+            toggleRow.removeFromLeft (10);
+            textShadowsToggle.setBounds (toggleRow.removeFromLeft (170));
+#endif
         }
 
         void changeListenerCallback (juce::ChangeBroadcaster* source) override
@@ -333,6 +409,11 @@ namespace melatonin
             0 };
         juce::TextButton animateButton { "Animate!" };
         juce::TextButton resetButton { "Reset" };
+        juce::ToggleButton bypassCacheToggle { "Uncached only" };
+        juce::ToggleButton textShadowsToggle { "text drop/inner" };
+#if MELATONIN_BLUR_USE_DIRECT2D
+        juce::ToggleButton direct2DToggle { "Direct2D" };
+#endif
 #if MELATONIN_VBLANK
         juce::VBlankAttachment vBlankCallback;
 #endif
@@ -343,6 +424,7 @@ namespace melatonin
         std::array<PerfSample, kPerfHistorySize> perfHistory {};
         size_t perfWriteIndex = 0;
         size_t perfFilled = 0;
+        bool skipNextPerfSample = false;
         juce::Random perfRng;
     };
 
