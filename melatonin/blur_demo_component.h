@@ -29,6 +29,7 @@ namespace melatonin
             addAndMakeVisible (opacitySlider);
             addAndMakeVisible (colorSelector);
             addAndMakeVisible (animateButton);
+            addAndMakeVisible (resetButton);
 
             radiusSlider.setColour (juce::Slider::ColourIds::trackColourId, juce::Colours::grey);
             spreadSlider.setColour (juce::Slider::ColourIds::trackColourId, juce::Colours::grey);
@@ -110,6 +111,17 @@ namespace melatonin
                 animating = !animating;
                 animateButton.setButtonText (animating ? "Stop!" : "Animate!");
             };
+
+            resetButton.onClick = [this] {
+                animating = false;
+                animateButton.setButtonText ("Animate!");
+                modulator = 0;
+                radiusSlider.setValue (10);
+                spreadSlider.setValue (0);
+                offsetXSlider.setValue (0);
+                offsetYSlider.setValue (0);
+                opacitySlider.setValue (1);
+            };
         }
 
         void modulate()
@@ -161,16 +173,80 @@ namespace melatonin
             {
                 g.drawText (labels[i], sliderLabelsBounds.withLeft (sliderLabelsBounds.getX() + 60 * i).withWidth (60), juce::Justification::centred);
             }
-            auto elapsed = juce::Time::getMillisecondCounterHiRes() - start;
+            auto elapsed = (float) (juce::Time::getMillisecondCounterHiRes() - start);
 
-            g.setColour (juce::Colours::white);
-            g.setFont (20);
-            g.drawText ("rendered in " + juce::String (elapsed, 3) + "ms", getLocalBounds().removeFromTop (50), juce::Justification::centred);
+            perfHistory[perfWriteIndex] = { elapsed, perfRng.nextFloat() };
+            perfWriteIndex = (perfWriteIndex + 1) % kPerfHistorySize;
+            if (perfFilled < kPerfHistorySize)
+                ++perfFilled;
+
+            auto topStrip = getLocalBounds().removeFromTop (80);
+            auto headerArea = topStrip.removeFromTop (24);
+            g.setColour (juce::Colours::white.withAlpha (0.75f));
+            g.setFont (13.0f);
+            g.drawText ("paint durations history", headerArea, juce::Justification::centred);
+            drawPerfGraph (g, topStrip);
+        }
+
+        static juce::String formatTime (float ms)
+        {
+            return juce::String (juce::roundToInt (ms * 1000.0f)) + "µs";
+        }
+
+        void drawPerfGraph (juce::Graphics& g, juce::Rectangle<int> bounds)
+        {
+            auto labelArea = bounds.removeFromBottom (14);
+            auto graphArea = bounds.reduced (4, 4);
+
+            float maxMs = 0.001f;
+            for (size_t i = 0; i < perfFilled; ++i)
+                maxMs = std::max (maxMs, perfHistory[i].elapsedMs);
+
+            g.setFont (11.0f);
+            g.setColour (juce::Colours::white.withAlpha (0.55f));
+            g.drawText ("0µs", juce::Rectangle<int> (graphArea.getX() - 40, labelArea.getY(), 38, labelArea.getHeight()), juce::Justification::centredRight);
+            g.drawText (formatTime (maxMs), juce::Rectangle<int> (graphArea.getRight() + 2, labelArea.getY(), 60, labelArea.getHeight()), juce::Justification::centredLeft);
+
+            g.setColour (juce::Colours::white.withAlpha (0.35f));
+            constexpr int numIntermediate = 5;
+            for (int i = 1; i <= numIntermediate; ++i)
+            {
+                auto t = (float) i / (float) (numIntermediate + 1);
+                auto x = juce::roundToInt (juce::jmap (t, (float) graphArea.getX(), (float) graphArea.getRight()));
+                g.fillRect (x, graphArea.getBottom() - 3, 1, 3);
+                g.drawText (formatTime (t * maxMs), juce::Rectangle<int> (x - 30, labelArea.getY(), 60, labelArea.getHeight()), juce::Justification::centred);
+            }
+
+            g.setColour (juce::Colours::white.withAlpha (0.12f));
+            g.fillRect (graphArea.getX(), graphArea.getBottom() - 1, graphArea.getWidth(), 1);
+
+            const auto liveColor = juce::Colour::fromRGB (120, 220, 180);
+            const auto fadedColor = juce::Colour::fromRGB (110, 140, 125);
+            const auto deadColor = juce::Colours::grey.withAlpha (0.45f);
+            const auto graphTop = (float) graphArea.getY();
+            const auto graphHeight = (float) graphArea.getHeight() - 4.0f;
+            const auto graphX = (float) graphArea.getX();
+            const auto graphWidth = (float) graphArea.getWidth();
+
+            for (size_t i = 0; i < perfFilled; ++i)
+            {
+                auto idx = (perfWriteIndex + kPerfHistorySize - perfFilled + i) % kPerfHistorySize;
+                const auto& s = perfHistory[idx];
+                auto age = perfFilled - 1 - i;
+
+                auto xNorm = std::min (1.0f, s.elapsedMs / maxMs);
+                auto x = graphX + xNorm * graphWidth;
+                auto y = graphTop + s.yJitter * graphHeight;
+
+                g.setColour (age < 60 ? liveColor : age < 120 ? fadedColor : deadColor);
+                g.fillEllipse (x - 1.5f, y - 1.5f, 3.0f, 3.0f);
+            }
         }
 
         void resized() override
         {
             auto area = getLocalBounds().reduced (50);
+            area.removeFromTop (30);
             contentBounds = area.removeFromTop (150).withSizeKeepingCentre (550, 100);
             dropShadowedPath.clear();
             dropShadowedPath.addRoundedRectangle (contentBounds.removeFromLeft (100), 10);
@@ -205,7 +281,10 @@ namespace melatonin
             area.removeFromTop (10);
 
             colorSelector.setBounds (area.removeFromTop (200).withSizeKeepingCentre (200, 200));
-            animateButton.setBounds (area.removeFromTop (50).withSizeKeepingCentre (100, 30));
+            auto buttonRow = area.removeFromTop (50).withSizeKeepingCentre (210, 30);
+            resetButton.setBounds (buttonRow.removeFromLeft (100));
+            buttonRow.removeFromLeft (10);
+            animateButton.setBounds (buttonRow.removeFromLeft (100));
         }
 
         void changeListenerCallback (juce::ChangeBroadcaster* source) override
@@ -253,10 +332,18 @@ namespace melatonin
             0,
             0 };
         juce::TextButton animateButton { "Animate!" };
+        juce::TextButton resetButton { "Reset" };
 #if MELATONIN_VBLANK
         juce::VBlankAttachment vBlankCallback;
 #endif
         size_t modulator = 0;
+
+        struct PerfSample { float elapsedMs; float yJitter; };
+        static constexpr size_t kPerfHistorySize = 300;
+        std::array<PerfSample, kPerfHistorySize> perfHistory {};
+        size_t perfWriteIndex = 0;
+        size_t perfFilled = 0;
+        juce::Random perfRng;
     };
 
     class TextShadowDemo : public juce::Component
