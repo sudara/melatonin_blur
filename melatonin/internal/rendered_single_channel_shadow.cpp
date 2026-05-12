@@ -17,8 +17,7 @@ namespace melatonin::internal
         scaledPathBounds = (originAgnosticPath.getBounds() * scale).getSmallestIntegerContainer();
         updateScaledShadowBounds (scale);
 
-        // explicitly support 0 radius shadows and edge spread cases
-        if (parameters.radius < 1 || scaledShadowBounds.isEmpty())
+        if (scaledShadowBounds.isEmpty())
         {
            #if MELATONIN_BLUR_USE_DIRECT2D
             singleChannelMask = juce::Image();
@@ -31,6 +30,7 @@ namespace melatonin::internal
         // Remember, the origin of the path will always be 0,0
         auto shadowPath = juce::Path (originAgnosticPath);
 
+        // radius < 1 falls through on purpose: spread alone still produces a shape, blur becomes a no-op
         if (!stroked && parameters.spread != 0)
         {
             // expand the actual path itself
