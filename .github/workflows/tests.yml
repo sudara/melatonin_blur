@@ -31,16 +31,16 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
     name: Tests
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 20 # macos-11 in particular needs more than 15 min
+    timeout-minutes: 20
 
     strategy:
       fail-fast: false # show errors for each platform vs. cancel build
       matrix:
-        os: [ macos-13, macos-14, macos-15, windows-2022, windows-2019, ubuntu-22.04 ]
+        os: [ macos-14, macos-26, windows-2022, ubuntu-22.04 ]
         juce: [ JUCE7, JUCE8 ]
         exclude:
-          # JUCE 7 uses CGWindowListCreateImage, unavailable on macOS 15
-          - os: macos-15
+          # JUCE 7 uses CGWindowListCreateImage, unavailable on macOS 15+
+          - os: macos-26
             juce: JUCE7
 
     steps:
@@ -72,12 +72,7 @@ jobs:
 
       - name: Install Linux Deps
         if: runner.os == 'Linux'
-        run: |
-          # manually install gcc-11 and set as default for 20.04
-          sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-          sudo apt-get update && sudo apt install libasound2-dev libx11-dev libxinerama-dev libxext-dev libfreetype6-dev libwebkit2gtk-4.0-dev libglu1-mesa-dev ninja-build g++-11 gcc-11
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 100
-          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 100
+        run: sudo apt-get update && sudo apt install -y libasound2-dev libx11-dev libxinerama-dev libxext-dev libfreetype6-dev libwebkit2gtk-4.0-dev libglu1-mesa-dev ninja-build
 
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.9
