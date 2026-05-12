@@ -47,7 +47,7 @@ jobs:
           - os: windows-2022
             juce: JUCE8
             direct2d: ON
-          - os: windows-2019
+          - os: windows-2025
             juce: JUCE8
             direct2d: ON
 
@@ -100,6 +100,11 @@ jobs:
         working-directory: ${{ env.BUILD_DIR }}
         run: ./Tests
 
+      # Skipped when Direct2D is enabled: GitHub-hosted Windows runners have no
+      # GPU passthrough, so D2D falls back to WARP (software rendering). The numbers
+      # come back ~10× slower than the CPU path with variance exceeding the mean,
+      # which (a) isn't a useful signal and (b) blows past the job timeout.
       - name: Benchmarks
+        if: matrix.direct2d != 'ON'
         working-directory: ${{ env.BUILD_DIR }}
         run: ./Benchmarks
