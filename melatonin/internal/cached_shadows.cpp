@@ -62,7 +62,7 @@ namespace melatonin::internal
         renderInternal (g);
     }
 
-    void CachedShadows::render (juce::Graphics& g, const juce::Path& newPath, const juce::PathStrokeType& newType, const bool lowQuality)
+    void CachedShadows::render (juce::Graphics& g, const juce::Path& newPath, const juce::PathStrokeType& newType, const bool lowQuality, const juce::AffineTransform& transform)
     {
         if (renderedSingleChannelShadows.empty())
             return;
@@ -78,7 +78,7 @@ namespace melatonin::internal
         // Stroking the path changes its bounds.
         // Do this before we strip the origin and compare with cache.
         juce::Path strokedPath;
-        strokeType.createStrokedPath (strokedPath, newPath, {}, scale);
+        strokeType.createStrokedPath (strokedPath, newPath, transform, scale);
 
         updatePathIfNeeded (strokedPath);
 

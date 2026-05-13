@@ -32,7 +32,7 @@ namespace melatonin::internal
         juce::Path lastOriginAgnosticPathScaled = {};
 
         void render (juce::Graphics& g, const juce::Path& newPath, bool lowQuality = false);
-        void render (juce::Graphics& g, const juce::Path& newPath, const juce::PathStrokeType& newType, bool lowQuality = false);
+        void render (juce::Graphics& g, const juce::Path& newPath, const juce::PathStrokeType& newType, bool lowQuality = false, const juce::AffineTransform& transform = {});
         void render (juce::Graphics& g, const juce::String& text, const juce::Rectangle<float>& area, juce::Justification justification);
         void render (juce::Graphics& g, const juce::String& text, const juce::Rectangle<int>& area, juce::Justification justification);
         void render (juce::Graphics& g, const juce::String& text, int x, int y, int width, int height, juce::Justification justification);
