@@ -48,7 +48,7 @@ namespace melatonin::blur
         }
     };
 
-    static void inline ippVectorSingleChannel (juce::Image& img, unsigned int radius)
+    static void inline ippVectorSingleChannel (juce::Image& img, unsigned int radiusIn)
     {
         const int w = static_cast<int> (img.getWidth());
         const int h = static_cast<int> (img.getHeight());
@@ -56,10 +56,10 @@ namespace melatonin::blur
         juce::Image::BitmapData data (img, juce::Image::BitmapData::readWrite);
 
         // Ensure radius is within bounds
-        radius = juce::jlimit (1u, 254u, radius);
+        const int radius = static_cast<int> (juce::jlimit (1u, 254u, radiusIn));
 
         // This tracks the start of the circular buffer
-        unsigned int queueIndex = 0;
+        size_t queueIndex = 0;
 
         // the "stack" is all in our head, maaaan
         // think of it as a *weighted* sum of the values in the queue
@@ -90,7 +90,7 @@ namespace melatonin::blur
 
         // use standard allocator for outside vector, inside vectors are aligned
         std::vector<std::vector<float, IPPAligned<float>>> queue;
-        for (auto i = 0u; i < radius * 2 + 1; ++i)
+        for (int i = 0; i < radius * 2 + 1; ++i)
         {
             queue.emplace_back (vectorSize, 0);
         }
@@ -120,7 +120,7 @@ namespace melatonin::blur
             tempPixelVector[(uint8_t) i] = (float) data.getLinePointer (i)[0];
 
         // Now pre-fill the left half of the queue with this leftmost pixel value
-        for (auto i = 0u; i <= radius; ++i)
+        for (int i = 0; i <= radius; ++i)
         {
             // these initialize the left side AND middle of the stack
             ippsCopy_32f (tempPixelVector.data(), queue[i].data(), h);
@@ -130,7 +130,7 @@ namespace melatonin::blur
 
         // Fill the right half of the queue with the next pixel values
         // zero is the center pixel here, it was added above (radius + 1) times to the sum
-        for (auto i = 1u; i <= radius; ++i)
+        for (int i = 1; i <= radius; ++i)
         {
             if (i <= w - 1)
             {
@@ -150,7 +150,7 @@ namespace melatonin::blur
             ippsAddProductC_32f (tempPixelVector.data(), (float) (radius + 1 - i), stackSumVector.data(), h);
         }
 
-        for (auto x = 0u; x < w; ++x)
+        for (int x = 0; x < w; ++x)
         {
             // calculate the blurred value from the stack
             // it first goes in a temporary location...
@@ -193,7 +193,7 @@ namespace melatonin::blur
             ippsAdd_32f_I (sumInVector.data(), stackSumVector.data(), h);
 
             // Add the current center pixel to sumOutVector
-            auto middleIndex = (queueIndex + radius) % queue.size();
+            auto middleIndex = (queueIndex + static_cast<size_t> (radius)) % queue.size();
             ippsAdd_32f_I (queue[middleIndex].data(), sumOutVector.data(), h);
 
             // *remove* the new center pixel from sumInVector
@@ -215,7 +215,7 @@ namespace melatonin::blur
 
         // Now pre-fill the left half of the queue with the topmost pixel values
         // queue is already populated from the horizontal pass
-        for (auto i = 0u; i <= radius; ++i)
+        for (int i = 0; i <= radius; ++i)
         {
             // these init left side AND middle of the stack
             ippsCopy_32f (tempPixelVector.data(), queue[i].data(), w);
@@ -224,7 +224,7 @@ namespace melatonin::blur
         }
 
         // Fill the right half of the queue with pixel values from the next rows
-        for (auto i = 1u; i <= radius; ++i)
+        for (int i = 1; i <= radius; ++i)
         {
             if (i <= h - 1)
             {
@@ -242,7 +242,7 @@ namespace melatonin::blur
             ippsAddProductC_32f (tempPixelVector.data(), (float) (radius + 1 - i), stackSumVector.data(), w);
         }
 
-        for (auto y = 0u; y < h; ++y)
+        for (int y = 0; y < h; ++y)
         {
             // calculate the blurred value vector from the stack
             // it first goes in a temporary location...
@@ -281,7 +281,7 @@ namespace melatonin::blur
             ippsAdd_32f_I (sumInVector.data(), stackSumVector.data(), w);
 
             // Add the current center pixel to sumOutVector
-            auto middleIndex = (queueIndex + radius) % queue.size();
+            auto middleIndex = (queueIndex + static_cast<size_t> (radius)) % queue.size();
             ippsAdd_32f_I (queue[middleIndex].data(), sumOutVector.data(), w);
 
             // *remove* the new center pixel from sumInVector
@@ -289,7 +289,7 @@ namespace melatonin::blur
         }
     }
 
-    static void inline ippVectorARGB (juce::Image& img, unsigned int radius)
+    static void inline ippVectorARGB (juce::Image& img, unsigned int radiusIn)
     {
         const int w = static_cast<int> (img.getWidth());
         const int h = static_cast<int> (img.getHeight());
@@ -297,10 +297,10 @@ namespace melatonin::blur
         juce::Image::BitmapData data (img, juce::Image::BitmapData::readWrite);
 
         // Ensure radius is within bounds
-        radius = juce::jlimit (1u, 254u, radius);
+        const int radius = static_cast<int> (juce::jlimit (1u, 254u, radiusIn));
 
         // This tracks the start of the circular buffer
-        unsigned int queueIndex = 0;
+        size_t queueIndex = 0;
 
         // the "stack" is all in our head, maaaan
         // think of it as a *weighted* sum of the values in the queue
@@ -331,7 +331,7 @@ namespace melatonin::blur
 
         // use standard allocator for outside vector, inside vectors are aligned
         std::vector<std::vector<float, IPPAligned<float>>> queue;
-        for (auto i = 0u; i < radius * 2 + 1; ++i)
+        for (int i = 0; i < radius * 2 + 1; ++i)
         {
             queue.emplace_back (vectorSize, 0);
         }
@@ -365,7 +365,7 @@ namespace melatonin::blur
                 tempPixelVector[(uint8_t) i] = (float) data.getLinePointer (i)[channel];
 
             // Now pre-fill the left half of the queue with this leftmost pixel value
-            for (auto i = 0u; i <= radius; ++i)
+            for (int i = 0; i <= radius; ++i)
             {
                 // these initialize the left side AND middle of the stack
                 ippsCopy_32f (tempPixelVector.data(), queue[i].data(), h);
@@ -375,7 +375,7 @@ namespace melatonin::blur
 
             // Fill the right half of the queue with the next pixel values
             // zero is the center pixel here, it was added above (radius + 1) times to the sum
-            for (auto i = 1u; i <= radius; ++i)
+            for (int i = 1; i <= radius; ++i)
             {
                 if (i <= w - 1)
                 {
@@ -396,7 +396,7 @@ namespace melatonin::blur
             }
 
             // main loop of horizontal pass
-            for (auto x = 0u; x < w; ++x)
+            for (int x = 0; x < w; ++x)
             {
                 // calculate the blurred value from the stack
                 // it first goes in a temporary location...
@@ -439,7 +439,7 @@ namespace melatonin::blur
                 ippsAdd_32f_I (sumInVector.data(), stackSumVector.data(), h);
 
                 // Add the current center pixel to sumOutVector
-                auto middleIndex = (queueIndex + radius) % queue.size();
+                auto middleIndex = (queueIndex + static_cast<size_t> (radius)) % queue.size();
                 ippsAdd_32f_I (queue[middleIndex].data(), sumOutVector.data(), h);
 
                 // *remove* the new center pixel from sumInVector
@@ -466,7 +466,7 @@ namespace melatonin::blur
 
             // Now pre-fill the left half of the queue with the topmost pixel values
             // queue is already populated from the horizontal pass
-            for (auto i = 0u; i <= radius; ++i)
+            for (int i = 0; i <= radius; ++i)
             {
                 // these init left side AND middle of the stack
                 ippsCopy_32f (tempPixelVector.data(), queue[i].data(), w);
@@ -475,7 +475,7 @@ namespace melatonin::blur
             }
 
             // Fill the right half of the queue with pixel values from the next rows
-            for (auto i = 1u; i <= radius; ++i)
+            for (int i = 1; i <= radius; ++i)
             {
                 if (i <= h - 1)
                 {
@@ -495,14 +495,14 @@ namespace melatonin::blur
                 ippsAddProductC_32f (tempPixelVector.data(), (float) (radius + 1 - i), stackSumVector.data(), w);
             }
 
-            for (auto y = 0u; y < h; ++y)
+            for (int y = 0; y < h; ++y)
             {
                 // calculate the blurred value vector from the stack
                 // it first goes in a temporary location...
                 ippsDivC_32f (stackSumVector.data(), sizeOfStack, tempPixelVector.data(), w);
 
                 // ...before being placed back in our image data as uint8
-                for (auto col = 0u; col < w; ++col)
+                for (int col = 0; col < w; ++col)
                 {
                     data.getLinePointer (y)[col * data.pixelStride + channel] = (unsigned char) tempPixelVector[col];
                 }
@@ -518,13 +518,13 @@ namespace melatonin::blur
                 if (y + radius + 1 < h)
                 {
                     // grab pixels from each row, offset by x+radius+1
-                    for (size_t col = 0; col < (size_t) w; ++col)
-                        queue[queueIndex][col] = (float) data.getLinePointer ((int) (y + radius + 1))[col * data.pixelStride + channel];
+                    for (int col = 0; col < w; ++col)
+                        queue[queueIndex][col] = (float) data.getLinePointer (y + radius + 1)[col * data.pixelStride + channel];
                 }
                 else
                 {
                     // we're at the bottom of image, grab bottom row
-                    for (size_t col = 0; col < (size_t) w; ++col)
+                    for (int col = 0; col < w; ++col)
                         queue[queueIndex][col] = (float) data.getLinePointer (h - 1)[col * data.pixelStride + channel];
                 }
 
@@ -540,7 +540,7 @@ namespace melatonin::blur
                 ippsAdd_32f_I (sumInVector.data(), stackSumVector.data(), w);
 
                 // Add the current center pixel to sumOutVector
-                auto middleIndex = (queueIndex + radius) % queue.size();
+                auto middleIndex = (queueIndex + static_cast<size_t> (radius)) % queue.size();
                 ippsAdd_32f_I (queue[middleIndex].data(), sumOutVector.data(), w);
 
                 // *remove* the new center pixel from sumInVector
