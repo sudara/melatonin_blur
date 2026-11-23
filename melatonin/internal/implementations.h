@@ -119,7 +119,13 @@ namespace melatonin::blur
 
     [[maybe_unused]] static inline void singleChannel (juce::Image& img, size_t radius)
     {
+        if (radius < 1)
+            return;
+
 #if MELATONIN_BLUR_VIMAGE
+        if (melatonin::blur::vImageBoxSingleChannel (img, radius))
+            return;
+
         if (internal::vImageSingleChannelAvailable())
             melatonin::blur::vImageSingleChannel (img, radius);
         else

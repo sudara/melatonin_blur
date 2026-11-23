@@ -619,3 +619,90 @@ TEST_CASE ("Melatonin Blur")
         }
     }
 }
+
+#if MELATONIN_BLUR_VIMAGE
+TEST_CASE ("Melatonin Blur vImage box blur")
+{
+    const auto mask = [] (int border, bool inverted) {
+        juce::Image image (juce::Image::SingleChannel, 40 + 2 * border, 30 + 2 * border, true);
+        juce::Path shape;
+        shape.addRoundedRectangle ((float) border, (float) border, 40.0f, 30.0f, 4.0f);
+
+        if (inverted)
+        {
+            shape.setUsingNonZeroWinding (false);
+            shape.addRectangle (image.getBounds().toFloat());
+        }
+
+        juce::Graphics g (image);
+        g.setColour (juce::Colours::white);
+        g.fillPath (shape);
+        return image;
+    };
+
+    const auto maxDifference = [] (const juce::Image& a, const juce::Image& b) {
+        const juce::Image::BitmapData first (a, juce::Image::BitmapData::readOnly);
+        const juce::Image::BitmapData second (b, juce::Image::BitmapData::readOnly);
+        int result = 0;
+
+        for (int y = 0; y < first.height; ++y)
+            for (int x = 0; x < first.width; ++x)
+                result = juce::jmax (result, std::abs ((int) *first.getPixelPointer (x, y) - (int) *second.getPixelPointer (x, y)));
+
+        return result;
+    };
+
+    SECTION ("matches the separable convolution to one level on a shadow mask")
+    {
+        const auto radius = GENERATE (2, 4, 8, 16, 32, 72, 96);
+        const auto inverted = GENERATE (false, true);
+
+        // Half the radius exercises the narrowest border eligible for the box filter.
+        const auto border = GENERATE_COPY (radius, radius / 2);
+        CAPTURE (radius, inverted, border);
+
+        auto box = mask (border, inverted);
+        auto reference = box.createCopy();
+
+        REQUIRE (melatonin::blur::vImageBoxSingleChannel (box, (size_t) radius));
+        melatonin::blur::vImageSingleChannel (reference, (size_t) radius);
+
+        REQUIRE (maxDifference (box, reference) <= 1);
+    }
+
+    SECTION ("a single row of pixels goes through the box blur too")
+    {
+        juce::Image row (juce::Image::SingleChannel, 20, 1, true);
+        {
+            juce::Image::BitmapData data (row, juce::Image::BitmapData::readWrite);
+            for (int x = 8; x < 12; ++x)
+                *data.getPixelPointer (x, 0) = 255;
+        }
+        auto reference = row.createCopy();
+
+        melatonin::blur::singleChannel (row, 4);
+        melatonin::blur::vImageSingleChannel (reference, 4);
+
+        REQUIRE (maxDifference (row, reference) <= 1);
+        REQUIRE (*juce::Image::BitmapData (row, juce::Image::BitmapData::readOnly).getPixelPointer (10, 0) < 255);
+    }
+
+    SECTION ("leaves an odd radius to the separable convolution")
+    {
+        auto image = mask (8, false);
+        const auto untouched = image.createCopy();
+
+        REQUIRE_FALSE (melatonin::blur::vImageBoxSingleChannel (image, 7));
+        REQUIRE (maxDifference (image, untouched) == 0);
+    }
+
+    SECTION ("leaves an image without half a radius of uniform border to the separable convolution")
+    {
+        auto image = mask (3, false);
+        const auto untouched = image.createCopy();
+
+        REQUIRE_FALSE (melatonin::blur::vImageBoxSingleChannel (image, 8));
+        REQUIRE (maxDifference (image, untouched) == 0);
+    }
+}
+#endif
