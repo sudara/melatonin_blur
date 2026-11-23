@@ -3,8 +3,7 @@
 
 namespace melatonin::internal
 {
-    // This class isn't meant for direct usage and may change its API over time!
-    // Use DropShadow and InnerShadow and PathWithShadows instead, you've been warned...
+    // DropShadow, InnerShadow and PathWithShadows are the public entry points.
     class CachedShadows
     {
     protected:
@@ -14,20 +13,16 @@ namespace melatonin::internal
         CachedShadows (CachedShadows&&) = delete;
         CachedShadows& operator= (CachedShadows&&) = default;
 
-        // allow us to just pass multiple radii to get multiple shadows
         CachedShadows (std::initializer_list<int> radii, bool isInner = false);
         CachedShadows (std::initializer_list<double> radii, bool isInner = false);
 
-        // multiple shadows
         CachedShadows (std::initializer_list<ShadowParametersInt> shadowParameters, bool force_inner = false);
         explicit CachedShadows (const std::vector<ShadowParametersInt>& shadowParameters, bool force_inner = false);
 
         virtual ~CachedShadows() = default;
 
     public:
-        // store a copy of the path to compare against for caching
-        // public for testability, sorry not sorry
-        // too lazy to break out ARGBComposite into its own class
+        // Keeping the origin out of the cache key lets translated paths reuse their blur.
         juce::Path lastOriginAgnosticPath = {};
         juce::Path lastOriginAgnosticPathScaled = {};
 
@@ -37,7 +32,6 @@ namespace melatonin::internal
         void render (juce::Graphics& g, const juce::String& text, const juce::Rectangle<int>& area, juce::Justification justification);
         void render (juce::Graphics& g, const juce::String& text, int x, int y, int width, int height, juce::Justification justification);
 
-        // these are float that will round, ints will implicitly convert
         CachedShadows& setRadius (double radius, size_t index = 0);
         CachedShadows& setSpread (double spread, size_t index = 0);
 
@@ -82,6 +76,9 @@ namespace melatonin::internal
 
         CachedShadows& setColor (juce::Colour color, size_t index = 0);
         CachedShadows& setOpacity (double opacity, size_t index = 0);
+
+        /** Pass the corner radius of a filled rounded rectangle. On macOS and iOS, exclusion assumes source-over blending and an opaque fill over any drop shadow. */
+        CachedShadows& excludeInterior (float inset, bool shouldExclude = true);
 
         // helps with testing and debugging cache
         [[nodiscard]] bool willRecalculate() const { return needsRecalculate; }
@@ -146,6 +143,10 @@ namespace melatonin::internal
         bool stroked = false;
         juce::PathStrokeType strokeType { -1.0f };
 
+        // Shadows can show between glyphs and inside a stroke.
+        bool pathIsFilled = false;
+        float interiorInset = -1.0f;
+
         struct TextArrangement
         {
             juce::String text;
@@ -168,11 +169,19 @@ namespace melatonin::internal
         void updatePathIfNeeded (juce::Path& pathToBlur);
         void recalculateBlurs();
         void renderInternal (juce::Graphics& g);
-        void drawARGBComposite (juce::Graphics& g, float opacity, bool optimizeClipBounds = false);
+        void drawARGBComposite (juce::Graphics& g, float opacity);
 
         // This is done at the main graphics context scale
         // The path is at 0,0 and the shadows are placed at their correct relative *integer* positions
         void compositeShadowsToARGB();
         [[nodiscard]] bool isSingleDropShadow() const;
+        [[nodiscard]] juce::Rectangle<int> interiorToSkip() const;
+
+       #if MELATONIN_BLUR_BLEND_COMPOSITE
+        // Inner layers share the same antialiased edge even when their offsets change.
+        juce::Image pathCoverage;
+        void renderPathCoverage();
+        void blendShadowsIntoComposite (juce::Rectangle<int> compositeBounds);
+       #endif
     };
 }
