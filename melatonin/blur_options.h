@@ -17,11 +17,11 @@
  #define MELATONIN_BLUR_USE_DIRECT2D 0
 #endif
 
-// CoreGraphics bitmap pixels are CPU-accessible, so compositing can avoid a clip mask per layer.
-#if JUCE_MAC || JUCE_IOS
- #define MELATONIN_BLUR_BLEND_COMPOSITE 1
-#else
+// JUCE 8 on Windows keeps images on the GPU, where a CPU pixel loop forces a readback.
+#if JUCE_WINDOWS && JUCE_MAJOR_VERSION >= 8
  #define MELATONIN_BLUR_BLEND_COMPOSITE 0
+#else
+ #define MELATONIN_BLUR_BLEND_COMPOSITE 1
 #endif
 
 namespace melatonin::blur

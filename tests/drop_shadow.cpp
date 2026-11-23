@@ -487,9 +487,11 @@ TEST_CASE ("Melatonin Blur Direct2D single channel matches CPU within tolerance"
 }
 #endif
 
-#if JUCE_MAC || JUCE_IOS
+#if ! (JUCE_WINDOWS && JUCE_MAJOR_VERSION >= 8)
 TEST_CASE ("Melatonin Blur skips the interior of a shadow")
 {
+    juce::ScopedJuceInitialiser_GUI juce;
+
     const auto scale = GENERATE (1.0f, 2.0f, 1.5f);
     const auto origin = GENERATE (10.0f, 10.3f);
     CAPTURE (scale, origin);

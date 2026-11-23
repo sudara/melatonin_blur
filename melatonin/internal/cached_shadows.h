@@ -3,7 +3,8 @@
 
 namespace melatonin::internal
 {
-    // DropShadow, InnerShadow and PathWithShadows are the public entry points.
+    // This class isn't meant for direct usage and may change its API over time!
+    // Use DropShadow and InnerShadow and PathWithShadows instead, you've been warned...
     class CachedShadows
     {
     protected:
@@ -13,16 +14,20 @@ namespace melatonin::internal
         CachedShadows (CachedShadows&&) = delete;
         CachedShadows& operator= (CachedShadows&&) = default;
 
+        // allow us to just pass multiple radii to get multiple shadows
         CachedShadows (std::initializer_list<int> radii, bool isInner = false);
         CachedShadows (std::initializer_list<double> radii, bool isInner = false);
 
+        // multiple shadows
         CachedShadows (std::initializer_list<ShadowParametersInt> shadowParameters, bool force_inner = false);
         explicit CachedShadows (const std::vector<ShadowParametersInt>& shadowParameters, bool force_inner = false);
 
         virtual ~CachedShadows() = default;
 
     public:
-        // Keeping the origin out of the cache key lets translated paths reuse their blur.
+        // store a copy of the path to compare against for caching
+        // public for testability, sorry not sorry
+        // too lazy to break out ARGBComposite into its own class
         juce::Path lastOriginAgnosticPath = {};
         juce::Path lastOriginAgnosticPathScaled = {};
 
@@ -32,6 +37,7 @@ namespace melatonin::internal
         void render (juce::Graphics& g, const juce::String& text, const juce::Rectangle<int>& area, juce::Justification justification);
         void render (juce::Graphics& g, const juce::String& text, int x, int y, int width, int height, juce::Justification justification);
 
+        // these are float that will round, ints will implicitly convert
         CachedShadows& setRadius (double radius, size_t index = 0);
         CachedShadows& setSpread (double spread, size_t index = 0);
 
@@ -77,7 +83,7 @@ namespace melatonin::internal
         CachedShadows& setColor (juce::Colour color, size_t index = 0);
         CachedShadows& setOpacity (double opacity, size_t index = 0);
 
-        /** Pass the corner radius of a filled rounded rectangle. On macOS and iOS, exclusion assumes source-over blending and an opaque fill over any drop shadow. */
+        /** Pass the corner radius of a filled rounded rectangle. Exclusion assumes source-over blending and an opaque fill over any drop shadow. Windows on JUCE 8 always draws the whole shadow. */
         CachedShadows& excludeInterior (float inset, bool shouldExclude = true);
 
         // helps with testing and debugging cache
