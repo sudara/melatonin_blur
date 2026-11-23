@@ -706,3 +706,24 @@ TEST_CASE ("Melatonin Blur vImage box blur")
     }
 }
 #endif
+
+TEST_CASE ("Melatonin Blur keeps a solid single channel image solid past 256 rows and columns")
+{
+    const auto& [name, blur] = singleColorBlurImplementation();
+    CAPTURE (name);
+
+    juce::Image image (juce::Image::SingleChannel, 300, 300, true);
+    image.clear (image.getBounds(), juce::Colours::white);
+    blur (image, 3);
+
+    const juce::Image::BitmapData data (image, juce::Image::BitmapData::readOnly);
+    const auto topLeft = *data.getPixelPointer (0, 0);
+    int pixelsUnlikeTopLeft = 0;
+
+    for (int y = 0; y < data.height; ++y)
+        for (int x = 0; x < data.width; ++x)
+            pixelsUnlikeTopLeft += *data.getPixelPointer (x, y) != topLeft;
+
+    REQUIRE (pixelsUnlikeTopLeft == 0);
+    REQUIRE (topLeft > 250);
+}

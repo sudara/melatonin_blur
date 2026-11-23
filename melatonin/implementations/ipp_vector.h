@@ -117,7 +117,7 @@ namespace melatonin::blur
         // to start with, populate a fresh vector with float values of the leftmost pixels
         // A 255 uint8 value will literally become 255.0f
         for (auto i = 0; i < h; ++i)
-            tempPixelVector[(uint8_t) i] = (float) data.getLinePointer (i)[0];
+            tempPixelVector[(size_t) i] = (float) data.getLinePointer (i)[0];
 
         // Now pre-fill the left half of the queue with this leftmost pixel value
         for (int i = 0; i <= radius; ++i)
@@ -362,7 +362,7 @@ namespace melatonin::blur
             // to start with, populate a fresh vector with float values of the leftmost pixels
             // A 255 uint8 value will literally become 255.0f
             for (auto i = 0; i < h; ++i)
-                tempPixelVector[(uint8_t) i] = (float) data.getLinePointer (i)[channel];
+                tempPixelVector[(size_t) i] = (float) data.getLinePointer (i)[channel];
 
             // Now pre-fill the left half of the queue with this leftmost pixel value
             for (int i = 0; i <= radius; ++i)
@@ -462,7 +462,7 @@ namespace melatonin::blur
             // populate our temp vector with float values of the topmost pixels
             // this must be a manual loop
             for (auto i = 0; i < w; ++i)
-                tempPixelVector[(uint8_t) i] = (float) data.getLinePointer (0)[i * data.pixelStride + channel];
+                tempPixelVector[(size_t) i] = (float) data.getLinePointer (0)[i * data.pixelStride + channel];
 
             // Now pre-fill the left half of the queue with the topmost pixel values
             // queue is already populated from the horizontal pass
@@ -480,14 +480,14 @@ namespace melatonin::blur
                 if (i <= h - 1)
                 {
                     for (auto col = 0; col < w; ++col)
-                        tempPixelVector[(uint8_t) col] = (float) data.getLinePointer (i)[col * data.pixelStride + channel];
+                        tempPixelVector[(size_t) col] = (float) data.getLinePointer (i)[col * data.pixelStride + channel];
                 }
                 // edge case where queue is bigger than image width!
                 // for example vertical test where width = 1
                 else
                 {
                     for (auto col = 0; col < w; ++col)
-                        tempPixelVector[(uint8_t) col] = (float) data.getLinePointer (h - 1)[col * data.pixelStride + channel];
+                        tempPixelVector[(size_t) col] = (float) data.getLinePointer (h - 1)[col * data.pixelStride + channel];
                 }
 
                 ippsCopy_32f (tempPixelVector.data(), queue[radius + i].data(), w);

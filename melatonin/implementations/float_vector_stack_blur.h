@@ -78,7 +78,7 @@ namespace melatonin::blur
         // to start with, populate a fresh vector with float values of the leftmost pixels
         // A 255 uint8 value will literally become 255.0f
         for (size_t i = 0; i < h; ++i)
-            tempPixelVector[(uint8_t) i] = (float) data.getLinePointer ((int) i)[0];
+            tempPixelVector[i] = (float) data.getLinePointer ((int) i)[0];
 
         // Now pre-fill the left half of the queue with this leftmost pixel value
         for (size_t i = 0; i <= size_t (radius); ++i)
@@ -348,10 +348,10 @@ namespace melatonin::blur
         // A 255 uint8 value will literally become 255.0f
         for (size_t i = 0; i < h; ++i)
         {
-            tempPixelVector0[(uint8_t) i] = (float) data.getLinePointer ((int) i)[0];
-            tempPixelVector1[(uint8_t) i] = (float) data.getLinePointer ((int) i)[1];
-            tempPixelVector2[(uint8_t) i] = (float) data.getLinePointer ((int) i)[2];
-            tempPixelVector3[(uint8_t) i] = (float) data.getLinePointer ((int) i)[3];
+            tempPixelVector0[i] = (float) data.getLinePointer ((int) i)[0];
+            tempPixelVector1[i] = (float) data.getLinePointer ((int) i)[1];
+            tempPixelVector2[i] = (float) data.getLinePointer ((int) i)[2];
+            tempPixelVector3[i] = (float) data.getLinePointer ((int) i)[3];
         }
 
         // Now pre-fill the left half of the queue with this leftmost pixel value
