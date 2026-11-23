@@ -136,14 +136,14 @@ namespace melatonin::stackBlur
             {
                 if (i <= h - 1)
                 {
-                    auto pixel = data.getLinePointer (i) + (unsigned int) data.pixelStride * x;
+                    auto pixel = data.getLinePointer (static_cast<int> (i)) + (unsigned int) data.pixelStride * x;
                     queue[radius + i] = pixel[0];
                 }
                 // edge case where queue is bigger than image height!
                 // for example where width = 1
                 else
                 {
-                    auto pixel = data.getLinePointer ((h - 1)) + (unsigned int) data.pixelStride * x;
+                    auto pixel = data.getLinePointer (static_cast<int> (h - 1)) + (unsigned int) data.pixelStride * x;
                     queue[radius + i] = pixel[0];
                 }
 

@@ -47,6 +47,52 @@ namespace melatonin::blur
         JUCE_END_IGNORE_WARNINGS_GCC_LIKE
     }
 
+    static inline std::optional<uint8_t> uniformBorderValue (const juce::Image::BitmapData& data, int band)
+    {
+        band = juce::jmin (band, data.width);
+        const auto value = *data.getLinePointer (0);
+        const auto matches = [value] (const uint8_t* first, int count) {
+            return std::all_of (first, first + count, [value] (uint8_t pixel) { return pixel == value; });
+        };
+
+        for (int y = 0; y < data.height; ++y)
+        {
+            const auto* row = data.getLinePointer (y);
+            const bool wholeRow = y < band || y >= data.height - band;
+
+            if (wholeRow ? ! matches (row, data.width) : ! (matches (row, band) && matches (row + data.width - band, band)))
+                return {};
+        }
+
+        return value;
+    }
+
+    static inline bool vImageBoxSingleChannel (juce::Image& img, size_t radius)
+    {
+        // Two box filters of width radius + 1 produce the triangular kernel. vImage requires an odd width.
+        if (radius % 2 != 0)
+            return false;
+
+        juce::Image::BitmapData data (img, juce::Image::BitmapData::readWrite);
+        // A uniform border lets both passes use the edge colour for samples outside the image.
+        const auto border = uniformBorderValue (data, (int) radius / 2);
+
+        if (! border)
+            return false;
+
+        const auto w = (vImagePixelCount) data.width;
+        const auto h = (vImagePixelCount) data.height;
+        const auto stride = (size_t) data.lineStride;
+
+        juce::HeapBlock<uint8_t> scratch (stride * h);
+        vImage_Buffer image = { data.getLinePointer (0), h, w, stride };
+        vImage_Buffer temp = { scratch.get(), h, w, stride };
+
+        const auto boxSize = (uint32_t) radius + 1;
+        return vImageBoxConvolve_Planar8 (&image, &temp, nullptr, 0, 0, boxSize, boxSize, *border, kvImageBackgroundColorFill) == kvImageNoError
+               && vImageBoxConvolve_Planar8 (&temp, &image, nullptr, 0, 0, boxSize, boxSize, *border, kvImageBackgroundColorFill) == kvImageNoError;
+    }
+
     // currently unused, may be benchmarked vs. drawImageAt
     [[maybe_unused]] static juce::Image convertToARGB (juce::Image& src, juce::Colour color)
     {

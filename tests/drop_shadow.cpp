@@ -3,6 +3,7 @@
 #include "helpers/pixel_helpers.h"
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators_all.hpp>
 #include <catch2/matchers/catch_matchers_all.hpp>
 
 TEST_CASE ("Melatonin Blur Drop Shadow")
@@ -483,6 +484,151 @@ TEST_CASE ("Melatonin Blur Direct2D single channel matches CPU within tolerance"
 
     INFO ("maximum per-channel difference: " << maximumDifference);
     REQUIRE (maximumDifference <= 3);
+}
+#endif
+
+#if ! (JUCE_WINDOWS && JUCE_MAJOR_VERSION >= 8)
+TEST_CASE ("Melatonin Blur skips the interior of a shadow")
+{
+    juce::ScopedJuceInitialiser_GUI juce;
+
+    const auto scale = GENERATE (1.0f, 2.0f, 1.5f);
+    const auto origin = GENERATE (10.0f, 10.3f);
+    CAPTURE (scale, origin);
+
+    // The interior must exceed the clipping threshold even at 1x.
+    const juce::Rectangle<float> area (origin, origin, 560.0f, 380.0f);
+    juce::Path p;
+    p.addRoundedRectangle (area, 6.0f);
+
+    const auto drawOnWhite = [&] (const std::function<void (juce::Graphics&)>& paint) {
+        juce::Image image (juce::Image::ARGB, juce::roundToInt (620.0f * scale), juce::roundToInt (440.0f * scale), true);
+        juce::Graphics g (image);
+        g.fillAll (juce::Colours::white);
+        g.addTransform (juce::AffineTransform::scale (scale));
+        paint (g);
+        return image;
+    };
+
+    const auto samePixels = [] (const juce::Image& a, const juce::Image& b) {
+        const juce::Image::BitmapData first (a, juce::Image::BitmapData::readOnly);
+        const juce::Image::BitmapData second (b, juce::Image::BitmapData::readOnly);
+
+        for (int y = 0; y < first.height; ++y)
+            if (std::memcmp (first.getLinePointer (y), second.getLinePointer (y), (size_t) first.width * (size_t) first.pixelStride) != 0)
+                return false;
+
+        return true;
+    };
+
+    const std::vector<melatonin::ShadowParametersInt> parameters { { juce::Colours::black, 6, { 2, 2 } }, { juce::Colours::red, 3 } };
+    melatonin::DropShadow whole (parameters);
+    melatonin::DropShadow hollow (parameters);
+    hollow.excludeInterior (6.0f);
+
+    SECTION ("drop shadow: an opaque shape on top looks the same as with the whole shadow")
+    {
+        const auto withShape = [&] (melatonin::DropShadow& shadow) {
+            return drawOnWhite ([&] (juce::Graphics& g) {
+                shadow.render (g, p);
+                g.setColour (juce::Colours::blue);
+                g.fillPath (p);
+            });
+        };
+
+        REQUIRE (samePixels (withShape (hollow), withShape (whole)));
+    }
+
+    SECTION ("drop shadow: the middle of the shape gets no shadow")
+    {
+        const auto centre = (area.getCentre() * scale).roundToInt();
+
+        REQUIRE (drawOnWhite ([&] (juce::Graphics& g) { hollow.render (g, p); }).getPixelAt (centre.x, centre.y) == juce::Colours::white);
+        REQUIRE (drawOnWhite ([&] (juce::Graphics& g) { whole.render (g, p); }).getPixelAt (centre.x, centre.y) != juce::Colours::white);
+    }
+
+    SECTION ("drop shadow: it can be turned off again")
+    {
+        hollow.excludeInterior (6.0f, false);
+        REQUIRE (samePixels (drawOnWhite ([&] (juce::Graphics& g) { hollow.render (g, p); }), drawOnWhite ([&] (juce::Graphics& g) { whole.render (g, p); })));
+    }
+
+    SECTION ("drop shadow: a small shape keeps its whole shadow, a clip with a hole would cost more than it saves")
+    {
+        juce::Path button;
+        button.addRoundedRectangle (origin, origin, 60.0f, 24.0f, 4.0f);
+
+        REQUIRE (samePixels (drawOnWhite ([&] (juce::Graphics& g) { hollow.render (g, button); }), drawOnWhite ([&] (juce::Graphics& g) { whole.render (g, button); })));
+    }
+
+    SECTION ("drop shadow: a stroked path keeps its whole shadow, it shows through the middle")
+    {
+        const juce::PathStrokeType stroke (3.0f);
+
+        // Reuse the cache to exercise the switch from a fill to a stroke.
+        drawOnWhite ([&] (juce::Graphics& g) { hollow.render (g, p); });
+
+        REQUIRE (samePixels (drawOnWhite ([&] (juce::Graphics& g) { hollow.render (g, p, stroke); }), drawOnWhite ([&] (juce::Graphics& g) { whole.render (g, p, stroke); })));
+    }
+
+    SECTION ("drop shadow: text keeps its whole shadow, it shows between the glyphs")
+    {
+        const auto text = [&] (melatonin::DropShadow& shadow) {
+            return drawOnWhite ([&] (juce::Graphics& g) {
+                g.setFont (g.getCurrentFont().withHeight (300.0f));
+                shadow.render (g, "OO", area, juce::Justification::centred);
+            });
+        };
+
+        // Reuse the cache to exercise the switch from a fill to text.
+        drawOnWhite ([&] (juce::Graphics& g) { hollow.render (g, p); });
+
+        REQUIRE (samePixels (text (hollow), text (whole)));
+    }
+
+    SECTION ("drop shadow: the skipped area moves with a cached shape")
+    {
+        auto moved = p;
+        moved.applyTransform (juce::AffineTransform::translation (33.0f, 21.0f));
+
+        const auto firstThenMoved = [&] (melatonin::DropShadow& shadow) {
+            drawOnWhite ([&] (juce::Graphics& g) { shadow.render (g, p); });
+
+            return drawOnWhite ([&] (juce::Graphics& g) {
+                shadow.render (g, moved);
+                REQUIRE_FALSE (shadow.willRecalculate());
+                g.setColour (juce::Colours::blue);
+                g.fillPath (moved);
+            });
+        };
+
+        REQUIRE (samePixels (firstThenMoved (hollow), firstThenMoved (whole)));
+
+        // Leaving the shadow uncovered makes the clip position observable.
+        const auto centre = (moved.getBounds().getCentre() * scale).roundToInt();
+        REQUIRE (drawOnWhite ([&] (juce::Graphics& g) { hollow.render (g, moved); }).getPixelAt (centre.x, centre.y) == juce::Colours::white);
+    }
+
+    SECTION ("drop shadow: a stack with an inner shadow keeps the whole composite")
+    {
+        auto withInner = parameters;
+        withInner.push_back ({ juce::Colours::green, 2, {}, 0, true });
+        melatonin::DropShadow mixed (withInner);
+        melatonin::DropShadow mixedHollow (withInner);
+        mixedHollow.excludeInterior (6.0f);
+
+        REQUIRE (samePixels (drawOnWhite ([&] (juce::Graphics& g) { mixedHollow.render (g, p); }), drawOnWhite ([&] (juce::Graphics& g) { mixed.render (g, p); })));
+    }
+
+    SECTION ("inner shadow: skips its empty middle and changes no pixel")
+    {
+        const std::vector<melatonin::ShadowParametersInt> innerParameters { { juce::Colours::black, 6, { 2, -3 } }, { juce::Colours::red, 3, { 0, 0 }, 2 } };
+        melatonin::InnerShadow wholeInner (innerParameters);
+        melatonin::InnerShadow hollowInner (innerParameters);
+        hollowInner.excludeInterior (6.0f);
+
+        REQUIRE (samePixels (drawOnWhite ([&] (juce::Graphics& g) { hollowInner.render (g, p); }), drawOnWhite ([&] (juce::Graphics& g) { wholeInner.render (g, p); })));
+    }
 }
 #endif
 

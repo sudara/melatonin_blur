@@ -19,4 +19,5 @@
     #include "tests/shadow_scaling.cpp"
     #include "tests/path_with_shadows.cpp"
     #include "tests/text_shadow.cpp"
+    #include "tests/setters.cpp"
 #endif

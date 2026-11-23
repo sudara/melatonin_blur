@@ -83,6 +83,9 @@ namespace melatonin::internal
         CachedShadows& setColor (juce::Colour color, size_t index = 0);
         CachedShadows& setOpacity (double opacity, size_t index = 0);
 
+        /** Pass the corner radius of a filled rounded rectangle. Exclusion assumes source-over blending and an opaque fill over any drop shadow. Windows on JUCE 8 always draws the whole shadow. */
+        CachedShadows& excludeInterior (float inset, bool shouldExclude = true);
+
         // helps with testing and debugging cache
         [[nodiscard]] bool willRecalculate() const { return needsRecalculate; }
         [[nodiscard]] bool willRecomposite() const { return needsRecomposite; }
@@ -121,6 +124,8 @@ namespace melatonin::internal
         // this stores the final, end result
         juce::Image compositedARGB;
         juce::Point<float> scaledCompositePosition;
+        juce::uint8 compositeAlpha = 255;
+        juce::uint8 lastDrawnAlpha = 255;
 
         // each component blur is stored here, their positions are stored in ShadowParametersInt
         std::vector<RenderedSingleChannelShadow> renderedSingleChannelShadows;
@@ -144,6 +149,10 @@ namespace melatonin::internal
         bool stroked = false;
         juce::PathStrokeType strokeType { -1.0f };
 
+        // Shadows can show between glyphs and inside a stroke.
+        bool pathIsFilled = false;
+        float interiorInset = -1.0f;
+
         struct TextArrangement
         {
             juce::String text;
@@ -166,10 +175,19 @@ namespace melatonin::internal
         void updatePathIfNeeded (juce::Path& pathToBlur);
         void recalculateBlurs();
         void renderInternal (juce::Graphics& g);
-        void drawARGBComposite (juce::Graphics& g, bool optimizeClipBounds = false);
+        void drawARGBComposite (juce::Graphics& g, float opacity);
 
         // This is done at the main graphics context scale
         // The path is at 0,0 and the shadows are placed at their correct relative *integer* positions
         void compositeShadowsToARGB();
+        [[nodiscard]] bool isSingleDropShadow() const;
+        [[nodiscard]] juce::Rectangle<int> interiorToSkip() const;
+
+       #if MELATONIN_BLUR_BLEND_COMPOSITE
+        // Inner layers share the same antialiased edge even when their offsets change.
+        juce::Image pathCoverage;
+        void renderPathCoverage();
+        void blendShadowsIntoComposite (juce::Rectangle<int> compositeBounds);
+       #endif
     };
 }

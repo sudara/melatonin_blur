@@ -185,9 +185,15 @@ TEST_CASE ("Melatonin Blur Inner Shadow")
 
                 SECTION ("edges of path are pure white")
                 {
+                   #if JUCE_MAJOR_VERSION >= 8
                     CHECK (getPixels (result, { 2, 6 }, 2) == "FFFFFFFF, FFFFFFFF, FFFFFFFF, FFFFFFFF, FFFFFFFF");
-                    CHECK (getPixels (result, 2, { 2, 6 }) == "FFFFFFFF, FFFFFFFF, FFFFFFFF, FFFFFFFF, FFFFFFFF");
                     CHECK (getPixels (result, { 2, 6 }, 6) == "FFFFFFFF, FFFFFFFF, FFFFFFFF, FFFFFFFF, FFFFFFFF");
+                   #else
+                    // JUCE 7's software renderer covers the right column of a whole-pixel rectangle at 254.
+                    CHECK (getPixels (result, { 2, 5 }, 2) == "FFFFFFFF, FFFFFFFF, FFFFFFFF, FFFFFFFF");
+                    CHECK (getPixels (result, { 2, 5 }, 6) == "FFFFFFFF, FFFFFFFF, FFFFFFFF, FFFFFFFF");
+                   #endif
+                    CHECK (getPixels (result, 2, { 2, 6 }) == "FFFFFFFF, FFFFFFFF, FFFFFFFF, FFFFFFFF, FFFFFFFF");
 
                     // TODO: look into why windows is a bit off here...
                     // CHECK (getPixels (result, 6, { 2, 6 }) == "FFFFFFFF, FFFFFFFF, FFFFFFFF, FFFFFFFF, FFFFFFFF");

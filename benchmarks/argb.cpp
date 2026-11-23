@@ -16,9 +16,9 @@ TEST_CASE ("Melatonin Blur ARGB Benchmarks")
             juce::Graphics g (context);
             g.fillAll (juce::Colours::white);
 
-            for (auto radius : { 8, 16, 32, 48 })
+            for (auto radius : { 8u, 16u, 32u, 48u })
             {
-                if (dimension < radius * 2 + 1)
+                if (static_cast<unsigned int> (dimension) < radius * 2 + 1)
                     continue;
 
                 DYNAMIC_SECTION ("with radius " << radius)

@@ -52,6 +52,7 @@ namespace melatonin::internal
         if (renderedSingleChannelShadows.empty() || newPath.getBounds().isEmpty())
             return;
 
+        pathIsFilled = true;
         setScale (g, lowQuality);
 
         // Store a copy of the path.
@@ -69,6 +70,7 @@ namespace melatonin::internal
             return;
 
         stroked = true;
+        pathIsFilled = false;
         setScale (g, lowQuality);
         if (newType != strokeType)
         {
@@ -91,6 +93,7 @@ namespace melatonin::internal
         if (renderedSingleChannelShadows.empty())
             return;
 
+        pathIsFilled = false;
         setScale (g, false);
 
         // TODO: right now if text is repositioned it *will* break blur cache
@@ -149,17 +152,35 @@ namespace melatonin::internal
     CachedShadows& CachedShadows::setColor (juce::Colour color, size_t index)
     {
         if (canUpdateShadow (index))
-            needsRecomposite |= renderedSingleChannelShadows[index].updateColor (color);
+        {
+            auto& shadow = renderedSingleChannelShadows[index];
+            const auto previous = shadow.parameters.color;
+
+            if (shadow.updateColor (color))
+                needsRecomposite |= ! isSingleDropShadow() || previous.withAlpha (1.0f) != color.withAlpha (1.0f);
+        }
 
         return *this;
     }
 
     CachedShadows& CachedShadows::setOpacity (double opacity, size_t index)
     {
-        if (canUpdateShadow (index))
-            needsRecomposite |= renderedSingleChannelShadows[index].updateOpacity (static_cast<float> (opacity));
+        if (canUpdateShadow (index) && renderedSingleChannelShadows[index].updateOpacity (static_cast<float> (opacity)))
+            needsRecomposite |= ! isSingleDropShadow();
 
         return *this;
+    }
+
+    CachedShadows& CachedShadows::excludeInterior (const float inset, const bool shouldExclude)
+    {
+        jassert (inset >= 0.0f);
+        interiorInset = shouldExclude ? inset : -1.0f;
+        return *this;
+    }
+
+    bool CachedShadows::isSingleDropShadow() const
+    {
+        return renderedSingleChannelShadows.size() == 1 && ! renderedSingleChannelShadows.front().parameters.inner;
     }
 
     bool CachedShadows::TextArrangement::operator== (const TextArrangement& other) const
@@ -233,6 +254,11 @@ namespace melatonin::internal
         {
             shadow.render (lastOriginAgnosticPath, scale, stroked);
         }
+
+       #if MELATONIN_BLUR_BLEND_COMPOSITE
+        renderPathCoverage();
+       #endif
+
         needsRecalculate = false;
         needsRecomposite = true;
     }
@@ -258,16 +284,69 @@ namespace melatonin::internal
         if (needsRecalculate)
             recalculateBlurs();
 
+        float drawOpacity = 1.0f;
+        if (isSingleDropShadow())
+        {
+            const auto color = renderedSingleChannelShadows.front().parameters.color;
+            // A changing alpha is applied at draw time, so a fade does not rebuild the image on each frame. A steady alpha is baked in, which draws faster.
+            const bool fading = color.getAlpha() != lastDrawnAlpha && compositedARGB.isValid();
+            const auto alphaToCache = fading ? juce::uint8 { 255 } : color.getAlpha();
+            needsRecomposite |= alphaToCache != compositeAlpha;
+            compositeAlpha = alphaToCache;
+            lastDrawnAlpha = color.getAlpha();
+            if (fading)
+                drawOpacity = color.getFloatAlpha();
+        }
+
         // have any of the shadows changed position/color/opacity OR been recalculated?
         // if so, recreate the ARGB composite of all the shadows together
         if (needsRecomposite)
             compositeShadowsToARGB();
 
         // draw the cached composite into the main graphics context
-        drawARGBComposite (g);
+        drawARGBComposite (g, drawOpacity);
     }
 
-    void CachedShadows::drawARGBComposite (juce::Graphics& g, bool optimizeClipBounds)
+    juce::Rectangle<int> CachedShadows::interiorToSkip() const
+    {
+        if (interiorInset < 0.0f || ! pathIsFilled)
+            return {};
+
+        // The shadow can show through antialiased edge pixels even on a square corner.
+        const auto solidInterior = lastOriginAgnosticPath.getBounds().reduced (juce::jmax (1.0f, interiorInset));
+        auto interior = solidInterior;
+        size_t innerShadows = 0;
+
+        for (const auto& shadow : renderedSingleChannelShadows)
+        {
+            if (! shadow.parameters.inner)
+                continue;
+
+            ++innerShadows;
+
+            // Radius, spread and offset each round independently in device pixels.
+            const auto reach = (float) (shadow.parameters.radius + juce::jmax (0, shadow.parameters.spread)) + 2.0f / juce::jmin (1.0f, scale);
+            interior = interior.getIntersection (solidInterior.reduced (reach + (float) std::abs (shadow.parameters.offset.x), reach + (float) std::abs (shadow.parameters.offset.y)));
+        }
+
+        // The drop shadow can still be visible where the inner shadow is transparent.
+        if (innerShadows != 0 && innerShadows != renderedSingleChannelShadows.size())
+            return {};
+
+        interior += pathPositionInContext;
+
+        // Inward rounding keeps the clip inside the covered area.
+        const auto hole = juce::Rectangle<int>::leftTopRightBottom ((int) std::ceil (interior.getX()), (int) std::ceil (interior.getY()), (int) std::floor (interior.getRight()), (int) std::floor (interior.getBottom()));
+
+        if (hole.isEmpty())
+            return {};
+
+        // Setting up the clip can cost more than drawing a small interior.
+        const auto devicePixels = (float) hole.getWidth() * (float) hole.getHeight() * scale * scale;
+        return devicePixels >= 150000.0f ? hole : juce::Rectangle<int>();
+    }
+
+    void CachedShadows::drawARGBComposite (juce::Graphics& g, float opacity)
     {
         // support default constructors, 0 radius blurs, etc
         if (compositedARGB.isNull())
@@ -276,16 +355,14 @@ namespace melatonin::internal
         // resets the Clip Region when this scope ends
         juce::Graphics::ScopedSaveState saveState (g);
 
-        // TODO: requires testing/benchmarking
-        if (optimizeClipBounds)
-        {
-            // don't bother drawing what's inside the path's bounds
-            g.excludeClipRegion (lastOriginAgnosticPath.getBounds().toNearestIntEdges());
-        }
+        // Direct2D clips to a hole with a geometry layer, which is slow.
+       #if ! (JUCE_WINDOWS && JUCE_MAJOR_VERSION >= 8)
+        // A rectangular exclusion avoids antialiasing a second path around the interior.
+        if (const auto hole = interiorToSkip(); ! hole.isEmpty())
+            g.excludeClipRegion (hole);
+       #endif
 
-        // draw the composite at full strength
-        // (the composite itself has the colors/opacity/etc)
-        g.setOpacity (1.0);
+        g.setOpacity (opacity);
 
         // compositedARGB has been scaled by the physical pixel scale factor
         // (unless lowQuality is true)
@@ -322,6 +399,9 @@ namespace melatonin::internal
         const auto targetBounds = compositeBounds.withZeroOrigin();
         ensureImage (compositedARGB, juce::Image::ARGB, targetBounds);
 
+       #if MELATONIN_BLUR_BLEND_COMPOSITE
+        blendShadowsIntoComposite (compositeBounds);
+       #else
         // we're already scaled up (if needed) so no .addTransform here
         juce::Graphics g2 (compositedARGB);
         forceClearTransparent (g2, targetBounds);
@@ -339,7 +419,7 @@ namespace melatonin::internal
             // lets us temporarily clip the region if needed
             juce::Graphics::ScopedSaveState saveState (g2);
 
-            g2.setColour (shadow.parameters.color);
+            g2.setColour (isSingleDropShadow() ? shadow.parameters.color.withAlpha (compositeAlpha) : shadow.parameters.color);
 
             // for inner shadows, clip to the path bounds
             // we are doing this here instead of in the single channel render
@@ -406,6 +486,129 @@ namespace melatonin::internal
             // using the shadow's image as a sort of mask
             g2.drawImageAt (shadow.getImage(), shadowOffsetFromComposite.getX(), shadowOffsetFromComposite.getY(), true);
         }
+       #endif
         needsRecomposite = false;
     }
+
+   #if MELATONIN_BLUR_BLEND_COMPOSITE
+    // A lookup avoids premultiplying the same colour for each pixel in the layer.
+    static std::array<juce::uint32, 256> pixelsByCoverage (juce::Colour colour)
+    {
+        std::array<juce::uint32, 256> pixels;
+
+        for (size_t coverage = 0; coverage < pixels.size(); ++coverage)
+        {
+            const auto alpha = colour.getFloatAlpha() * (float) coverage;
+            pixels[coverage] = juce::PixelARGB ((juce::uint8) juce::roundToInt (alpha),
+                (juce::uint8) juce::roundToInt (alpha * colour.getFloatRed()),
+                (juce::uint8) juce::roundToInt (alpha * colour.getFloatGreen()),
+                (juce::uint8) juce::roundToInt (alpha * colour.getFloatBlue())).getNativeARGB();
+        }
+
+        return pixels;
+    }
+
+    static juce::uint32 blendOver (const juce::uint32 destination, const juce::uint32 source)
+    {
+        const auto keep = 255u - (source >> 24);
+        // Each channel has a spare byte for the multiply and rounding before division by 255.
+        const auto kept = [keep] (juce::uint32 twoChannels) {
+            const auto product = twoChannels * keep + 0x00800080u;
+            return ((product + ((product >> 8) & 0x00ff00ffu)) >> 8) & 0x00ff00ffu;
+        };
+
+        return source + (kept (destination & 0x00ff00ffu) | (kept ((destination >> 8) & 0x00ff00ffu) << 8));
+    }
+
+    void CachedShadows::renderPathCoverage()
+    {
+        const auto isInner = [] (const RenderedSingleChannelShadow& shadow) { return shadow.parameters.inner; };
+        const auto bounds = renderedSingleChannelShadows.front().getScaledPathBounds();
+
+        if (bounds.isEmpty() || std::none_of (renderedSingleChannelShadows.begin(), renderedSingleChannelShadows.end(), isInner))
+        {
+            pathCoverage = {};
+            return;
+        }
+
+        ensureImage (pathCoverage, juce::Image::SingleChannel, bounds.withZeroOrigin());
+
+        juce::Graphics g (pathCoverage);
+        forceClearTransparent (g, pathCoverage.getBounds());
+        g.setColour (juce::Colours::white);
+        g.fillPath (lastOriginAgnosticPathScaled, juce::AffineTransform::translation (-bounds.getPosition().toFloat()));
+    }
+
+    void CachedShadows::blendShadowsIntoComposite (const juce::Rectangle<int> compositeBounds)
+    {
+        juce::Image::BitmapData composite (compositedARGB, juce::Image::BitmapData::writeOnly);
+        const juce::Rectangle<int> compositeArea (composite.width, composite.height);
+
+        auto& first = renderedSingleChannelShadows.front();
+        const bool firstLayerCoversComposite = ! first.parameters.inner && first.getImage().isValid() && first.getScaledBounds() == compositeBounds;
+
+        if (! firstLayerCoversComposite)
+            for (int y = 0; y < composite.height; ++y)
+                juce::zeromem (composite.getLinePointer (y), (size_t) composite.width * sizeof (juce::PixelARGB));
+
+        const auto destinationRow = [&] (int x, int y) { return reinterpret_cast<juce::uint32*> (composite.getPixelPointer (x, y)); };
+
+        for (auto& shadow : renderedSingleChannelShadows)
+        {
+            const auto pixels = pixelsByCoverage (isSingleDropShadow() ? shadow.parameters.color.withAlpha (compositeAlpha) : shadow.parameters.color);
+            const auto& blur = shadow.getImage();
+            const auto blurArea = blur.getBounds() + (shadow.getScaledBounds().getPosition() - compositeBounds.getPosition());
+
+            std::optional<juce::Image::BitmapData> blurData;
+            if (blur.isValid())
+                blurData.emplace (blur, juce::Image::BitmapData::readOnly);
+
+            if (! shadow.parameters.inner)
+            {
+                if (! blurData)
+                    continue;
+
+                const auto area = blurArea.getIntersection (compositeArea);
+                const bool ontoEmptyComposite = &shadow == &renderedSingleChannelShadows.front();
+
+                for (int y = area.getY(); y < area.getBottom(); ++y)
+                {
+                    const auto* strength = blurData->getPixelPointer (area.getX() - blurArea.getX(), y - blurArea.getY());
+                    auto* destination = destinationRow (area.getX(), y);
+
+                    if (ontoEmptyComposite)
+                        for (int x = 0; x < area.getWidth(); ++x)
+                            destination[x] = pixels[strength[x]];
+                    else
+                        for (int x = 0; x < area.getWidth(); ++x)
+                            destination[x] = blendOver (destination[x], pixels[strength[x]]);
+                }
+
+                continue;
+            }
+
+            if (pathCoverage.isNull())
+                continue;
+
+            const juce::Image::BitmapData clip (pathCoverage, juce::Image::BitmapData::readOnly);
+            const auto pathArea = pathCoverage.getBounds() + (shadow.getScaledPathBounds().getPosition() - compositeBounds.getPosition());
+            const auto area = pathArea.getIntersection (compositeArea);
+
+            for (int y = area.getY(); y < area.getBottom(); ++y)
+            {
+                const auto* coverage = clip.getPixelPointer (area.getX() - pathArea.getX(), y - pathArea.getY());
+                const auto* blurRow = blurData && blurArea.getVerticalRange().contains (y) ? blurData->getLinePointer (y - blurArea.getY()) : nullptr;
+                auto* destination = destinationRow (area.getX(), y);
+
+                for (int x = 0; x < area.getWidth(); ++x)
+                {
+                    // An offset can expose the solid part of the inner shadow beyond the stored blur.
+                    const auto blurX = area.getX() + x - blurArea.getX();
+                    const auto strength = blurRow != nullptr && blurX >= 0 && blurX < blurArea.getWidth() ? blurRow[blurX] : 255u;
+                    destination[x] = blendOver (destination[x], pixels[(strength * coverage[x] + 127u) / 255u]);
+                }
+            }
+        }
+    }
+   #endif
 }
