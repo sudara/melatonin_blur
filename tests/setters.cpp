@@ -14,30 +14,82 @@ static void render (melatonin::DropShadow& shadow, juce::Image& result, juce::Pa
 
 TEST_CASE ("Melatonin Blur Setters")
 {
-    // here's what our test image looks like:
-    // 0=white, 1=black, just to be annoying...
-
-    // 0  0  0  0  0  0  0  0  0
-    // 0  0  0  0  0  0  0  0  0
-    // 0  0  0  0  0  0  0  0  0
-    // 0  0  0  1  1  1  0  0  0
-    // 0  0  0  1  1  1  0  0  0
-    // 0  0  0  1  1  1  0  0  0
-    // 0  0  0  0  0  0  0  0  0
-    // 0  0  0  0  0  0  0  0  0
-    // 0  0  0  0  0  0  0  0  0
-
-    // create a 3px by 3px square
     auto bounds = juce::Rectangle<float> (3, 3);
     juce::Path p;
-
-    // stick the 3x3 box centered inside a 9x9
     p.addRectangle (bounds.translated (3, 3));
 
-    // needed for JUCE not to pee its pants (aka leak) when working with graphics
     juce::ScopedJuceInitialiser_GUI juce;
 
     juce::Image result (juce::Image::ARGB, 9, 9, true);
+
+    SECTION ("fades reuse an opaque composite and static repaints use baked opacity")
+    {
+        struct Renderer : juce::LowLevelGraphicsSoftwareRenderer
+        {
+            using LowLevelGraphicsSoftwareRenderer::LowLevelGraphicsSoftwareRenderer;
+
+            void drawImage (const juce::Image& image, const juce::AffineTransform& transform) override
+            {
+                compositeAlpha = image.getPixelAt (image.getWidth() / 2, image.getHeight() / 2).getAlpha();
+                LowLevelGraphicsSoftwareRenderer::drawImage (image, transform);
+            }
+
+            int compositeAlpha = -1;
+        };
+
+        Renderer renderer (result);
+        juce::Graphics g (renderer);
+        melatonin::DropShadow shadow { { juce::Colours::black.withAlpha (0.5f), 1 } };
+        auto checkDraw = [&] (int alpha, int compositeAlpha) {
+            g.fillAll (juce::Colours::white);
+            shadow.render (g, p);
+            CHECK (renderer.compositeAlpha == compositeAlpha);
+            CHECK (std::abs (result.getPixelAt (4, 4).getRed() - (255 - alpha)) <= 1);
+        };
+
+        checkDraw (128, 128);
+        shadow.setOpacity (0.25f);
+        checkDraw (64, 255);
+        shadow.setColor (juce::Colours::black.withAlpha (0.75f));
+        checkDraw (191, 255);
+        checkDraw (191, 191);
+
+        juce::Image native (juce::Image::ARGB, 9, 9, true, juce::NativeImageType());
+        shadow.setOpacity (0.5f);
+        render (shadow, native, p);
+        CHECK (std::abs (native.getPixelAt (4, 4).getRed() - 127) <= 1);
+        checkDraw (128, 128);
+    }
+
+    SECTION ("a fade frame and the steady repaint after it give the same pixels on a native image")
+    {
+        juce::Image native (juce::Image::ARGB, 9, 9, true, juce::NativeImageType());
+        melatonin::DropShadow shadow { { juce::Colours::orange.withAlpha (0.5f), 1 } };
+        render (shadow, native, p);
+
+        for (const auto opacity : { 0.25f, 0.75f, 0.1f, 1.0f })
+        {
+            shadow.setOpacity (opacity);
+            render (shadow, native, p);
+            const auto fadeFrame = native.createCopy();
+            render (shadow, native, p);
+
+            for (int y = 0; y < native.getHeight(); ++y)
+            {
+                for (int x = 0; x < native.getWidth(); ++x)
+                {
+                    const auto fade = fadeFrame.getPixelAt (x, y);
+                    const auto steady = native.getPixelAt (x, y);
+                    CHECK (std::abs (fade.getRed() - steady.getRed()) <= 1);
+                    CHECK (std::abs (fade.getGreen() - steady.getGreen()) <= 1);
+                    CHECK (std::abs (fade.getBlue() - steady.getBlue()) <= 1);
+                }
+            }
+
+            // orange has no blue, so blue at a fully covered pixel shows the alpha
+            CHECK (std::abs (native.getPixelAt (4, 4).getBlue() - juce::roundToInt (255.0f * (1.0f - opacity))) <= 1);
+        }
+    }
 
     SECTION ("Setters")
     {
@@ -199,6 +251,60 @@ TEST_CASE ("Melatonin Blur Setters")
             }
         }
 
+        SECTION ("opacity")
+        {
+            SECTION ("setOpacity preserves the single-shadow cache")
+            {
+                shadow.setOpacity (0.5f);
+                CHECK (shadow.willRecalculate() == false);
+                CHECK (shadow.willRecomposite() == false);
+            }
+
+            SECTION ("setColor preserves the single-shadow cache when only alpha changes")
+            {
+                shadow.setColor (juce::Colours::black.withAlpha (0.5f));
+                CHECK (shadow.willRecalculate() == false);
+                CHECK (shadow.willRecomposite() == false);
+            }
+
+            SECTION ("a cached black shadow fades to gray over white")
+            {
+                shadow.setOpacity (0.5f);
+                render (shadow, result, p);
+
+                const auto gray = result.getPixelAt (4, 4).getRed();
+                CHECK (gray >= 126);
+                CHECK (gray <= 129);
+
+                shadow.setOpacity (1.0f);
+                render (shadow, result, p);
+                CHECK (getPixels (result, 4, { 4, 4 }) == "FF000000");
+            }
+
+            SECTION ("setColor updates both RGB and alpha")
+            {
+                shadow.setColor (juce::Colours::red.withAlpha (0.5f));
+                CHECK (shadow.willRecomposite() == true);
+                render (shadow, result, p);
+
+                const auto pixel = result.getPixelAt (4, 4);
+                CHECK (pixel.getRed() == 255);
+                CHECK (pixel.getGreen() >= 126);
+                CHECK (pixel.getGreen() <= 129);
+                CHECK (pixel.getBlue() == pixel.getGreen());
+            }
+
+            SECTION ("changing one layer's opacity invalidates the composite")
+            {
+                melatonin::DropShadow two { { juce::Colours::black, 1 }, { juce::Colours::black, 2 } };
+                render (two, result, p);
+
+                two.setOpacity (0.5f);
+                CHECK (two.willRecalculate() == false);
+                CHECK (two.willRecomposite() == true);
+            }
+        }
+
         // Regression test, this was broken during 2024
         SECTION ("sequential setters don't confuse cache state")
         {
@@ -212,10 +318,13 @@ TEST_CASE ("Melatonin Blur Setters")
 
             SECTION ("setOpacity with new opacity then setColor with same color breaks cache")
             {
-                shadow.setOpacity (0.5f);
-                shadow.setColor (juce::Colours::black.withAlpha (0.5f));
-                CHECK (shadow.willRecalculate() == false);
-                CHECK (shadow.willRecomposite() == true);
+                melatonin::DropShadow two { { juce::Colours::black, 1 }, { juce::Colours::black, 2 } };
+                render (two, result, p);
+
+                two.setOpacity (0.5f);
+                two.setColor (juce::Colours::black.withAlpha (0.5f));
+                CHECK (two.willRecalculate() == false);
+                CHECK (two.willRecomposite() == true);
             }
 
             SECTION ("setRadius with new radius then setSpread with same spread still breaks cache")

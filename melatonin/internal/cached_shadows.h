@@ -121,6 +121,8 @@ namespace melatonin::internal
         // this stores the final, end result
         juce::Image compositedARGB;
         juce::Point<float> scaledCompositePosition;
+        juce::uint8 compositeAlpha = 255;
+        juce::uint8 lastDrawnAlpha = 255;
 
         // each component blur is stored here, their positions are stored in ShadowParametersInt
         std::vector<RenderedSingleChannelShadow> renderedSingleChannelShadows;
@@ -166,10 +168,11 @@ namespace melatonin::internal
         void updatePathIfNeeded (juce::Path& pathToBlur);
         void recalculateBlurs();
         void renderInternal (juce::Graphics& g);
-        void drawARGBComposite (juce::Graphics& g, bool optimizeClipBounds = false);
+        void drawARGBComposite (juce::Graphics& g, float opacity, bool optimizeClipBounds = false);
 
         // This is done at the main graphics context scale
         // The path is at 0,0 and the shadows are placed at their correct relative *integer* positions
         void compositeShadowsToARGB();
+        [[nodiscard]] bool isSingleDropShadow() const;
     };
 }

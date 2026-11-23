@@ -149,17 +149,28 @@ namespace melatonin::internal
     CachedShadows& CachedShadows::setColor (juce::Colour color, size_t index)
     {
         if (canUpdateShadow (index))
-            needsRecomposite |= renderedSingleChannelShadows[index].updateColor (color);
+        {
+            auto& shadow = renderedSingleChannelShadows[index];
+            const auto previous = shadow.parameters.color;
+
+            if (shadow.updateColor (color))
+                needsRecomposite |= ! isSingleDropShadow() || previous.withAlpha (1.0f) != color.withAlpha (1.0f);
+        }
 
         return *this;
     }
 
     CachedShadows& CachedShadows::setOpacity (double opacity, size_t index)
     {
-        if (canUpdateShadow (index))
-            needsRecomposite |= renderedSingleChannelShadows[index].updateOpacity (static_cast<float> (opacity));
+        if (canUpdateShadow (index) && renderedSingleChannelShadows[index].updateOpacity (static_cast<float> (opacity)))
+            needsRecomposite |= ! isSingleDropShadow();
 
         return *this;
+    }
+
+    bool CachedShadows::isSingleDropShadow() const
+    {
+        return renderedSingleChannelShadows.size() == 1 && ! renderedSingleChannelShadows.front().parameters.inner;
     }
 
     bool CachedShadows::TextArrangement::operator== (const TextArrangement& other) const
@@ -258,16 +269,27 @@ namespace melatonin::internal
         if (needsRecalculate)
             recalculateBlurs();
 
-        // have any of the shadows changed position/color/opacity OR been recalculated?
-        // if so, recreate the ARGB composite of all the shadows together
+        float drawOpacity = 1.0f;
+        if (isSingleDropShadow())
+        {
+            const auto color = renderedSingleChannelShadows.front().parameters.color;
+            // A changing alpha is applied at draw time, so a fade does not rebuild the image on each frame. A steady alpha is baked in, which draws faster.
+            const bool fading = color.getAlpha() != lastDrawnAlpha && compositedARGB.isValid();
+            const auto alphaToCache = fading ? juce::uint8 { 255 } : color.getAlpha();
+            needsRecomposite |= alphaToCache != compositeAlpha;
+            compositeAlpha = alphaToCache;
+            lastDrawnAlpha = color.getAlpha();
+            if (fading)
+                drawOpacity = color.getFloatAlpha();
+        }
+
         if (needsRecomposite)
             compositeShadowsToARGB();
 
-        // draw the cached composite into the main graphics context
-        drawARGBComposite (g);
+        drawARGBComposite (g, drawOpacity);
     }
 
-    void CachedShadows::drawARGBComposite (juce::Graphics& g, bool optimizeClipBounds)
+    void CachedShadows::drawARGBComposite (juce::Graphics& g, float opacity, bool optimizeClipBounds)
     {
         // support default constructors, 0 radius blurs, etc
         if (compositedARGB.isNull())
@@ -283,9 +305,7 @@ namespace melatonin::internal
             g.excludeClipRegion (lastOriginAgnosticPath.getBounds().toNearestIntEdges());
         }
 
-        // draw the composite at full strength
-        // (the composite itself has the colors/opacity/etc)
-        g.setOpacity (1.0);
+        g.setOpacity (opacity);
 
         // compositedARGB has been scaled by the physical pixel scale factor
         // (unless lowQuality is true)
@@ -339,7 +359,7 @@ namespace melatonin::internal
             // lets us temporarily clip the region if needed
             juce::Graphics::ScopedSaveState saveState (g2);
 
-            g2.setColour (shadow.parameters.color);
+            g2.setColour (isSingleDropShadow() ? shadow.parameters.color.withAlpha (compositeAlpha) : shadow.parameters.color);
 
             // for inner shadows, clip to the path bounds
             // we are doing this here instead of in the single channel render

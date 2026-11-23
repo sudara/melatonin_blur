@@ -14,9 +14,9 @@ TEST_CASE ("Melatonin Blur Single Channel Benchmarks")
         {
             juce::ScopedJuceInitialiser_GUI juce;
 
-            for (auto radius : { 5, 10, 15, 20, 50 })
+            for (auto radius : { 5u, 10u, 15u, 20u, 50u })
             {
-                if (dimension < radius * 2 + 1)
+                if (static_cast<unsigned int> (dimension) < radius * 2 + 1)
                     continue;
 
                 DYNAMIC_SECTION ("with radius " << radius)
